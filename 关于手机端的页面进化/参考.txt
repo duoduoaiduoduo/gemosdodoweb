@@ -1,0 +1,584 @@
+import React, { useState, useEffect } from 'react';
+import { Lock, ArrowDown, Copy, BookOpen, PenTool, Twitter, Github, Mail, ArrowRight } from 'lucide-react';
+
+// ==========================================
+// 1. 基础配置与模拟数据 (Mock Data)
+// ==========================================
+const heroManifesto = {
+  zh: "探索技术与艺术交织的数字旷野 / 不断打破常规的边界 / ",
+  en: "EXPLORING THE DIGITAL WILDERNESS WOVEN WITH TECH & ART / BREAKING BOUNDARIES / "
+};
+
+// 使用黑白质感的占位图
+const mockArchiveItems = [
+  { id: 1, type: 'project', title: 'NEO-TOKYO 3D', date: '25.10.12', img: 'https://images.unsplash.com/photo-1580136579312-94651dfd596d?auto=format&fit=crop&w=600&q=80&sat=-100' },
+  { id: 2, type: 'video', title: 'GENERATIVE ART', date: '25.09.05', img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80&sat=-100' },
+  { id: 3, type: 'edu', title: 'REACT 19 ARCH', date: '25.08.22', img: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80&sat=-100' },
+  { id: 4, type: 'project', title: 'MINIMAL TASK', date: '25.07.11', img: 'https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&w=600&q=80&sat=-100' },
+];
+
+// ==========================================
+// 2. 局部组件 (Sub Components)
+// ==========================================
+const SocialLinks = () => (
+  <div className="art-social-links">
+    <button><Twitter size={16} strokeWidth={1.5} /></button>
+    <button><Github size={16} strokeWidth={1.5} /></button>
+    <button><Mail size={16} strokeWidth={1.5} /></button>
+  </div>
+);
+
+// ==========================================
+// 3. 核心布局组件 (Avant-Garde Redesign)
+// ==========================================
+function TouchHome({
+  lang,
+  t,
+  bridge,
+  isPhone,
+  showAdminEntry,
+  isLangTransitioning,
+  onAvatarTap,
+  onToggleLang,
+  onOpenAwards,
+  onOpenPdfs,
+  onOpenJournal,
+  onOpenAdmin,
+  activeFilter
+}) {
+  const filteredItems = activeFilter === 'all' 
+    ? mockArchiveItems 
+    : mockArchiveItems.filter(item => item.type === activeFilter);
+
+  return (
+    <div className="art-container">
+      {/* Topbar: Minimalist & Brutalist */}
+      <header className="art-topbar">
+        <div className="topbar-left" onClick={onToggleLang} style={{ cursor: 'pointer' }}>
+          <span>{lang === 'zh' ? 'EN / 中文' : 'ZH / ENG'}</span>
+        </div>
+        <div className="topbar-right">
+          <span className="icp-text">浙ICP备2026017753号</span>
+          {showAdminEntry && (
+            <button className="admin-btn" onClick={onOpenAdmin}>
+              <Lock size={14} strokeWidth={1.5} />
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Hero Section: Editorial Typography */}
+      <section className="art-hero">
+        <div className="hero-grid">
+          <div className="avatar-container" onClick={onAvatarTap}>
+            <img 
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80&sat=-100" 
+              alt="Avatar" 
+              className="art-avatar" 
+            />
+          </div>
+          <div className="title-container">
+            <div className="badge">{t('官网', 'OFFICIAL')}</div>
+            <h1 className="massive-title">DODO.</h1>
+            <h2 className="sub-title">ENGRAVED<br/>STELA</h2>
+          </div>
+        </div>
+        
+        {/* Marquee Ticker for Manifesto */}
+        <div className="art-marquee">
+          <div className="marquee-content">
+            <span>{t(heroManifesto.zh, heroManifesto.en)}</span>
+            <span>{t(heroManifesto.zh, heroManifesto.en)}</span>
+            <span>{t(heroManifesto.zh, heroManifesto.en)}</span>
+          </div>
+        </div>
+
+        <div className="hero-meta">
+          <p className="meta-desc">DIGITAL ARCHIVE<br/>& CREATIVE WORKS</p>
+          <SocialLinks />
+        </div>
+      </section>
+
+      {/* Filter Row: Stark Typography */}
+      <section className="art-filters">
+        {['all', 'project', 'video', 'edu'].map((filter) => (
+          <button 
+            key={filter}
+            className={`art-filter-btn ${activeFilter === filter ? 'active' : ''}`}
+            onClick={(e) => bridge.filterTimeline?.(filter, e.currentTarget)}
+          >
+            {filter.toUpperCase()}
+          </button>
+        ))}
+      </section>
+
+      {/* Archive Grid: Blueprint Style */}
+      <section className="art-archive">
+        <div className="archive-header">
+          <h3>ARCHIVE</h3>
+          <ArrowDown size={16} strokeWidth={1.5} />
+        </div>
+        
+        <div className="art-grid">
+          {filteredItems.map(item => (
+            <div key={item.id} className="art-card">
+              <div className="card-img-wrapper">
+                <img src={item.img} alt={item.title} />
+              </div>
+              <div className="card-meta">
+                <div className="card-info">
+                  <h4>{item.title}</h4>
+                  <span className="card-date">{item.date}</span>
+                </div>
+                <button className="card-action"><ArrowRight size={16} strokeWidth={1.5}/></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Bottom Nav: Fixed Flat Bar */}
+      <nav className="art-bottom-nav">
+        <button onClick={onOpenAwards}>
+          <Copy size={18} strokeWidth={1.5} />
+          <span>AWARDS</span>
+        </button>
+        <button onClick={onOpenPdfs} className="center-btn">
+          <BookOpen size={18} strokeWidth={1.5} />
+          <span>PORTFOLIO</span>
+        </button>
+        <button onClick={onOpenJournal}>
+          <PenTool size={18} strokeWidth={1.5} />
+          <span>JOURNAL</span>
+        </button>
+      </nav>
+    </div>
+  );
+}
+
+// ==========================================
+// 4. App 主容器
+// ==========================================
+export default function App() {
+  const [lang, setLang] = useState('en');
+  const [activeFilter, setActiveFilter] = useState('all');
+
+  const t = (zh, en) => (lang === 'zh' ? zh : en);
+
+  const bridge = {
+    filterTimeline: (filterStr) => setActiveFilter(filterStr)
+  };
+
+  return (
+    <div className="device-wrapper">
+      <style>{GLOBAL_CSS}</style>
+      <div className="device-screen">
+        <TouchHome
+          lang={lang}
+          t={t}
+          bridge={bridge}
+          activeFilter={activeFilter}
+          isPhone={true}
+          showAdminEntry={true}
+          isLangTransitioning={false}
+          onAvatarTap={() => console.log('Avatar tapped')}
+          onToggleLang={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+          onOpenAwards={() => alert(t('开启奖状模块', 'Opening Awards'))}
+          onOpenPdfs={() => alert(t('开启作品集模块', 'Opening Portfolio'))}
+          onOpenJournal={() => alert(t('开启手账模块', 'Opening Journal'))}
+          onOpenAdmin={() => alert(t('进入管理员系统', 'Admin Entry'))}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 5. CSS 注入 (Swiss Design & Neo-Brutalism)
+// ==========================================
+const GLOBAL_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+
+:root {
+  /* 极致纯色的骨白底色与墨黑字体 */
+  --art-bg: #EAE8E3; 
+  --art-fg: #111111;
+  --art-accent: #FF3B00; /* 先锋橘红 */
+  --line-width: 1.5px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background-color: #d1d1d1; /* 外部环境灰色 */
+  display: flex;
+  justify-content: center;
+  font-family: 'Space Grotesk', -apple-system, sans-serif;
+  color: var(--art-fg);
+}
+
+/* 模拟手机物理外壳 */
+.device-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.device-screen {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100vh;
+  background: var(--art-bg);
+  position: relative;
+  overflow-x: hidden;
+  border-left: var(--line-width) solid var(--art-fg);
+  border-right: var(--line-width) solid var(--art-fg);
+  box-shadow: 0 0 40px rgba(0,0,0,0.1);
+}
+
+/* 基础容器 */
+.art-container {
+  padding-bottom: 80px; /* 留出底部导航空间 */
+}
+
+/* 顶部栏 */
+.art-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: var(--line-width) solid var(--art-fg);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icp-text {
+  opacity: 0.5;
+}
+
+.admin-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--art-fg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+/* 英雄区域 (Hero) */
+.art-hero {
+  border-bottom: var(--line-width) solid var(--art-fg);
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  border-bottom: var(--line-width) solid var(--art-fg);
+}
+
+.avatar-container {
+  border-right: var(--line-width) solid var(--art-fg);
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.art-avatar {
+  width: 100%;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  filter: grayscale(100%) contrast(1.2); /* 黑白高反差 */
+  transition: filter 0.3s ease;
+}
+.art-avatar:hover {
+  filter: grayscale(0%) contrast(1.1);
+}
+
+.title-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.badge {
+  align-self: flex-start;
+  font-size: 9px;
+  font-weight: 700;
+  border: var(--line-width) solid var(--art-fg);
+  padding: 4px 8px;
+  margin-bottom: 12px;
+  letter-spacing: 0.1em;
+}
+
+.massive-title {
+  margin: 0;
+  font-size: clamp(2.5rem, 10vw, 3.5rem);
+  line-height: 0.85;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.sub-title {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* 走马灯 (Marquee) */
+.art-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: var(--line-width) solid var(--art-fg);
+  background: var(--art-fg);
+  color: var(--art-bg);
+  padding: 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.marquee-content {
+  display: inline-block;
+  animation: marquee 15s linear infinite;
+}
+
+.marquee-content span {
+  margin-right: 4px;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.33%); }
+}
+
+.hero-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+}
+
+.meta-desc {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+}
+
+.art-social-links {
+  display: flex;
+  gap: 8px;
+}
+
+.art-social-links button {
+  width: 36px;
+  height: 36px;
+  border: var(--line-width) solid var(--art-fg);
+  background: transparent;
+  color: var(--art-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.art-social-links button:active {
+  background: var(--art-accent);
+  color: #fff;
+  border-color: var(--art-accent);
+}
+
+/* 分类过滤器 (Filters) */
+.art-filters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: var(--line-width) solid var(--art-fg);
+}
+
+.art-filter-btn {
+  background: transparent;
+  border: none;
+  border-right: var(--line-width) solid var(--art-fg);
+  padding: 14px 0;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--art-fg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.art-filter-btn:last-child {
+  border-right: none;
+}
+
+.art-filter-btn.active {
+  background: var(--art-fg);
+  color: var(--art-bg);
+}
+
+.art-filter-btn:active {
+  background: var(--art-accent);
+  color: #fff;
+}
+
+/* 瀑布流/网格 (Archive Grid) */
+.archive-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: var(--line-width) solid var(--art-fg);
+}
+
+.archive-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.art-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.art-card {
+  border-bottom: var(--line-width) solid var(--art-fg);
+  display: flex;
+  flex-direction: column;
+}
+
+.art-card:last-child {
+  border-bottom: none;
+}
+
+.card-img-wrapper {
+  width: 100%;
+  height: 240px;
+  border-bottom: var(--line-width) solid var(--art-fg);
+  overflow: hidden;
+}
+
+.card-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(100%);
+  transition: transform 0.6s ease, filter 0.4s ease;
+}
+
+.art-card:active .card-img-wrapper img {
+  filter: grayscale(0%);
+  transform: scale(1.05);
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.card-info {
+  padding: 16px;
+  flex: 1;
+}
+
+.card-info h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.card-date {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.card-action {
+  width: 60px;
+  border: none;
+  border-left: var(--line-width) solid var(--art-fg);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--art-fg);
+  transition: all 0.2s ease;
+}
+
+.art-card:active .card-action {
+  background: var(--art-accent);
+  color: #fff;
+  border-color: var(--art-accent);
+}
+
+/* 底部导航栏 (Bottom Nav) */
+.art-bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 64px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  background: var(--art-bg);
+  border-top: var(--line-width) solid var(--art-fg);
+  z-index: 100;
+}
+
+.art-bottom-nav button {
+  background: transparent;
+  border: none;
+  border-right: var(--line-width) solid var(--art-fg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--art-fg);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.art-bottom-nav button:last-child {
+  border-right: none;
+}
+
+.art-bottom-nav button span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.art-bottom-nav button:active {
+  background: var(--art-fg);
+  color: var(--art-bg);
+}
+`
