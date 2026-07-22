@@ -1,0 +1,199 @@
+Mobile UI 架构重构指南：新粗野主义 (Neo-Brutalism) 与瑞士排版你好！基于最新的视觉方向，我们决定对现有的移动端首页（TouchHome）进行一次彻底的视觉重构。之前的“毛玻璃（Glassmorphism）+ 大圆角 + 弥散阴影”风格将被完全废弃。我们现在要转向**“超级艺术、极简、纯平面感”**的画廊级别设计。核心设计语言参考：新粗野主义 (Neo-Brutalism) 与 瑞士国际主义排版 (Swiss Design)。请参考以下详细的技术实现指南进行代码调整。1. 核心视觉理念变更 (Core Visual Shifts)干掉所有柔和元素：全局移除所有的 border-radius、box-shadow、backdrop-filter 和背景渐变。网格与硬线条 (Wireframe & Hard Lines)：整个页面的布局依靠 1.5px 的纯黑实线 (solid #111) 进行严格分割。抛弃传统的 padding/margin 留白浮岛布局，让元素直接贴合边框。极致排版 (Extreme Typography)：标题采用巨大字号、超紧凑行高（line-height < 1），与极小的描述性文字形成强烈的字号反差。优先使用带几何感/建筑感的无衬线字体（如 Space Grotesk）。色彩克制与反差 (Color Discipline)：默认状态只存在骨白色 (Bone White) 和 纯黑色 (Solid Black)，图片全局应用黑白滤镜。只有在用户触发交互（:active / :hover）时，才展现原色或刺眼的先锋橘红 (#FF3B00)。2. CSS 全局变量与底层样式重置请在你的主 CSS/SCSS 文件（或 Tailwind 配置）中注入以下基础变量。之前的 --m-surface 等变量在这一版中不再适用。@import url('[https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap](https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap)');
+
+:root {
+  /* 基础核心变量 */
+  --art-bg: #EAE8E3;     /* 骨白底色，取代原有的 #f8fafc */
+  --art-fg: #111111;     /* 极致纯黑 */
+  --art-accent: #FF3B00; /* 交互时的先锋橘红色 */
+  --line-width: 1.5px;   /* 全局统一的分割线宽度 */
+}
+
+/* 覆盖原本 body 的 phone 布局设置 */
+body.layout-phone, 
+body.layout-tablet {
+  background-color: var(--art-bg);
+  color: var(--art-fg);
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+}
+3. DOM 结构与 TouchHome 组件重构以下是重构后的 TouchHome TSX 代码参考。注意：我保留了你原本所有的 Props 签名（lang, t, bridge 等）和交互回调，仅仅重构了 DOM 结构和 className，你可以直接对照替换现有的 TouchHome。import React from 'react';
+import { Lock, ArrowDown, Copy, BookOpen, PenTool, Twitter, Github, Mail, ArrowRight } from 'lucide-react';
+
+export function TouchHome({
+  lang,
+  t,
+  bridge,
+  isPhone,
+  showAdminEntry,
+  isLangTransitioning,
+  onAvatarTap,
+  onToggleLang,
+  onOpenAwards,
+  onOpenPdfs,
+  onOpenJournal,
+  onOpenAdmin,
+  onScrollArchive,
+}: any) { // 替换为你原本严格的 TS Props
+
+  // 这里的 bridge.filterTimeline 需要配合本地 state 控制 activeFilter，这里假设由外层传入或内部维护
+
+  return (
+    <div className="art-container">
+      {/* 1. 顶部状态栏 - 纯粹的线条分割 */}
+      <header className="art-topbar">
+        <div className="topbar-left" onClick={onToggleLang} style={{ cursor: 'pointer' }}>
+          <span>{lang === 'zh' ? 'EN / 中文' : 'ZH / ENG'}</span>
+        </div>
+        <div className="topbar-right">
+          <span className="icp-text">浙ICP备2026017753号</span>
+          {showAdminEntry && (
+            <button className="admin-btn" onClick={onOpenAdmin}>
+              <Lock size={14} strokeWidth={1.5} />
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* 2. 英雄区 - 强网格排版 */}
+      <section className="art-hero">
+        <div className="hero-grid">
+          <div className="avatar-container" onClick={onAvatarTap}>
+            <img src="/avatar.png" alt="Avatar" className="art-avatar" />
+          </div>
+          <div className="title-container">
+            <div className="badge">{t('官网', 'OFFICIAL')}</div>
+            <h1 className="massive-title">DODO.</h1>
+            <h2 className="sub-title">ENGRAVED<br/>STELA</h2>
+          </div>
+        </div>
+        
+        {/* 新增：CSS 驱动的纯文字走马灯，增强艺术感 */}
+        <div className="art-marquee">
+          <div className="marquee-content">
+            <span>{t(heroManifesto.zh, heroManifesto.en)} / </span>
+            <span>{t(heroManifesto.zh, heroManifesto.en)} / </span>
+            <span>{t(heroManifesto.zh, heroManifesto.en)} / </span>
+          </div>
+        </div>
+
+        <div className="hero-meta">
+          <p className="meta-desc">DIGITAL ARCHIVE<br/>& CREATIVE WORKS</p>
+          <div className="art-social-links">
+            <button><Twitter size={16} strokeWidth={1.5} /></button>
+            <button><Github size={16} strokeWidth={1.5} /></button>
+            <button><Mail size={16} strokeWidth={1.5} /></button>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. 过滤器栏 */}
+      <section className="art-filters">
+        {/* 需配合 activeFilter 状态添加 .active 类名 */}
+        <button className="art-filter-btn active" onClick={(e) => bridge.filterTimeline?.('all', e.currentTarget)}>ALL</button>
+        <button className="art-filter-btn" onClick={(e) => bridge.filterTimeline?.('project', e.currentTarget)}>PROJECT</button>
+        <button className="art-filter-btn" onClick={(e) => bridge.filterTimeline?.('video', e.currentTarget)}>VIDEO</button>
+        <button className="art-filter-btn" onClick={(e) => bridge.filterTimeline?.('edu', e.currentTarget)}>EDU</button>
+      </section>
+
+      {/* 4. 瀑布流容器改造为单列硬派网格 */}
+      <section className="art-archive" id="masonrySection">
+        <div className="archive-header">
+          <h3>ARCHIVE</h3>
+          <ArrowDown size={16} strokeWidth={1.5} />
+        </div>
+        {/* 内部的卡片渲染请参考下文的 CSS 结构改造 */}
+        <div className="art-grid" id="masonryGrid">
+           {/* Card 结构示例 */}
+           {/* <div className="art-card">
+              <div className="card-img-wrapper"><img src="..." /></div>
+              <div className="card-meta">
+                <div className="card-info"><h4>TITLE</h4><span>DATE</span></div>
+                <button className="card-action"><ArrowRight /></button>
+              </div>
+           </div> 
+           */}
+        </div>
+      </section>
+
+      {/* 5. 底部导航栏 - 钉底的平整栏位，取代原来的悬浮胶囊 */}
+      <nav className="art-bottom-nav">
+        <button onClick={onOpenAwards}>
+          <Copy size={18} strokeWidth={1.5} />
+          <span>AWARDS</span>
+        </button>
+        <button onClick={onOpenPdfs} className="center-btn">
+          <BookOpen size={18} strokeWidth={1.5} />
+          <span>PORTFOLIO</span>
+        </button>
+        <button onClick={onOpenJournal}>
+          <PenTool size={18} strokeWidth={1.5} />
+          <span>JOURNAL</span>
+        </button>
+      </nav>
+    </div>
+  );
+}
+4. 重点组件 CSS 逻辑说明为了让你写出符合新理念的样式，请遵循以下 CSS 规则重写对应模块：4.1 线框流 (Wireframing Layout)舍弃 gap 和 padding 撑开间距的做法。使用 border-bottom 和 border-right 将区块像表格一样分割。.hero-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  border-bottom: var(--line-width) solid var(--art-fg);
+}
+.avatar-container {
+  border-right: var(--line-width) solid var(--art-fg);
+  /* 不加圆角，直接填满网格 */
+}
+4.2 极致微交互 (Micro-Interactions)关键变化：图片和头像是默认黑白的。只有当用户按下 (:active) 或者长按时，才恢复色彩。按钮按下时底色变为强烈的橘红色并反白。.art-avatar, .card-img-wrapper img {
+  filter: grayscale(100%) contrast(1.2);
+  transition: transform 0.6s ease, filter 0.4s ease;
+}
+
+/* 触摸按下时恢复色彩并放大 */
+.art-card:active .card-img-wrapper img, 
+.avatar-container:active .art-avatar {
+  filter: grayscale(0%) contrast(1.1);
+  transform: scale(1.05);
+}
+
+/* 按钮硬质反馈 */
+.art-bottom-nav button:active,
+.art-filter-btn:active {
+  background: var(--art-accent); /* 变为橘红色 */
+  color: #ffffff;
+}
+4.3 无限走马灯动画 (Marquee Animation)用纯 CSS 实现顶部宣言的跑马灯：.art-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  background: var(--art-fg);
+  color: var(--art-bg);
+  padding: 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.marquee-content {
+  display: inline-block;
+  animation: marquee 15s linear infinite;
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.33%); }
+}
+4.4 底部导航 (Bottom Nav)抛弃悬浮的圆角胶囊 (border-radius: 16px)，改为直接在 viewport 底部固定一条横平竖直的栏。.art-bottom-nav {
+  position: fixed; /* 或 absolute 视最外层容器而定 */
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 64px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: var(--art-bg);
+  border-top: var(--line-width) solid var(--art-fg);
+  z-index: 100;
+}
+/* 内部按钮使用 border-right 分割 */
+.art-bottom-nav button {
+  border: none;
+  border-right: var(--line-width) solid var(--art-fg);
+  border-radius: 0; /* 强行置空原有样式 */
+  background: transparent;
+}
+5. 接下来需要你配合的工作按照上述的 DOM 结构重构 TouchHome，可以放心移除之前 index.css 里冗长的 .m-shell、.m-hero 等带有玻璃拟态设定的样式。之前的 Masonry 瀑布流组件代码（renderMasonry相关），需要调整其渲染的 Card HTML 结构，移除 .masonry-card 里的所有阴影和圆角代码，改用纯边框 border-bottom: 1.5px solid #111 来分隔每一条纪事，并将原本的双列布局（column-count: 2）强制修改为粗暴的单列大图排列。请引入并采用 lucide-react 组件替换老式的 <i data-lucide="..."> 写法，并统一加上 strokeWidth={1.5}，以保持整页纤细高级的线条感。期待你的代码重构落地，让这个页面变成真正的艺术馆！

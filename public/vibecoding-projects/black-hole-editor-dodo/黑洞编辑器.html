@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGPU 卡冈图雅黑洞 - 电影级渲染器</title>
+    <style>
+        :root {
+            --ui-bg: rgba(4, 4, 4, 0.64);
+            --ui-line: rgba(255, 255, 255, 0.14);
+            --ui-line-soft: rgba(255, 255, 255, 0.08);
+            --ui-text: rgba(255, 255, 255, 0.86);
+            --ui-muted: rgba(255, 255, 255, 0.48);
+            --ui-faint: rgba(255, 255, 255, 0.24);
+            --ui-strong: #fff;
+        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: Inter, "Segoe UI", Arial, sans-serif; touch-action: none; user-select: none; color: var(--ui-text); }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        .panel { position: absolute; background: var(--ui-bg); padding: 14px; border: 1px solid var(--ui-line-soft); border-radius: 8px; color: var(--ui-text); pointer-events: auto; transition: opacity 0.2s ease; backdrop-filter: blur(10px); box-shadow: none; }
+        #ui-left { top: 16px; left: 16px; width: 260px; max-height: calc(100vh - 128px); overflow-y: auto; }
+        #ui-right { top: 16px; right: 16px; width: 280px; max-height: calc(100vh - 128px); overflow-y: auto; }
+        #ui-bottom { bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100vw - 48px); display: flex; flex-direction: column; gap: 10px; }
+        h1 { margin: 0 0 4px 0; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ui-strong); }
+        h2, h3 { margin: 0 0 12px 0; font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--ui-text); border-bottom: 1px solid var(--ui-line-soft); padding-bottom: 8px; }
+        p { margin: 0 0 12px 0; font-size: 11px; color: var(--ui-muted); line-height: 1.45; }
+        .control-group { margin-top: 12px; }
+        label { font-size: 11px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; color: var(--ui-muted); }
+        input[type="range"] { width: 100%; height: 2px; cursor: pointer; accent-color: var(--ui-strong); }
+        input[type="number"] { background: transparent; color: var(--ui-text); border: 1px solid var(--ui-line-soft); border-radius: 6px; padding: 4px 6px; font-family: "SFMono-Regular", Consolas, monospace; width: 60px; font-size: 11px; }
+        input[type="checkbox"] { cursor: pointer; accent-color: var(--ui-strong); }
+        select { width: 100%; background: transparent; color: var(--ui-text); border: 1px solid var(--ui-line-soft); border-radius: 6px; padding: 7px 8px; margin-top: 6px; outline: none; cursor: pointer; font-size: 11px; }
+        button { cursor: pointer; background: transparent !important; border: 1px solid var(--ui-line-soft) !important; color: var(--ui-text) !important; border-radius: 6px; padding: 6px 10px; font-size: 11px; font-weight: 500; transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease; }
+        button:hover { background: rgba(255,255,255,0.06) !important; border-color: var(--ui-line) !important; color: var(--ui-strong) !important; }
+        button:disabled { opacity: 0.36; cursor: not-allowed; }
+        .action-btn, .danger-btn { width: 100%; }
+        .danger-btn { color: rgba(255,255,255,0.7) !important; }
+        .icon-btn { min-width: 28px; padding: 4px 8px; }
+        .timeline-controls { display: flex; align-items: center; gap: 12px; }
+        .timeline-track-container { position: relative; flex-grow: 1; height: 20px; background: rgba(255,255,255,0.04); border-radius: 6px; border: 1px solid var(--ui-line-soft); cursor: pointer; overflow: hidden; }
+        .timeline-progress { position: absolute; top: 0; left: 0; height: 100%; background: rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.72); pointer-events: none; }
+        .keyframe-marker { position: absolute; top: 0; width: 2px; height: 100%; background: var(--ui-strong); transform: translateX(-50%); cursor: grab; z-index: 10; opacity: 0.9; }
+        .keyframe-marker:hover { width: 4px; }
+        .keyframe-marker:active { cursor: grabbing; }
+        .time-display { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; color: var(--ui-text); width: 58px; text-align: center; }
+        .controls-hint { margin-top: 12px; padding: 10px 0 0; background: transparent; border-top: 1px solid var(--ui-line-soft); border-radius: 0; font-size: 11px; color: var(--ui-muted); }
+        #camera-gizmos { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+        .cam-gizmo { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; cursor: pointer; background: rgba(0, 0, 0, 0.52); border: 1px solid var(--ui-line); color: var(--ui-text); padding: 4px 7px; border-radius: 6px; font-size: 10px; font-weight: 500; backdrop-filter: blur(8px); }
+        .cam-gizmo.active { background: rgba(255,255,255,0.12); color: var(--ui-strong); border-color: rgba(255,255,255,0.54); }
+        .cam-list-item { padding: 7px 0; margin-bottom: 0; background: transparent; border-bottom: 1px solid var(--ui-line-soft); border-radius: 0; cursor: pointer; font-size: 11px; display: flex; justify-content: space-between; align-items: center; }
+        .cam-list-item.active { color: var(--ui-strong); border-color: var(--ui-line); }
+        #render-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.86); z-index: 999; color: white; flex-direction: column; justify-content: center; align-items: center; font-family: "SFMono-Regular", Consolas, monospace; }
+        .progress-bar-bg { width: min(400px, 70vw); height: 2px; background: rgba(255,255,255,0.14); border-radius: 2px; margin-top: 20px; overflow: hidden; }
+        .progress-bar-fill { width: 0%; height: 100%; background: var(--ui-strong); transition: width 0.1s; }
+        #error-msg { display: none; position: fixed; inset: 0; z-index: 1000; color: white; background: #000; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
+        .creator-link { position: fixed; right: 18px; bottom: 142px; z-index: 30; display: inline-flex; align-items: center; gap: 7px; padding: 5px 8px 5px 5px; color: rgba(255,255,255,0.52); text-decoration: none; font-size: 11px; font-weight: 500; background: rgba(0,0,0,0.26); border: 1px solid rgba(255,255,255,0.07); border-radius: 999px; opacity: 0.42; transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease; }
+        .creator-link:hover { opacity: 0.9; color: rgba(255,255,255,0.86); background: rgba(0,0,0,0.5); }
+        .creator-link img { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; display: block; }
+        @media (max-width: 820px) {
+            #ui-left, #ui-right { width: calc(50vw - 34px); max-height: calc(100vh - 168px); }
+            #ui-left { left: 12px; top: 12px; }
+            #ui-right { right: 12px; top: 12px; }
+            #ui-bottom { bottom: 12px; width: calc(100vw - 24px); }
+            #ui-bottom > div:first-child { align-items: flex-start !important; }
+            #ui-bottom label, #ui-bottom button, #ui-bottom span { font-size: 10px !important; }
+            input[type="number"] { width: 48px !important; }
+            .creator-link { right: 14px; bottom: 134px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧：全局物理与控制面板 -->
+    <div id="ui-left" class="panel">
+        <h1>GARGANTUA</h1>
+        <p>纯 WebGPU 物理模拟与光学渲染</p>
+        
+        <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+            <button onclick="document.getElementById('fileInput').click()" style="flex: 1;">加载工程</button>
+            <button id="saveProjectBtn" style="flex: 1;">保存工程</button>
+            <input type="file" id="fileInput" accept=".gargantua,.json" style="display: none;">
+        </div>
+
+        <div class="control-group" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <label style="font-weight: 600; font-size: 11px;">渲染模式</label>
+            <select id="projModeSelect">
+                <option value="1">真实 3D 摄像机模式 (透视投影)</option>
+                <option value="0" selected>经典 2D 正交模式 (无形变偏移)</option>
+            </select>
+            <p style="font-size: 11px; margin-top: 6px; margin-bottom: 0;">2D 模式下隐藏摄像机系统</p>
+        </div>
+
+        <div class="controls-hint" id="control-hint-box">
+            <b>正交视角 2D</b><br>
+            中键拖拽：旋转系统<br>
+            Shift + 中键：平移画布<br>
+            滚轮：缩放画布
+        </div>
+
+        <div class="control-group">
+            <label>粒子大小 <span id="sizeValue">0.8</span></label>
+            <input type="range" id="sizeSlider" min="0.1" max="8.0" step="0.1" value="0.8">
+        </div>
+        <div class="control-group">
+            <label>粒子亮度 <span id="brightnessValue">0.7</span></label>
+            <input type="range" id="brightnessSlider" min="0.1" max="5.0" step="0.1" value="0.7">
+        </div>
+        <div class="control-group">
+            <label>运行速度 <span id="speedValue">1.0</span></label>
+            <input type="range" id="speedSlider" min="0.0" max="5.0" step="0.1" value="1.0">
+        </div>
+        <div class="control-group">
+            <label>色彩饱和度 <span id="saturationValue">0.5</span></label>
+            <input type="range" id="saturationSlider" min="0.0" max="3.0" step="0.1" value="0.5">
+        </div>
+    </div>
+
+    <!-- 右侧：摄像机系统面板 -->
+    <div id="ui-right" class="panel">
+        <h2 style="display:flex; justify-content:space-between; align-items:center;">
+            <span>摄像机</span>
+            <button id="addCameraBtn" class="icon-btn" title="在当前视角创建摄像机">+</button>
+        </h2>
+        
+        <div id="cameraListContainer"></div>
+
+        <div id="cameraSettings" style="display: none; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+            <h3 id="camSettingsTitle" style="margin: 0 0 10px 0; font-size: 12px;">摄像机设置</h3>
+            
+            <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                <button id="lockViewBtn" class="action-btn" style="flex: 2;">进入摄像机视角</button>
+            </div>
+
+            <!-- Transform -->
+            <div style="font-size: 11px; color: rgba(255,255,255,0.42); margin-bottom: 5px;">Transform (位置)</div>
+            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                <label style="flex:1; flex-direction: column; align-items: flex-start;">X <input type="number" id="camX" step="50"></label>
+                <label style="flex:1; flex-direction: column; align-items: flex-start;">Y <input type="number" id="camY" step="50"></label>
+                <label style="flex:1; flex-direction: column; align-items: flex-start;">Z <input type="number" id="camZ" step="50"></label>
+            </div>
+            
+            <!-- Lens -->
+            <div style="font-size: 11px; color: rgba(255,255,255,0.42); margin-top: 10px; margin-bottom: 5px;">Lens (镜头焦距)</div>
+            <div class="control-group" style="margin-top: 5px;">
+                <label><span id="focalValue">800</span> mm</label>
+                <input type="range" id="focalSlider" min="200" max="3000" step="10" value="800">
+            </div>
+
+            <!-- Depth of Field -->
+            <div style="font-size: 11px; color: rgba(255,255,255,0.42); margin-top: 15px; margin-bottom: 5px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">Depth of Field (物理景深)</div>
+            <div class="control-group" style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="dofToggle">
+                <label for="dofToggle" style="margin: 0;">开启景深模糊</label>
+            </div>
+            <div id="dofSettings" style="display: none; margin-left: 10px; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 10px; margin-top: 10px;">
+                <div class="control-group" style="margin-top: 0;">
+                    <label>焦点距离 <span id="focusDistValue">1000</span></label>
+                    <input type="range" id="focusDistSlider" min="100" max="4000" step="10" value="1000">
+                </div>
+                <div class="control-group" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="apertureToggle">
+                    <label for="apertureToggle" style="margin: 0;">启用真实光圈 (Bokeh)</label>
+                </div>
+                <div class="control-group" id="apertureSettings" style="display: none;">
+                    <label>光圈尺寸 <span id="apertureSizeValue">5.0</span></label>
+                    <input type="range" id="apertureSizeSlider" min="0.5" max="20.0" step="0.5" value="5.0">
+                </div>
+            </div>
+
+            <button id="deleteCamBtn" class="danger-btn" style="margin-top: 15px;">删除摄像机</button>
+        </div>
+    </div>
+
+    <!-- 底部：时间线面板 -->
+    <div id="ui-bottom" class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="font-weight: 600; color: rgba(255,255,255,0.86); font-size: 11px;">时间线</span>
+                <label style="margin:0; font-size: 12px;">总时长: <input type="number" id="durationInput" value="10" style="width:40px; margin-left:5px;"> s</label>
+                <button id="addKeyframeBtn" style="padding: 4px 10px;" disabled>+ 记录关键帧</button>
+                <button id="clearKeyframesBtn" class="icon-btn" disabled>清除帧</button>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: center; padding: 4px 0;">
+                <label style="margin:0; font-size: 12px;">FPS: <input type="number" id="renderFpsInput" value="30" style="width:40px;"></label>
+                <label style="margin:0; font-size: 12px;">尺寸: <input type="number" id="renderWidthInput" value="1920" style="width:55px;"> x <input type="number" id="renderHeightInput" value="1080" style="width:55px;"></label>
+                <button id="renderSequenceBtn" style="margin-left: 5px;">渲染 PNG 序列</button>
+            </div>
+        </div>
+        
+        <div class="timeline-controls" style="margin-top: 5px;">
+            <button id="playPauseBtn" style="width: 40px;">▶</button>
+            <div class="time-display" id="timeDisplay">0.00s</div>
+            
+            <div class="timeline-track-container" id="timelineTrack">
+                <div class="timeline-progress" id="timelineProgress"></div>
+                <!-- 关键帧标记会动态插入到这里 -->
+                <div id="keyframesContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 渲染遮罩层 -->
+    <div id="render-overlay">
+        <h2 style="color: white; border: none;">正在渲染高清序列帧...</h2>
+        <p style="color: rgba(255,255,255,0.62);">物理推演与 GPU 渲染已分离时间系统。请勿关闭网页。</p>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="renderProgressFill"></div></div>
+        <div style="margin-top: 15px; font-size: 18px;"><span id="renderCurrentFrame">0</span> / <span id="renderTotalFrames">0</span></div>
+        <p id="renderStatusMsg" style="margin-top: 10px; color: rgba(255,255,255,0.72);"></p>
+    </div>
+
+    <a class="creator-link" href="https://gemosdodo.art" target="_blank" rel="noopener noreferrer" aria-label="访问 GemosDodo 个人网页">
+        <img src="assets/gemosdodo-logo.png" alt="">
+        <span>GemosDodo</span>
+    </a>
+
+    <div id="camera-gizmos"></div>
+    <div id="error-msg"><h2>WebGPU 不受支持</h2><p>请尝试使用最新版本的 Chrome 或 Edge 浏览器。</p></div>
+    <canvas id="gpuCanvas"></canvas>
+
+    <!-- WGSL Compute Shader -->
+    <script type="text/wgsl" id="compute-wgsl">
+        struct Particle { 
+            pos : vec3<f32>, angle : f32, color: vec4<f32>, 
+            radius : f32, speed : f32, y_offset : f32, age : f32, 
+            lifetime : f32, seed : f32, pad1 : f32, pad2 : f32 
+        }
+        
+        struct Params {
+            dt : f32, time : f32, canvasWidth : f32, canvasHeight : f32,
+            Rs : f32, particleSize : f32, camX : f32, camY : f32,
+            camZ : f32, pan : f32, tilt : f32, focalLength : f32,
+            dofEnabled : f32, focusDistance : f32, apertureEnabled : f32, apertureSize : f32,
+            speedMultiplier : f32, brightness : f32, saturation : f32, projMode : f32,
+            zoom2D : f32, offsetX2D : f32, offsetY2D : f32, pad : f32
+        }
+
+        @group(0) @binding(0) var<storage, read_write> particles: array<Particle>;
+        @group(0) @binding(1) var<uniform> params: Params;
+
+        fn pcg_hash(input: u32) -> u32 {
+            var state = input * 747796405u + 2891336453u;
+            var word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+            return (word >> 22u) ^ word;
+        }
+        fn random_f32(seed: u32) -> f32 { return f32(pcg_hash(seed)) / 4294967295.0; }
+
+        @compute @workgroup_size(64)
+        fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
+            let index = GlobalInvocationID.x;
+            if (index >= arrayLength(&particles)) { return; }
+            var p = particles[index];
+            
+            p.age += params.dt * params.speedMultiplier;
+            p.angle += p.speed * params.speedMultiplier * params.dt;
+            p.radius -= (p.speed * 12.0) * params.speedMultiplier * params.dt; 
+            
+            let thickness_factor = smoothstep(params.Rs * 1.0, params.Rs * 3.0, p.radius);
+            p.pos = vec3<f32>(p.radius * cos(p.angle), p.y_offset * thickness_factor, p.radius * sin(p.angle));
+
+            if (p.radius < params.Rs * 1.05 || p.age > p.lifetime) {
+                var seed = u32(p.seed + params.time * 1000.0) + index;
+                let rand_r = random_f32(seed); seed += 1u;
+                p.radius = params.Rs * (1.5 + rand_r * rand_r * 7.0); 
+                p.angle = random_f32(seed) * 6.2831853; seed += 1u;
+                p.speed = 12.0 * pow(params.Rs / p.radius, 1.5); seed += 1u;
+                p.y_offset = (random_f32(seed) * 2.0 - 1.0) * ((p.radius - params.Rs) * 0.15); seed += 1u;
+                p.age = 0.0; p.lifetime = 10.0 + random_f32(seed) * 30.0; p.seed = f32(seed);
+            }
+            particles[index] = p;
+        }
+    </script>
+
+    <!-- WGSL Render Shader -->
+    <script type="text/wgsl" id="render-wgsl">
+        struct Particle { 
+            pos : vec3<f32>, angle : f32, color: vec4<f32>, 
+            radius : f32, speed : f32, y_offset : f32, age : f32, 
+            lifetime : f32, seed : f32, pad1 : f32, pad2 : f32 
+        }
+        struct Params {
+            dt : f32, time : f32, canvasWidth : f32, canvasHeight : f32,
+            Rs : f32, particleSize : f32, camX : f32, camY : f32,
+            camZ : f32, pan : f32, tilt : f32, focalLength : f32,
+            dofEnabled : f32, focusDistance : f32, apertureEnabled : f32, apertureSize : f32,
+            speedMultiplier : f32, brightness : f32, saturation : f32, projMode : f32,
+            zoom2D : f32, offsetX2D : f32, offsetY2D : f32, pad : f32
+        }
+
+        @group(0) @binding(0) var<storage, read> particles: array<Particle>;
+        @group(0) @binding(1) var<uniform> params: Params;
+
+        struct VertexOutput { @builtin(position) position : vec4<f32>, @location(0) color : vec4<f32>, @location(1) uv : vec2<f32> }
+        var<private> quad_pos : array<vec2<f32>, 6> = array<vec2<f32>, 6>(vec2(-1.,-1.), vec2(1.,-1.), vec2(-1.,1.), vec2(-1.,1.), vec2(1.,-1.), vec2(1.,1.));
+
+        @vertex
+        fn vs_main(@builtin(vertex_index) vIdx : u32, @builtin(instance_index) iIdx : u32) -> VertexOutput {
+            let p = particles[iIdx];
+            let vPos = quad_pos[vIdx];
+            var out : VertexOutput;
+
+            let cp = cos(params.pan); let sp = sin(params.pan);
+            let ct = cos(params.tilt); let st = sin(params.tilt);
+
+            var pixel_pos : vec2<f32>;
+            var size : f32;
+            var energy_ratio : f32 = 1.0;
+            var vz_rot : f32;
+
+            if (params.projMode < 0.5) {
+                // ==========================================
+                // 模式 0: 经典 2D 正交模式
+                // ==========================================
+                let p3d = p.pos;
+                let x_pan = p3d.x * cp - p3d.z * sp;
+                let y_pan = p3d.y;
+                let z_pan = p3d.x * sp + p3d.z * cp;
+
+                let x_rot = x_pan;
+                let y_rot = y_pan * ct - z_pan * st;
+                let z_rot = y_pan * st + z_pan * ct;
+
+                var screen_pos = vec2<f32>(x_rot, y_rot);
+                let dist = max(length(screen_pos), 0.001);
+
+                let Reff = params.Rs * smoothstep(0.0, params.Rs * 2.5, z_rot); 
+                let lensed_dist = (dist + sqrt(dist * dist + 4.0 * Reff * Reff)) / 2.0;
+                var final_pos = (screen_pos / dist) * lensed_dist;
+
+                final_pos = final_pos * params.zoom2D;
+                let lens_stretch = lensed_dist / dist;
+                size = (1.0 + min(lens_stretch * 0.5, 3.0)) * params.particleSize * params.zoom2D;
+
+                let center = vec2<f32>(params.canvasWidth * 0.5 + params.offsetX2D, params.canvasHeight * 0.5 + params.offsetY2D);
+                pixel_pos = center + final_pos + vPos * size;
+
+                let vx = -sin(p.angle); let vz = cos(p.angle);
+                let vx_pan = vx * cp - vz * sp; let vz_pan = vx * sp + vz * cp;
+                vz_rot = vz_pan * ct;
+            } else {
+                // ==========================================
+                // 模式 1: 真实 3D 摄像机模式
+                // ==========================================
+                let local_p = p.pos - vec3<f32>(params.camX, params.camY, params.camZ);
+                let px1 = local_p.x * cp - local_p.z * sp;
+                let pz1 = local_p.x * sp + local_p.z * cp;
+                let px2 = px1;
+                let py2 = local_p.y * ct - pz1 * st;
+                let pz2 = -(local_p.y * st + pz1 * ct); 
+
+                let bh_local = vec3<f32>(0.0, 0.0, 0.0) - vec3<f32>(params.camX, params.camY, params.camZ);
+                let bh_x1 = bh_local.x * cp - bh_local.z * sp;
+                let bh_z1 = bh_local.x * sp + bh_local.z * cp;
+                let bh_x2 = bh_x1;
+                let bh_y2 = bh_local.y * ct - bh_z1 * st;
+                let bh_z2 = -(bh_local.y * st + bh_z1 * ct); 
+
+                if (pz2 < 10.0) { out.position = vec4<f32>(2.0, 2.0, 2.0, 1.0); return out; }
+
+                let screen_pos = vec2<f32>(px2, py2);
+                let bh_screen = vec2<f32>(bh_x2, bh_y2);
+                let pos_rel_bh = screen_pos - bh_screen;
+                let dist = max(length(pos_rel_bh), 0.001);
+                
+                let z_diff = pz2 - bh_z2; 
+                let Reff = params.Rs * smoothstep(0.0, params.Rs * 2.5, z_diff); 
+                let lensed_dist = (dist + sqrt(dist * dist + 4.0 * Reff * Reff)) / 2.0;
+                var final_pos = bh_screen + (pos_rel_bh / dist) * lensed_dist;
+
+                final_pos = (final_pos / pz2) * params.focalLength;
+
+                let lens_stretch = lensed_dist / dist;
+                let base_size_screen = (1.0 + min(lens_stretch * 0.5, 3.0)) * params.particleSize * params.focalLength / pz2;
+                size = base_size_screen;
+
+                if (params.dofEnabled > 0.5 && params.apertureEnabled > 0.5) {
+                    let coc = abs(pz2 - params.focusDistance) * params.apertureSize * 0.005;
+                    let clamped_coc = clamp(coc, 0.0, 30.0);
+                    size = base_size_screen + clamped_coc;
+                    energy_ratio = (base_size_screen * base_size_screen) / (size * size);
+                }
+
+                let center = vec2<f32>(params.canvasWidth * 0.5, params.canvasHeight * 0.5);
+                pixel_pos = center + final_pos + vPos * size;
+
+                let vx = -sin(p.angle); let vz = cos(p.angle);
+                let vx_pan = vx * cp - vz * sp; let vz_pan = vx * sp + vz * cp;
+                vz_rot = vz_pan * ct; 
+            }
+
+            let clipX = (pixel_pos.x / params.canvasWidth) * 2.0 - 1.0;
+            let clipY = 1.0 - (pixel_pos.y / params.canvasHeight) * 2.0;
+            out.position = vec4<f32>(clipX, clipY, 0.0, 1.0);
+            
+            let doppler_factor = 1.0 - vz_rot * 0.75; 
+            let normalized_r = clamp((p.radius - params.Rs * 1.0) / (params.Rs * 6.0), 0.0, 1.0);
+            
+            var color_rgb = mix(vec3(1., 0.95, 0.85), vec3(1., 0.45, 0.05), smoothstep(0.0, 0.15, normalized_r));
+            color_rgb = mix(color_rgb, vec3(0.3, 0.02, 0.0), smoothstep(0.15, 1.0, normalized_r));
+            color_rgb *= doppler_factor;
+            if (vz_rot < 0.0) { color_rgb += vec3<f32>(0.1, 0.2, 0.4) * abs(vz_rot); }
+
+            let luminance = dot(color_rgb, vec3<f32>(0.299, 0.587, 0.114)); 
+            color_rgb = mix(vec3<f32>(luminance), color_rgb, params.saturation);
+
+            let horizon_fade = smoothstep(params.Rs * 1.0, params.Rs * 1.2, p.radius);
+            let alpha = p.color.a * horizon_fade * 0.8 * params.brightness * energy_ratio; 
+
+            out.color = vec4<f32>(color_rgb, alpha); out.uv = vPos;
+            return out;
+        }
+
+        @fragment
+        fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
+            let dist = length(in.uv);
+            if (dist > 1.0) { discard; }
+            let alpha = smoothstep(1.0, 0.8, dist) * in.color.a;
+            return vec4<f32>(in.color.rgb * alpha, alpha);
+        }
+    </script>
+
+    <script type="module">
+        const MathUtils = {
+            lerp: (a, b, t) => a + (b - a) * t,
+            lerpAngle: (a, b, t) => {
+                let d = b - a;
+                while (d > Math.PI) d -= Math.PI * 2;
+                while (d < -Math.PI) d += Math.PI * 2;
+                return a + d * t;
+            }
+        };
+
+        class Camera {
+            constructor(id, name) {
+                this.id = id; this.name = name;
+                this.x = 0; this.y = 150; this.z = 1000;
+                this.pan = 0; this.tilt = 0.15;
+                this.focalLength = 800; 
+                this.dofEnabled = false; this.focusDistance = 1000; 
+                this.apertureEnabled = false; this.apertureSize = 5.0;
+                this.keyframes = []; 
+            }
+
+            getState() {
+                return { x: this.x, y: this.y, z: this.z, pan: this.pan, tilt: this.tilt, focalLength: this.focalLength, dofEnabled: this.dofEnabled, focusDist: this.focusDistance, apertureEnabled: this.apertureEnabled, apertureSize: this.apertureSize };
+            }
+
+            setKeyframe(time) {
+                const state = this.getState();
+                const existingIdx = this.keyframes.findIndex(k => Math.abs(k.time - time) < 0.1); 
+                if (existingIdx !== -1) {
+                    this.keyframes[existingIdx].state = state;
+                } else {
+                    this.keyframes.push({ time, state });
+                    this.keyframes.sort((a, b) => a.time - b.time);
+                }
+            }
+
+            getInterpolatedState(t) {
+                if (this.keyframes.length === 0) return this.getState();
+                if (this.keyframes.length === 1) return this.keyframes[0].state;
+                
+                let frameA = this.keyframes[0];
+                let frameB = this.keyframes[this.keyframes.length - 1];
+                
+                if (t <= frameA.time) return frameA.state;
+                if (t >= frameB.time) return frameB.state;
+                
+                for (let i = 0; i < this.keyframes.length - 1; i++) {
+                    if (t >= this.keyframes[i].time && t <= this.keyframes[i+1].time) {
+                        frameA = this.keyframes[i]; frameB = this.keyframes[i+1]; break;
+                    }
+                }
+                
+                let ratio = (t - frameA.time) / (frameB.time - frameA.time);
+                return {
+                    x: MathUtils.lerp(frameA.state.x, frameB.state.x, ratio),
+                    y: MathUtils.lerp(frameA.state.y, frameB.state.y, ratio),
+                    z: MathUtils.lerp(frameA.state.z, frameB.state.z, ratio),
+                    pan: MathUtils.lerpAngle(frameA.state.pan, frameB.state.pan, ratio),
+                    tilt: MathUtils.lerpAngle(frameA.state.tilt, frameB.state.tilt, ratio),
+                    focalLength: MathUtils.lerp(frameA.state.focalLength, frameB.state.focalLength, ratio),
+                    focusDist: MathUtils.lerp(frameA.state.focusDist, frameB.state.focusDist, ratio),
+                    apertureSize: MathUtils.lerp(frameA.state.apertureSize, frameB.state.apertureSize, ratio),
+                    dofEnabled: ratio < 0.5 ? frameA.state.dofEnabled : frameB.state.dofEnabled,
+                    apertureEnabled: ratio < 0.5 ? frameA.state.apertureEnabled : frameB.state.apertureEnabled
+                };
+            }
+        }
+
+        const state = {
+            projMode: 0, // 1: 3D, 0: 2D
+            cameras: [], activeCamId: null, isLocked: false,
+            freeTarget: { tx: 0, ty: 0, tz: 0, dist: 1200, pan: 0, tilt: 0.08 },
+            current: { camX: 0, camY: 0, camZ: 1200, pan: 0, tilt: 0.08, focalLength: 800, dofEnabled: 0, focusDist: 1000, apertureEnabled: 0, apertureSize: 5.0 },
+            target2D: { zoom: 1.0, offsetX: 0, offsetY: 0, pan: 0, tilt: 0.08 },
+            current2D: { zoom: 1.0, offsetX: 0, offsetY: 0, pan: 0, tilt: 0.08 },
+            params: { size: 0.8, brightness: 0.7, speed: 1.0, saturation: 0.5 },
+            timeline: { duration: 10, currentTime: 0, isPlaying: false, fps: 30 },
+            renderer: { isActive: false, frame: 0, totalFrames: 0, dirHandle: null, origW: 0, origH: 0 }
+        };
+
+        let camIdCounter = 1;
+
+        const UI = {
+            projModeSelect: document.getElementById('projModeSelect'),
+            rightPanel: document.getElementById('ui-right'),
+            camList: document.getElementById('cameraListContainer'),
+            settingsPanel: document.getElementById('cameraSettings'),
+            gizmoLayer: document.getElementById('camera-gizmos'),
+            hintBox: document.getElementById('control-hint-box'),
+            lockBtn: document.getElementById('lockViewBtn'),
+            timeline: {
+                playBtn: document.getElementById('playPauseBtn'), timeDisplay: document.getElementById('timeDisplay'),
+                track: document.getElementById('timelineTrack'), progress: document.getElementById('timelineProgress'),
+                kContainer: document.getElementById('keyframesContainer'), addBtn: document.getElementById('addKeyframeBtn'),
+                clearBtn: document.getElementById('clearKeyframesBtn'), renderBtn: document.getElementById('renderSequenceBtn'),
+                duration: document.getElementById('durationInput')
+            },
+            inputs: {
+                x: document.getElementById('camX'), y: document.getElementById('camY'), z: document.getElementById('camZ'),
+                focal: document.getElementById('focalSlider'), focalVal: document.getElementById('focalValue'),
+                dofToggle: document.getElementById('dofToggle'), dofPanel: document.getElementById('dofSettings'),
+                focusDist: document.getElementById('focusDistSlider'), focusDistVal: document.getElementById('focusDistValue'),
+                apToggle: document.getElementById('apertureToggle'), apPanel: document.getElementById('apertureSettings'),
+                apSize: document.getElementById('apertureSizeSlider'), apSizeVal: document.getElementById('apertureSizeValue')
+            }
+        };
+
+        // --- 渲染引擎模式切换 ---
+        UI.projModeSelect.addEventListener('change', (e) => {
+            const is3D = parseInt(e.target.value) === 1;
+            state.projMode = is3D ? 1 : 0;
+            if (is3D) {
+                UI.rightPanel.style.opacity = '1'; UI.rightPanel.style.pointerEvents = 'auto';
+                state.freeTarget.pan = state.current2D.pan; state.freeTarget.tilt = state.current2D.tilt;
+                UI.hintBox.innerHTML = `<b>自由视角 3D</b><br>中键拖拽：旋转视角<br>Shift + 中键：平移<br>Ctrl + 中键 / 滚轮：缩放<br>左键：选择摄像机`;
+            } else {
+                UI.rightPanel.style.opacity = '0.3'; UI.rightPanel.style.pointerEvents = 'none';
+                if (state.isLocked) unlockCamera();
+                state.target2D.pan = state.current.pan; state.target2D.tilt = state.current.tilt;
+                UI.hintBox.innerHTML = `<b>正交视角 2D</b><br>中键拖拽：旋转系统<br>Shift + 中键：平移画布<br>滚轮：缩放画布`;
+            }
+        });
+        UI.projModeSelect.value = state.projMode.toString();
+        UI.projModeSelect.dispatchEvent(new Event('change'));
+
+        function getActiveCam() { return state.cameras.find(c => c.id === state.activeCamId); }
+
+        function renderCamList() {
+            UI.camList.innerHTML = '';
+            state.cameras.forEach(cam => {
+                const el = document.createElement('div');
+                el.className = `cam-list-item ${cam.id === state.activeCamId ? 'active' : ''}`;
+                el.innerHTML = `<span>${cam.name}</span> <span style="font-size:10px; color:rgba(255,255,255,0.42)">${cam.id === state.activeCamId && state.isLocked ? '已锁定' : ''}</span>`;
+                el.onclick = () => selectCamera(cam.id);
+                UI.camList.appendChild(el);
+            });
+            drawTimelineKeyframes();
+        }
+
+        function selectCamera(id) {
+            if (state.isLocked && state.activeCamId !== id) unlockCamera();
+            state.activeCamId = id; renderCamList();
+            const cam = getActiveCam();
+            if (cam) {
+                UI.settingsPanel.style.display = 'block'; document.getElementById('camSettingsTitle').innerText = `${cam.name} 设置`;
+                updateUIFromCam(cam);
+                UI.timeline.clearBtn.disabled = false;
+            } else {
+                UI.settingsPanel.style.display = 'none';
+                UI.timeline.addBtn.disabled = true; UI.timeline.clearBtn.disabled = true;
+            }
+            updateTimelineUI(); 
+        }
+
+        function updateUIFromCam(cam) {
+            if(!cam) return;
+            UI.inputs.x.value = Math.round(cam.x); UI.inputs.y.value = Math.round(cam.y); UI.inputs.z.value = Math.round(cam.z);
+            UI.inputs.focal.value = cam.focalLength; UI.inputs.focalVal.innerText = cam.focalLength;
+            UI.inputs.dofToggle.checked = cam.dofEnabled; UI.inputs.dofPanel.style.display = cam.dofEnabled ? 'block' : 'none';
+            UI.inputs.focusDist.value = cam.focusDistance; UI.inputs.focusDistVal.innerText = Math.round(cam.focusDistance);
+            UI.inputs.apToggle.checked = cam.apertureEnabled; UI.inputs.apPanel.style.display = cam.apertureEnabled ? 'block' : 'none';
+            UI.inputs.apSize.value = cam.apertureSize; UI.inputs.apSizeVal.innerText = cam.apertureSize;
+        }
+
+        function applyInterpolatedStateToCam(cam, interpState) {
+            cam.x = interpState.x; cam.y = interpState.y; cam.z = interpState.z;
+            cam.pan = interpState.pan; cam.tilt = interpState.tilt;
+            cam.focalLength = interpState.focalLength; cam.dofEnabled = interpState.dofEnabled;
+            cam.focusDistance = interpState.focusDist; cam.apertureEnabled = interpState.apertureEnabled; cam.apertureSize = interpState.apertureSize;
+            updateUIFromCam(cam);
+        }
+
+        function lockCamera() {
+            state.isLocked = true;
+            UI.lockBtn.innerText = "退出摄像机视角"; UI.lockBtn.classList.replace('action-btn', 'danger-btn');
+            renderCamList();
+        }
+
+        function unlockCamera() {
+            state.isLocked = false;
+            UI.lockBtn.innerText = "进入摄像机视角"; UI.lockBtn.classList.replace('danger-btn', 'action-btn');
+            const cam = getActiveCam();
+            if(cam) {
+                state.freeTarget.pan = cam.pan; state.freeTarget.tilt = cam.tilt; state.freeTarget.dist = 1000;
+                state.freeTarget.tx = cam.x - state.freeTarget.dist * Math.sin(cam.pan) * Math.cos(cam.tilt);
+                state.freeTarget.ty = cam.y - state.freeTarget.dist * Math.sin(cam.tilt);
+                state.freeTarget.tz = cam.z - state.freeTarget.dist * Math.cos(cam.pan) * Math.cos(cam.tilt);
+            }
+            renderCamList();
+        }
+
+        UI.lockBtn.onclick = () => { if (state.isLocked) unlockCamera(); else lockCamera(); };
+
+        document.getElementById('addCameraBtn').onclick = () => {
+            const cam = new Camera(camIdCounter++, `Camera ${camIdCounter-1}`);
+            cam.x = state.current.camX; cam.y = state.current.camY; cam.z = state.current.camZ;
+            cam.pan = state.current.pan; cam.tilt = state.current.tilt;
+            state.cameras.push(cam); selectCamera(cam.id);
+        };
+        document.getElementById('deleteCamBtn').onclick = () => {
+            unlockCamera(); state.cameras = state.cameras.filter(c => c.id !== state.activeCamId); selectCamera(null);
+        };
+
+        const bindInput = (el, key, isFloat=false) => {
+            el.addEventListener('input', (e) => {
+                const cam = getActiveCam(); if(!cam) return;
+                let val = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value);
+                if(el.type === 'checkbox') val = e.target.checked;
+                cam[key] = val; updateUIFromCam(cam);
+            });
+        };
+        bindInput(UI.inputs.x, 'x'); bindInput(UI.inputs.y, 'y'); bindInput(UI.inputs.z, 'z');
+        bindInput(UI.inputs.focal, 'focalLength'); bindInput(UI.inputs.dofToggle, 'dofEnabled');
+        bindInput(UI.inputs.focusDist, 'focusDistance'); bindInput(UI.inputs.apToggle, 'apertureEnabled'); bindInput(UI.inputs.apSize, 'apertureSize', true);
+
+        const bindGlobalSlider = (id, key) => {
+            document.getElementById(id + 'Slider').oninput = e => {
+                state.params[key] = parseFloat(e.target.value);
+                document.getElementById(id + 'Value').innerText = state.params[key].toFixed(1);
+            };
+        };
+        bindGlobalSlider('size', 'size'); bindGlobalSlider('brightness', 'brightness');
+        bindGlobalSlider('speed', 'speed'); bindGlobalSlider('saturation', 'saturation');
+
+        // -------------------------------------------------------------
+        // 时间线与渲染器控制
+        // -------------------------------------------------------------
+        UI.timeline.playBtn.onclick = () => {
+            state.timeline.isPlaying = !state.timeline.isPlaying;
+            UI.timeline.playBtn.innerText = state.timeline.isPlaying ? '⏸' : '▶';
+        };
+
+        UI.timeline.duration.onchange = e => { state.timeline.duration = parseFloat(e.target.value); drawTimelineKeyframes(); };
+
+        UI.timeline.track.onmousedown = (e) => {
+            const rect = UI.timeline.track.getBoundingClientRect();
+            const setTime = (ex) => {
+                let ratio = (ex - rect.left) / rect.width;
+                ratio = Math.max(0, Math.min(1, ratio));
+                state.timeline.currentTime = ratio * state.timeline.duration;
+                updateTimelineUI();
+                
+                const cam = getActiveCam();
+                if (cam && cam.keyframes.length > 0) {
+                    const interpState = cam.getInterpolatedState(state.timeline.currentTime);
+                    applyInterpolatedStateToCam(cam, interpState);
+                }
+            };
+            setTime(e.clientX);
+            const onMove = e => setTime(e.clientX);
+            const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+            document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
+        };
+
+        UI.timeline.addBtn.onclick = () => {
+            const cam = getActiveCam();
+            if (cam) { cam.setKeyframe(state.timeline.currentTime); drawTimelineKeyframes(); updateTimelineUI(); }
+        };
+
+        UI.timeline.clearBtn.onclick = () => {
+            const cam = getActiveCam();
+            if (cam) { cam.keyframes = []; drawTimelineKeyframes(); updateTimelineUI(); }
+        };
+
+        function updateTimelineUI() {
+            const ratio = state.timeline.currentTime / state.timeline.duration;
+            UI.timeline.progress.style.width = `${ratio * 100}%`;
+            UI.timeline.timeDisplay.innerText = state.timeline.currentTime.toFixed(2) + 's';
+
+            const cam = getActiveCam();
+            if (cam) {
+                UI.timeline.addBtn.disabled = false;
+                const nearKf = cam.keyframes.find(k => Math.abs(k.time - state.timeline.currentTime) < 0.1);
+                if (nearKf) {
+                    UI.timeline.addBtn.innerText = '更新此帧';
+                    UI.timeline.addBtn.style.borderColor = 'rgba(255,255,255,0.34)';
+                } else {
+                    UI.timeline.addBtn.innerText = '+ 记录关键帧';
+                    UI.timeline.addBtn.style.borderColor = 'rgba(255,255,255,0.08)';
+                }
+            } else {
+                UI.timeline.addBtn.disabled = true;
+                UI.timeline.addBtn.innerText = '+ 记录关键帧';
+                UI.timeline.addBtn.style.borderColor = 'rgba(255,255,255,0.08)';
+            }
+        }
+
+        function drawTimelineKeyframes() {
+            UI.timeline.kContainer.innerHTML = '';
+            const cam = getActiveCam();
+            if (!cam) return;
+            cam.keyframes.forEach(k => {
+                const marker = document.createElement('div');
+                marker.className = 'keyframe-marker';
+                marker.style.left = `${(k.time / state.timeline.duration) * 100}%`;
+                marker.title = `Time: ${k.time.toFixed(2)}s\n(双击删除, 拖拽移动)`;
+                
+                marker.onmousedown = (e) => {
+                    e.stopPropagation(); 
+                    const trackRect = UI.timeline.track.getBoundingClientRect();
+                    const onMove = (me) => {
+                        let ratio = (me.clientX - trackRect.left) / trackRect.width;
+                        ratio = Math.max(0, Math.min(1, ratio));
+                        k.time = ratio * state.timeline.duration;
+                        marker.style.left = `${ratio * 100}%`;
+                        marker.title = `Time: ${k.time.toFixed(2)}s\n(双击删除, 拖拽移动)`;
+                        state.timeline.currentTime = k.time;
+                        updateTimelineUI();
+                    };
+                    const onUp = () => {
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', onUp);
+                        cam.keyframes.sort((a, b) => a.time - b.time); 
+                        drawTimelineKeyframes();
+                    };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                };
+
+                marker.ondblclick = (e) => {
+                    e.stopPropagation();
+                    cam.keyframes = cam.keyframes.filter(kf => kf !== k);
+                    drawTimelineKeyframes(); updateTimelineUI();
+                };
+                UI.timeline.kContainer.appendChild(marker);
+            });
+        }
+
+        // --- 保存/加载工程 (.json) ---
+        document.getElementById('saveProjectBtn').onclick = () => {
+            const data = {
+                version: "1.1", projMode: state.projMode,
+                cameras: state.cameras.map(c => ({
+                    id: c.id, name: c.name,
+                    x: c.x, y: c.y, z: c.z, pan: c.pan, tilt: c.tilt, focalLength: c.focalLength,
+                    dofEnabled: c.dofEnabled, focusDistance: c.focusDistance, apertureEnabled: c.apertureEnabled, apertureSize: c.apertureSize,
+                    keyframes: c.keyframes
+                })),
+                params: state.params, timeline: { duration: state.timeline.duration }
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'Gargantua_Project.gargantua';
+            a.click(); URL.revokeObjectURL(url);
+        };
+
+        document.getElementById('fileInput').onchange = (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    state.cameras = data.cameras.map(cd => { let cam = new Camera(cd.id, cd.name); Object.assign(cam, cd); return cam; });
+                    camIdCounter = Math.max(...state.cameras.map(c=>c.id), 0) + 1;
+                    if(data.params) Object.assign(state.params, data.params);
+                    if(data.timeline) { state.timeline.duration = data.timeline.duration; UI.timeline.duration.value = state.timeline.duration; }
+                    
+                    if(data.projMode !== undefined) {
+                        state.projMode = data.projMode; 
+                        UI.projModeSelect.value = state.projMode.toString();
+                        UI.projModeSelect.dispatchEvent(new Event('change'));
+                    }
+
+                    ['size', 'brightness', 'speed', 'saturation'].forEach(k => {
+                        document.getElementById(k+'Slider').value = state.params[k]; document.getElementById(k+'Value').innerText = state.params[k].toFixed(1);
+                    });
+                    
+                    unlockCamera();
+                    if(state.cameras.length > 0) selectCamera(state.cameras[0].id); else renderCamList();
+                } catch(err) { alert("工程文件解析失败！"); }
+            };
+            reader.readAsText(file);
+        };
+
+        // -------------------------------------------------------------
+        // Blender 控制系统
+        // -------------------------------------------------------------
+        let isDraggingMMB = false, lastX = 0, lastY = 0;
+        const canvas = document.getElementById('gpuCanvas');
+        
+        canvas.addEventListener('mousedown', e => {
+            if (e.button === 1) { e.preventDefault(); isDraggingMMB = true; lastX = e.clientX; lastY = e.clientY; canvas.style.cursor = 'all-scroll'; }
+        });
+        window.addEventListener('mouseup', e => { if (e.button === 1) { isDraggingMMB = false; canvas.style.cursor = 'default'; } });
+        window.addEventListener('mousemove', e => {
+            if (!isDraggingMMB || state.renderer.isActive) return;
+            const dx = e.clientX - lastX; const dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY;
+
+            if (state.projMode === 0) {
+                // 2D 模式
+                if (e.shiftKey) {
+                    state.target2D.offsetX += dx * (window.devicePixelRatio||1);
+                    state.target2D.offsetY += dy * (window.devicePixelRatio||1);
+                } else {
+                    state.target2D.pan -= dx * 0.005; state.target2D.tilt += dy * 0.005;
+                    state.target2D.tilt = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, state.target2D.tilt));
+                }
+            } else {
+                // 3D 模式
+                if (state.isLocked) {
+                    const cam = getActiveCam(); if(!cam) return;
+                    if (e.ctrlKey) {
+                        const s = 2.0; cam.x += Math.sin(cam.pan) * Math.cos(cam.tilt) * dy * s; cam.y += Math.sin(cam.tilt) * dy * s; cam.z += Math.cos(cam.pan) * Math.cos(cam.tilt) * dy * s;
+                    } else if (e.shiftKey) {
+                        const rightX = Math.cos(cam.pan), rightZ = -Math.sin(cam.pan);
+                        const upX = Math.sin(cam.pan)*Math.sin(cam.tilt), upY = Math.cos(cam.tilt), upZ = Math.cos(cam.pan)*Math.sin(cam.tilt);
+                        cam.x -= (rightX * dx + upX * dy) * 1.5; cam.y -= (0 * dx + upY * dy) * 1.5; cam.z -= (rightZ * dx + upZ * dy) * 1.5;
+                    } else {
+                        cam.pan -= dx * 0.005; cam.tilt += dy * 0.005; cam.tilt = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, cam.tilt));
+                    }
+                    updateUIFromCam(cam);
+                } else {
+                    const ft = state.freeTarget;
+                    if (e.ctrlKey) { ft.dist += dy * 2.0; ft.dist = Math.max(50, ft.dist); } 
+                    else if (e.shiftKey) {
+                        const rightX = Math.cos(ft.pan), rightZ = -Math.sin(ft.pan);
+                        const upX = Math.sin(ft.pan)*Math.sin(ft.tilt), upY = Math.cos(ft.tilt), upZ = Math.cos(ft.pan)*Math.sin(ft.tilt);
+                        ft.tx -= (rightX * dx + upX * dy) * 2.0; ft.ty -= (0 * dx + upY * dy) * 2.0; ft.tz -= (rightZ * dx + upZ * dy) * 2.0;
+                    } else {
+                        ft.pan -= dx * 0.005; ft.tilt += dy * 0.005; ft.tilt = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, ft.tilt));
+                    }
+                }
+            }
+        });
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault(); if(state.renderer.isActive) return;
+            if (state.projMode === 0) {
+                const zoomFactor = 1.0 - e.deltaY * 0.001;
+                state.target2D.zoom *= zoomFactor;
+                state.target2D.zoom = Math.max(0.05, Math.min(state.target2D.zoom, 20.0));
+            } else {
+                if (state.isLocked) {
+                    const cam = getActiveCam(); if(!cam) return;
+                    cam.x += Math.sin(cam.pan) * Math.cos(cam.tilt) * e.deltaY; cam.y += Math.sin(cam.tilt) * e.deltaY; cam.z += Math.cos(cam.pan) * Math.cos(cam.tilt) * e.deltaY;
+                    updateUIFromCam(cam);
+                } else {
+                    state.freeTarget.dist += e.deltaY * 1.5; state.freeTarget.dist = Math.max(50, state.freeTarget.dist);
+                }
+            }
+        }, { passive: false });
+
+        // -------------------------------------------------------------
+        // WebGPU 初始化与渲染循环
+        // -------------------------------------------------------------
+        async function initWebGPU() {
+            if (!navigator.gpu) { document.getElementById('error-msg').style.display = 'flex'; return; }
+            const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+            if (!adapter) { document.getElementById('error-msg').style.display = 'flex'; return; }
+            const device = await adapter.requestDevice();
+            const context = canvas.getContext('webgpu');
+
+            let dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr; canvas.height = window.innerHeight * dpr;
+            const format = navigator.gpu.getPreferredCanvasFormat();
+            context.configure({ device, format, alphaMode: 'premultiplied' });
+
+            window.addEventListener('resize', () => {
+                if(state.renderer.isActive) return;
+                dpr = window.devicePixelRatio || 1;
+                canvas.width = window.innerWidth * dpr; canvas.height = window.innerHeight * dpr;
+            });
+
+            const numParticles = 150000;
+            const initialParticleData = new Float32Array(numParticles * 16);
+            for (let i = 0; i < numParticles; i++) {
+                const offset = i * 16;
+                initialParticleData[offset + 7] = Math.random() * 0.5 + 0.5; 
+                initialParticleData[offset + 8] = 0.0;                       
+                initialParticleData[offset + 11] = 9999.0;                   
+                initialParticleData[offset + 12] = 0.0;                      
+                initialParticleData[offset + 13] = Math.random() * 100000;   
+            }
+
+            const particleBuffer = device.createBuffer({ size: initialParticleData.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+            device.queue.writeBuffer(particleBuffer, 0, initialParticleData);
+
+            const uniformBuffer = device.createBuffer({ size: 24 * 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+            const uniformData = new Float32Array(24);
+
+            const computeShader = device.createShaderModule({ code: document.getElementById('compute-wgsl').textContent });
+            const renderShader = device.createShaderModule({ code: document.getElementById('render-wgsl').textContent });
+            const computePipeline = device.createComputePipeline({ layout: 'auto', compute: { module: computeShader, entryPoint: 'main' } });
+            const renderPipeline = device.createRenderPipeline({
+                layout: 'auto', vertex: { module: renderShader, entryPoint: 'vs_main' },
+                fragment: { module: renderShader, entryPoint: 'fs_main', targets: [{ format, blend: { color: { srcFactor: 'src-alpha', dstFactor: 'one', operation: 'add' }, alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' } } }] },
+                primitive: { topology: 'triangle-list' },
+            });
+
+            const bindGroupEntries = [ { binding: 0, resource: { buffer: particleBuffer } }, { binding: 1, resource: { buffer: uniformBuffer } } ];
+            const computeBindGroup = device.createBindGroup({ layout: computePipeline.getBindGroupLayout(0), entries: bindGroupEntries });
+            const renderBindGroup = device.createBindGroup({ layout: renderPipeline.getBindGroupLayout(0), entries: bindGroupEntries });
+
+            // 提取到 initWebGPU 内部，使其能访问并重新配置底层的 context 与 canvas 大小
+            UI.timeline.renderBtn.onclick = async () => {
+                if (!window.showDirectoryPicker) { alert("当前浏览器不支持目录访问 API。请使用桌面版的最新 Chrome 或 Edge 浏览器来进行序列帧渲染。"); return; }
+                try {
+                    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                    
+                    // 读取用户设置的分辨率和 FPS，若无输入则缺省回退
+                    state.timeline.fps = parseInt(document.getElementById('renderFpsInput').value) || 30;
+                    const rw = parseInt(document.getElementById('renderWidthInput').value) || canvas.width;
+                    const rh = parseInt(document.getElementById('renderHeightInput').value) || canvas.height;
+
+                    state.timeline.isPlaying = false; state.timeline.currentTime = 0;
+                    state.renderer.isActive = true; state.renderer.frame = 0;
+                    state.renderer.totalFrames = Math.floor(state.timeline.duration * state.timeline.fps);
+                    state.renderer.dirHandle = dirHandle;
+                    
+                    // 保存原画布大小，然后赋予新分辨率以供渲染
+                    state.renderer.origW = canvas.width;
+                    state.renderer.origH = canvas.height;
+                    canvas.width = rw;
+                    canvas.height = rh;
+                    context.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'premultiplied' });
+                    
+                    document.getElementById('render-overlay').style.display = 'flex';
+                    document.getElementById('renderTotalFrames').innerText = state.renderer.totalFrames;
+                } catch(e) { console.log("User cancelled folder selection."); }
+            };
+
+            let lastTime = performance.now();
+            const workgroupCount = Math.ceil(numParticles / 64);
+
+            function updateGizmos() {
+                UI.gizmoLayer.innerHTML = '';
+                if(state.isLocked || state.projMode === 0) return;
+                const w = canvas.width / dpr, h = canvas.height / dpr;
+                const cp = Math.cos(state.current.pan), sp = Math.sin(state.current.pan);
+                const ct = Math.cos(state.current.tilt), st = Math.sin(state.current.tilt);
+
+                state.cameras.forEach(cam => {
+                    let dx = cam.x - state.current.camX, dy = cam.y - state.current.camY, dz = cam.z - state.current.camZ;
+                    let x1 = dx * cp - dz * sp, z1 = dx * sp + dz * cp;
+                    let x2 = x1, y2 = dy * ct - z1 * st, z2 = -(dy * st + z1 * ct); 
+
+                    if (z2 > 10) { 
+                        let screenX = w/2 + (x2 / z2) * state.current.focalLength * (1/dpr);
+                        let screenY = h/2 - (y2 / z2) * state.current.focalLength * (1/dpr);
+                        if(screenX > -50 && screenX < w+50 && screenY > -50 && screenY < h+50) {
+                            const el = document.createElement('div');
+                            el.className = `cam-gizmo ${cam.id === state.activeCamId ? 'active' : ''}`;
+                            el.style.left = `${screenX}px`; el.style.bottom = `${screenY}px`;
+                            el.innerHTML = cam.name; el.onclick = () => { selectCamera(cam.id); };
+                            UI.gizmoLayer.appendChild(el);
+                        }
+                    }
+                });
+            }
+
+            async function frame(currentTimeRaw) {
+                let dt, physicsTime;
+                
+                if (state.renderer.isActive) {
+                    dt = 1.0 / state.timeline.fps;
+                    physicsTime = state.renderer.frame * dt;
+                    state.timeline.currentTime = physicsTime;
+                } else {
+                    dt = (currentTimeRaw - lastTime) / 1000.0; lastTime = currentTimeRaw;
+                    if (dt > 0.1) dt = 0.016;
+                    physicsTime = currentTimeRaw / 1000.0;
+
+                    if (state.timeline.isPlaying) {
+                        state.timeline.currentTime += dt;
+                        if (state.timeline.currentTime > state.timeline.duration) state.timeline.currentTime = 0;
+                        updateTimelineUI();
+                    }
+                }
+
+                // 只有处于“未渲染”且“播放状态”时才允许物理缓动插值，渲染模式需要绝对精确硬赋值
+                const lerpSpd = state.renderer.isActive ? 1.0 : (1.0 - Math.exp(-dt * 12.0));
+
+                if (state.projMode === 0) {
+                    for(let key in state.target2D) { state.current2D[key] += (state.target2D[key] - state.current2D[key]) * lerpSpd; }
+                } else {
+                    let targetParams = {};
+                    // 无论是否渲染，只要没有锁定摄像机，就按自由视角渲染
+                    if (state.isLocked) {
+                        const cam = getActiveCam();
+                        if (cam) {
+                            if ((state.timeline.isPlaying || state.renderer.isActive) && cam.keyframes.length > 0) {
+                                const interpState = cam.getInterpolatedState(state.timeline.currentTime);
+                                applyInterpolatedStateToCam(cam, interpState);
+                            }
+                            targetParams = { camX: cam.x, camY: cam.y, camZ: cam.z, pan: cam.pan, tilt: cam.tilt, focalLength: cam.focalLength, dofEnabled: cam.dofEnabled?1:0, focusDist: cam.focusDistance, apertureEnabled: cam.apertureEnabled?1:0, apertureSize: cam.apertureSize };
+                        }
+                    } else {
+                        const ft = state.freeTarget;
+                        const cx = ft.tx + ft.dist * Math.sin(ft.pan) * Math.cos(ft.tilt);
+                        const cy = ft.ty + ft.dist * Math.sin(ft.tilt);
+                        const cz = ft.tz + ft.dist * Math.cos(ft.pan) * Math.cos(ft.tilt);
+                        targetParams = { camX: cx, camY: cy, camZ: cz, pan: ft.pan, tilt: ft.tilt, focalLength: 800, dofEnabled: 0, focusDist: 1000, apertureEnabled: 0, apertureSize: 0 };
+                    }
+                    for(let key in targetParams) { state.current[key] += (targetParams[key] - state.current[key]) * lerpSpd; }
+                    if (!state.renderer.isActive) updateGizmos();
+                }
+
+                const Rs = Math.min(canvas.width, canvas.height) * 0.12; 
+                uniformData[0] = dt; uniformData[1] = physicsTime;
+                uniformData[2] = canvas.width; uniformData[3] = canvas.height;
+                uniformData[4] = Rs; uniformData[5] = state.params.size;
+                
+                // 渲染缩放补偿 (保证4K渲染不会缩小)
+                const resScale = state.renderer.isActive ? (canvas.height / state.renderer.origH) : 1.0;
+
+                if (state.projMode === 1) {
+                    uniformData[6] = state.current.camX; uniformData[7] = state.current.camY; uniformData[8] = state.current.camZ;
+                    uniformData[9] = state.current.pan; uniformData[10] = state.current.tilt; 
+                } else {
+                    uniformData[6] = 0; uniformData[7] = 0; uniformData[8] = 0;
+                    uniformData[9] = state.current2D.pan; uniformData[10] = state.current2D.tilt; 
+                }
+
+                uniformData[11] = state.current.focalLength * resScale;
+                uniformData[12] = state.current.dofEnabled; uniformData[13] = state.current.focusDist;
+                uniformData[14] = state.current.apertureEnabled; uniformData[15] = state.current.apertureSize;
+                uniformData[16] = state.params.speed; uniformData[17] = state.params.brightness; uniformData[18] = state.params.saturation; 
+                
+                uniformData[19] = state.projMode; 
+                uniformData[20] = state.current2D.zoom * resScale; 
+                uniformData[21] = state.current2D.offsetX * resScale; 
+                uniformData[22] = state.current2D.offsetY * resScale; 
+                uniformData[23] = 0; 
+                device.queue.writeBuffer(uniformBuffer, 0, uniformData);
+
+                const commandEncoder = device.createCommandEncoder();
+                const computePass = commandEncoder.beginComputePass();
+                computePass.setPipeline(computePipeline); computePass.setBindGroup(0, computeBindGroup);
+                computePass.dispatchWorkgroups(workgroupCount); computePass.end();
+
+                const renderPass = commandEncoder.beginRenderPass({ colorAttachments: [{ view: context.getCurrentTexture().createView(), clearValue: { r: 0, g: 0, b: 0, a: 1 }, loadOp: 'clear', storeOp: 'store' }] });
+                renderPass.setPipeline(renderPipeline); renderPass.setBindGroup(0, renderBindGroup);
+                renderPass.draw(6, numParticles, 0, 0); renderPass.end();
+
+                device.queue.submit([commandEncoder.finish()]);
+
+                if (state.renderer.isActive) {
+                    try {
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        const fileName = `Frame_${String(state.renderer.frame).padStart(4, '0')}.png`;
+                        const fileHandle = await state.renderer.dirHandle.getFileHandle(fileName, { create: true });
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(blob); await writable.close();
+
+                        state.renderer.frame++;
+                        const progressRatio = state.renderer.frame / state.renderer.totalFrames;
+                        document.getElementById('renderProgressFill').style.width = `${progressRatio * 100}%`;
+                        document.getElementById('renderCurrentFrame').innerText = state.renderer.frame;
+                        updateTimelineUI(); 
+
+                        if (state.renderer.frame >= state.renderer.totalFrames) {
+                            state.renderer.isActive = false;
+                            
+                            // 渲染成功：恢复原有分辨率
+                            canvas.width = state.renderer.origW;
+                            canvas.height = state.renderer.origH;
+                            context.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'premultiplied' });
+
+                            document.getElementById('renderStatusMsg').innerText = "渲染完成，文件已写入指定文件夹。";
+                            setTimeout(() => { document.getElementById('render-overlay').style.display = 'none'; document.getElementById('renderStatusMsg').innerText=""; }, 3000);
+                            lastTime = performance.now(); 
+                        }
+                    } catch(err) {
+                        state.renderer.isActive = false;
+                        
+                        // 渲染报错：恢复原有分辨率
+                        canvas.width = state.renderer.origW;
+                        canvas.height = state.renderer.origH;
+                        context.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'premultiplied' });
+
+                        document.getElementById('renderStatusMsg').innerText = "渲染中断：无法写入文件或磁盘空间不足。";
+                        document.getElementById('renderStatusMsg').style.color = "rgba(255,255,255,0.72)";
+                        setTimeout(() => { document.getElementById('render-overlay').style.display = 'none'; }, 5000);
+                    }
+                }
+
+                requestAnimationFrame(frame);
+            }
+            requestAnimationFrame(frame);
+        }
+        initWebGPU();
+    </script>
+</body>
+</html>
