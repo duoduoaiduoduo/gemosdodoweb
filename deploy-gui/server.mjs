@@ -59,14 +59,15 @@ function sse(res, obj) {
   res.write(`data: ${JSON.stringify(obj)}\n\n`);
 }
 
-// 根据 deploy.mjs 的输出行映射到进度与状态
+// 根据 deploy.mjs 的输出行映射到进度与状态（顺序很重要，避免误匹配"新提交"等）
 function mapLine(line) {
+  if (line.includes("已推送"))
+    return { progress: 80, status: "已推送，等待服务器自动部署…" };
   if (line.includes("暂存")) return { progress: 25, status: "暂存改动…" };
-  if (line.includes("提交")) return { progress: 45, status: "提交到本地仓库…" };
+  if (line.includes("正在提交") || line.includes("提交到") || line.includes("已提交"))
+    return { progress: 45, status: "提交到本地仓库…" };
   if (line.includes("推送") || line.includes("push"))
     return { progress: 65, status: "推送到 GitHub…" };
-  if (line.includes("已推送") || line.includes("已推送"))
-    return { progress: 80, status: "已推送，等待服务器自动部署…" };
   return null;
 }
 
