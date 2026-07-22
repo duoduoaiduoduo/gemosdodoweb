@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "deploy": "node scripts/deploy.mjs"
+    "deploy": "node scripts/deploy.mjs",
+    "deploy:gui": "node deploy-gui/server.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

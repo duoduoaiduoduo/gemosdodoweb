@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gemosdodo 一键部署</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #171a21;
+    --card2: #1f242e;
+    --border: #2a3140;
+    --text: #e6e9ef;
+    --muted: #8b93a7;
+    --accent: #6ea8fe;
+    --accent2: #8b5cf6;
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(1200px 600px at 50% -10%, #1b2030 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .card {
+    width: 480px;
+    max-width: 92vw;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px 26px 22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.45);
+  }
+  h1 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: .5px;
+  }
+  .sub { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  textarea {
+    width: 100%;
+    min-height: 92px;
+    resize: vertical;
+    background: var(--card2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--accent); }
+  .row { display: flex; gap: 10px; margin-top: 16px; }
+  button {
+    flex: 1;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .05s ease, opacity .2s ease;
+  }
+  button:active { transform: translateY(1px); }
+  .primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0b0e14;
+  }
+  .primary:disabled { opacity: .5; cursor: not-allowed; }
+  .ghost {
+    flex: 0 0 auto;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .ghost:hover { color: var(--text); }
+  .bar-wrap {
+    margin-top: 18px;
+    height: 10px;
+    background: var(--card2);
+    border-radius: 99px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    transition: width .4s ease;
+  }
+  .status { margin-top: 12px; font-size: 14px; min-height: 20px; }
+  .status.ok { color: var(--green); }
+  .status.err { color: var(--red); }
+  .status.warn { color: var(--yellow); }
+  pre.log {
+    margin: 14px 0 0;
+    max-height: 150px;
+    overflow: auto;
+    background: #0b0e14;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #c4ccdd;
+    white-space: pre-wrap;
+    word-break: break-all;
+    display: none;
+  }
+  pre.log.show { display: block; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚀 Gemosdodo 一键部署</h1>
+    <p class="sub">输入本次更新内容，点"上传"即可推送到服务器（自动部署，约 1 分钟上线）。</p>
+
+    <label for="msg">这次更新了什么？</label>
+    <textarea id="msg" placeholder="例如：修复首页在手机端的排版问题"></textarea>
+
+    <div class="row">
+      <button id="upload" class="primary">上传并更新</button>
+      <button id="stop" class="ghost" title="停止本地部署服务">停止服务</button>
+    </div>
+
+    <div class="bar-wrap"><div id="bar" class="bar"></div></div>
+    <div id="status" class="status">就绪。</div>
+    <pre id="log" class="log"></pre>
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const msg = $("msg"), upload = $("upload"), stop = $("stop");
+  const bar = $("bar"), status = $("status"), log = $("log");
+
+  function setStatus(text, cls) {
+    status.textContent = text;
+    status.className = "status" + (cls ? " " + cls : "");
+  }
+  function appendLog(text) {
+    log.classList.add("show");
+    log.textContent += text + "\n";
+    log.scrollTop = log.scrollHeight;
+  }
+
+  upload.addEventListener("click", async () => {
+    const text = msg.value.trim();
+    if (!text) { setStatus("请先输入本次更新的内容", "warn"); msg.focus(); return; }
+
+    upload.disabled = true;
+    bar.style.width = "0%";
+    log.textContent = "";
+    setStatus("准备中…");
+
+    try {
+      const resp = await fetch("/deploy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+      const reader = resp.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+
+      const pump = async () => {
+        const { done, value } = await reader.read();
+        if (done) return;
+        buf += dec.decode(value, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf("\n\n")) >= 0) {
+          const block = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          const line = block.split("\n").find((l) => l.startsWith("data:"));
+          if (!line) continue;
+          let ev;
+          try { ev = JSON.parse(line.slice(5).trim()); } catch { continue; }
+          if (typeof ev.progress === "number") bar.style.width = ev.progress + "%";
+          if (ev.status) setStatus(ev.status, ev.done ? (ev.status.includes("❌") ? "err" : ev.status.includes("⚠️") ? "warn" : "ok") : "");
+          if (ev.log) appendLog(ev.log);
+          if (ev.done) {
+            if (ev.url) appendLog("👉 " + ev.url);
+            upload.disabled = false;
+          }
+        }
+        await pump();
+      };
+      await pump();
+    } catch (e) {
+      setStatus("连接失败：" + e.message, "err");
+      upload.disabled = false;
+    }
+  });
+
+  stop.addEventListener("click", async () => {
+    try { await fetch("/shutdown", { method: "POST" }); setStatus("本地服务已停止。"); }
+    catch {}
+  });
+</script>
+</body>
+</html>
