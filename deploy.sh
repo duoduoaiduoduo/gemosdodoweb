@@ -40,8 +40,8 @@ fi
 prune_keep_latest "data.json.bak.*" "${KEEP_BACKUPS}"
 prune_keep_latest "uploads.bak.*" "${KEEP_BACKUPS}"
 
-echo "== [2/5] Pulling latest code from Gitee =="
-git pull origin master
+echo "== [2/5] Pulling latest code from GitHub =="
+git pull origin main
 
 echo "== [3/5] Installing dependencies =="
 npm install
