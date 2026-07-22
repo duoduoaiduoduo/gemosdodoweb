@@ -1,0 +1,35 @@
+#!/bin/bash
+# GemosDeploy.app 启动器：后台启动本地部署服务，由服务自动打开浏览器。
+# 这样双击 .app 即可，无需终端。
+set -u
+
+PROJ="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$PROJ" || exit 1
+
+# GUI 启动时 PATH 可能不全，显式补齐常见 node 位置
+NODE_CANDIDATES=(
+  "/Users/duoqian/.workbuddy/binaries/node/versions/22.22.2/bin/node"
+  "/usr/local/bin/node"
+  "/opt/homebrew/bin/node"
+  "/usr/bin/node"
+)
+NODE=""
+for n in "${NODE_CANDIDATES[@]}"; do
+  if [ -x "$n" ]; then NODE="$n"; break; fi
+done
+[ -z "$NODE" ] && NODE="$(command -v node 2>/dev/null || echo node)"
+
+# 若服务已在运行则不再重复启动
+if pgrep -f "deploy-gui/server.mjs" >/dev/null 2>&1; then
+  # 已在运行，仅确保浏览器打开
+  PORT_FILE="$PROJ/deploy-gui/.port"
+  if [ -f "$PORT_FILE" ]; then
+    open "http://127.0.0.1:$(cat "$PORT_FILE")/" 2>/dev/null
+  fi
+  exit 0
+fi
+
+# 后台 detached 启动（macOS 无 setsid，用 nohup+disown 脱离 .app 父进程）
+nohup "$NODE" "$PROJ/deploy-gui/server.mjs" >"$PROJ/deploy-gui/server.log" 2>&1 &
+disown
+exit 0
