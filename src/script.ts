@@ -849,8 +849,10 @@ export function initApp() {
         let delayCount = 0;
         let leftHeight = 0;
         let rightHeight = 0;
-        // metadataHeight is a rough estimate of the text block height relative to column width (approx 60-80px)
-        const metadataHeight = 0.5; 
+        // 手机双列瀑布流：用「列宽的倍数」表达高度，保证两列真正齐平。
+        // 图片容器用 aspect-ratio 固定（图片 object-fit:cover 填满，不再留白），
+        // 所以图片高度 = 列宽 / aspect（即 1/aspect × 列宽）；文字块约占 0.34 列宽。
+        const metadataHeight = 0.34;
 
         timelineData.forEach((item) => {
             if (filterType !== 'all' && item.category !== filterType) return;
@@ -871,8 +873,10 @@ export function initApp() {
 
             if (isMobile) {
                 // ── Mobile: pure image on top, text block below updated to Neo-Brutalism ──
+                // 图片容器用 aspect-ratio 固定成该卡片的封面比例，图片 object-fit:cover 填满，
+                // 卡片高度因此完全可预测，双列「放最矮列」得以真正齐平、不再有大片留白。
                 card.innerHTML = `
-                  <div class="card-img-wrapper">
+                  <div class="card-img-wrapper" style="aspect-ratio:${ratio};">
                     <div class="card-image-skeleton"></div>
                     <img src="${imgSrc}" class="card-fade-image" alt="${displayTitle}" loading="lazy"
                          onload="this.classList.add('is-loaded'); if(this.previousElementSibling) this.previousElementSibling.classList.add('is-hidden');">
