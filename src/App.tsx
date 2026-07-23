@@ -580,17 +580,15 @@ function DesktopHome({
         onClick={onOpenVibecoding}
         aria-label={t('打开 VibeCoding 页面', 'Open VibeCoding page')}
       >
-        <span className="vibecoding-portal-orbit vibe-orbit-a" aria-hidden="true" />
-        <span className="vibecoding-portal-orbit vibe-orbit-b" aria-hidden="true" />
-        <span className="vibecoding-portal-grid" aria-hidden="true" />
         <span className="vibecoding-portal-core">
-          <span className="vibecoding-portal-chip">LAB</span>
           <span className="vibecoding-portal-icon" aria-hidden="true">
-            <Code2 size={22} strokeWidth={1.8} />
+            <Code2 size={18} strokeWidth={1.8} />
           </span>
-          <span className="vibecoding-portal-title">VibeCoding</span>
-          <span className="vibecoding-portal-sub">
-            {t('可玩 HTML 实验', 'Playable HTML Lab')}
+          <span className="vibecoding-portal-text">
+            <span className="vibecoding-portal-title">VibeCoding</span>
+            <span className="vibecoding-portal-sub">
+              {t('可玩 HTML 实验', 'Playable HTML Lab')}
+            </span>
           </span>
         </span>
       </button>

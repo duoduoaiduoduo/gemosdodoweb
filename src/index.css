@@ -143,19 +143,36 @@ body, html {
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto; 
-    scroll-behavior: smooth;
     background-color: var(--bg-color);
     font-family: "PingFang SC", "Microsoft YaHei", "Inter", sans-serif;
     color: var(--primary-color);
-    -ms-overflow-style: none;
-    scrollbar-width: none;
 }
 
+/* 细滚动条：恢复 Mac 触控板滑动时的视觉反馈（之前被 display:none 禁掉），Windows 也保持精致一致 */
+html {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(140, 150, 170, 0.35) transparent;
+}
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-    display: none;
+    width: 10px;
+    height: 10px;
+}
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+    background: transparent;
+}
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+    background-color: rgba(140, 150, 170, 0.32);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.2s ease;
+}
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(140, 150, 170, 0.62);
 }
 
 #root {
@@ -452,26 +469,25 @@ body.site-entered .animate-item {
 }
 
 .masonry-grid {
-    column-count: 4; 
-    column-gap: 24px;
+    position: relative;
     width: 100%;
-    perspective: 1200px;
+    /* 瀑布流由 script.ts 用绝对定位计算，彻底绕开 CSS columns + 3D transform 在 Safari 的渲染 bug（兼容 Windows/Mac） */
 }
 
 .masonry-card {
-    position: relative;
+    position: absolute;
+    -webkit-column-break-inside: avoid;
     break-inside: avoid;
-    margin-bottom: 24px;
     border-radius: 16px;
     box-shadow: 0 10px 30px var(--shadow-color);
     cursor: pointer;
     transform: perspective(1000px) translateY(0) scale(1) rotateX(0) rotateY(0);
     transition: transform 0.2s ease-out, box-shadow 0.3s ease-out;
     background: #111;
-    transform-style: preserve-3d;
-    perspective: 1000px;
-    perspective-origin: 50% 50%;
-    will-change: transform, box-shadow;
+    will-change: auto;
+}
+.masonry-card:hover {
+    will-change: transform;
 }
 
 .masonry-card:hover {
@@ -668,9 +684,7 @@ body.layout-tablet .masonry-card .masonry-card-date {
     to { opacity: 1; transform: perspective(1000px) translateY(0) scale(1) rotateX(0) rotateY(0); }
 }
 
-@media (max-width: 1200px) { .masonry-grid { column-count: 3; } }
-@media (max-width: 900px) { .masonry-grid { column-count: 2; } }
-@media (max-width: 600px) { .masonry-grid { column-count: 1; } }
+/* 桌面瀑布流列数改由 script.ts 的 relayoutMasonry() 按容器宽度计算（4/3/2/1），不再用 CSS columns */
 
 .no-grass { pointer-events: auto; }
 
@@ -1090,6 +1104,7 @@ body.site-entered .filter-sidebar { transform: translateY(-50%); }
     border-radius: 10px;
     overflow: hidden;
     background: rgba(20,20,20,0.55);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     cursor: pointer;
     transition: transform 0.25s ease, filter 0.25s ease;
@@ -1198,6 +1213,7 @@ body.site-entered .filter-sidebar { transform: translateY(-50%); }
     border-radius: 999px;
     background: rgba(12, 12, 12, 0.68);
     border: 1px solid rgba(255, 255, 255, 0.16);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     z-index: 2;
 }
@@ -1272,6 +1288,7 @@ body.site-entered .filter-sidebar { transform: translateY(-50%); }
     border: 1px solid var(--border-color);
     background: var(--panel-bg);
     border-radius: 14px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 }
 .admin-topbar-left {
@@ -1797,6 +1814,7 @@ body.pdfs-mode .grass {
     border: 1px solid rgba(255,255,255,0.14);
     border-radius: 18px;
     background: rgba(12,14,26,0.6);
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     padding: 20px;
     min-height: 68vh;
@@ -2202,6 +2220,7 @@ body.pdfs-mode .grass {
 .award-card-info {
     border-top: 1px solid rgba(255,255,255,0.1);
     background: linear-gradient(180deg, rgba(7,9,17,0.06), rgba(7,9,17,0.24));
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
 }
 .award-card-title {
@@ -2230,6 +2249,7 @@ body.pdfs-mode .grass {
 }
 
 .award-lightbox {
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     background:
       radial-gradient(700px 380px at 18% 5%, rgba(147, 174, 255, 0.24), transparent 60%),
@@ -2540,6 +2560,7 @@ body.pdfs-mode .grass {
     inset: 0;
     z-index: 290;
     background: rgba(2, 5, 12, 0.84);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
@@ -2606,6 +2627,7 @@ body.pdfs-mode .grass {
     border: 1px solid rgba(255,255,255,0.16);
     border-radius: 999px;
     padding: 4px 10px;
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
 }
 .icp-record:hover {
@@ -2765,6 +2787,7 @@ body.layout-tablet .roller-compact .roller-card-shell {
     border-radius: 0;
     background: transparent;
     box-shadow: none;
+    -webkit-backdrop-filter: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
@@ -2983,6 +3006,7 @@ body.layout-tablet a:active {
     right: 20px;
     z-index: 100;
     background: rgba(255,255,255,0.14);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.32);
     color: var(--text-color);
@@ -3038,6 +3062,7 @@ body.layout-tablet a:active {
     border: 1px solid var(--m-border);
     background: var(--m-surface);
     color: var(--m-text);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 }
 
@@ -3063,6 +3088,7 @@ body.layout-tablet a:active {
     border-radius: 18px;
     border: 1px solid var(--m-border);
     background: var(--m-surface-strong);
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     padding: 14px 14px 12px;
     box-shadow: 0 16px 30px rgba(0,0,0,0.18);
@@ -3201,6 +3227,7 @@ body.layout-tablet a:active {
     border-radius: 16px;
     border: 1px solid var(--m-border);
     background: var(--m-surface-strong);
+    -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
     padding: 8px;
     display: grid;
@@ -3424,6 +3451,7 @@ body.layout-tablet .icp-record {
         border: 1px solid var(--m-line);
         background: var(--m-surface);
         box-shadow: var(--m-shadow-2);
+        -webkit-backdrop-filter: none;
         backdrop-filter: none;
         padding: 14px 14px 12px;
     }
@@ -3497,6 +3525,7 @@ body.layout-tablet .icp-record {
         border: 1px solid var(--m-line);
         background: rgba(255,255,255,0.92);
         box-shadow: var(--m-shadow-1);
+        -webkit-backdrop-filter: blur(6px);
         backdrop-filter: blur(6px);
     }
 
@@ -3777,6 +3806,7 @@ body.layout-tablet .icp-record {
     body.layout-tablet .award-lightbox,
     body.layout-tablet .pdf-lightbox {
         background: rgba(242, 246, 252, 0.94);
+        -webkit-backdrop-filter: blur(4px);
         backdrop-filter: blur(4px);
     }
 
@@ -4017,6 +4047,7 @@ body.layout-tablet .icp-record {
     body.layout-phone .m-topbar,
     body.layout-tablet .m-topbar {
         background: rgba(255, 255, 255, 0.4) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
         backdrop-filter: blur(20px) saturate(180%) !important;
         -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -4034,6 +4065,7 @@ body.layout-tablet .icp-record {
     body.layout-phone .m-filter-row,
     body.layout-tablet .m-filter-row {
         background: rgba(255, 255, 255, 0.5) !important;
+        -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
         backdrop-filter: blur(24px) saturate(180%) !important;
         -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
         border: 1px solid rgba(255, 255, 255, 0.2) !important;
@@ -4138,6 +4170,7 @@ body.layout-tablet .icp-record {
     body.layout-phone .masonry-card-badge,
     body.layout-tablet .masonry-card-badge {
         background: rgba(255,255,255,0.2) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
         backdrop-filter: blur(8px) !important;
         -webkit-backdrop-filter: blur(8px) !important;
         border: 1px solid rgba(255,255,255,0.1) !important;
@@ -4153,6 +4186,7 @@ body.layout-tablet .icp-record {
         width: 90% !important;
         border-radius: 40px !important;
         background: rgba(255, 255, 255, 0.6) !important;
+        -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
         backdrop-filter: blur(28px) saturate(200%) !important;
         -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
         border: 1px solid rgba(255, 255, 255, 0.4) !important;
@@ -4449,6 +4483,7 @@ body.layout-tablet .icp-record {
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.3) !important;
+    -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     display: flex;
     align-items: center;
@@ -5399,6 +5434,7 @@ body.layout-tablet .m-title-zone .official-badge {
     inset: 0;
     z-index: 290;
     background: rgba(53, 38, 26, 0.28) !important;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
@@ -6574,6 +6610,7 @@ body.layout-desktop .pdf-card:hover {
         background: rgba(255, 255, 255, 0.92) !important;
         color: #20344f !important;
         box-shadow: 0 10px 24px rgba(20, 26, 38, 0.16) !important;
+        -webkit-backdrop-filter: blur(6px);
         backdrop-filter: blur(6px);
         -webkit-backdrop-filter: blur(6px);
         display: inline-flex;
@@ -6693,192 +6730,106 @@ body.layout-desktop .pdf-card:hover {
         top: 164px;
         right: 28px;
         z-index: 97;
-        width: 106px;
-        height: 58px;
-        padding: 0;
-        border: 1px solid rgba(119, 227, 197, 0.28);
+        width: auto;
+        min-width: 134px;
+        height: 50px;
+        padding: 0 16px;
+        border: 1px solid rgba(119, 227, 197, 0.30);
         border-radius: 999px;
         background:
-            radial-gradient(circle at 18% 18%, rgba(255,255,255,0.3), transparent 28%),
-            linear-gradient(145deg, rgba(10, 23, 26, 0.94), rgba(14, 54, 47, 0.9) 55%, rgba(8, 17, 21, 0.96));
+            radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 40%),
+            linear-gradient(150deg, rgba(10, 26, 28, 0.92), rgba(12, 48, 42, 0.90) 60%, rgba(7, 16, 20, 0.95));
         box-shadow:
-            0 22px 44px rgba(6, 18, 19, 0.3),
-            0 0 0 1px rgba(255,255,255,0.05) inset,
-            0 0 28px rgba(42, 228, 183, 0.15);
+            0 14px 30px rgba(4, 14, 15, 0.28),
+            0 0 0 1px rgba(255,255,255,0.04) inset,
+            0 0 22px rgba(42, 228, 183, 0.10);
         color: #f4fff9;
         overflow: hidden;
-        backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         isolation: isolate;
         transition:
-            transform 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
-            box-shadow 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
-            border-color 0.34s ease,
-            border-radius 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
-            height 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+            box-shadow 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+            border-color 0.32s ease;
     }
 
     body.layout-desktop .vibecoding-portal:hover {
-        transform: translateY(-5px) rotate(-0.8deg) scale(1.02);
-        height: 122px;
-        border-radius: 24px;
-        border-color: rgba(135, 243, 214, 0.54);
+        transform: translateY(-4px) scale(1.03);
+        border-color: rgba(135, 243, 214, 0.6);
         box-shadow:
-            0 28px 54px rgba(6, 18, 19, 0.36),
-            0 0 0 1px rgba(255,255,255,0.08) inset,
-            0 0 40px rgba(42, 228, 183, 0.24);
+            0 20px 40px rgba(4, 14, 15, 0.34),
+            0 0 0 1px rgba(255,255,255,0.07) inset,
+            0 0 36px rgba(42, 228, 183, 0.26);
     }
 
     body.layout-desktop .vibecoding-portal:active {
-        transform: translateY(-2px) scale(0.985);
+        transform: translateY(-1px) scale(0.99);
+    }
+
+    /* 装饰性轨道 / 网格 / 标签：减法，隐藏 */
+    body.layout-desktop .vibecoding-portal-orbit,
+    body.layout-desktop .vibecoding-portal-grid,
+    body.layout-desktop .vibecoding-portal-chip {
+        display: none;
     }
 
     body.layout-desktop .vibecoding-portal-core {
         position: relative;
         z-index: 2;
-        width: calc(100% - 8px);
-        height: calc(100% - 8px);
-        border-radius: inherit;
-        padding: 8px 10px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 8px;
-        text-align: left;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
-        transition:
-            padding 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
-            gap 0.34s ease,
-            flex-direction 0.34s ease,
-            align-items 0.34s ease;
-    }
-
-    body.layout-desktop .vibecoding-portal:hover .vibecoding-portal-core {
-        padding: 10px 10px 9px;
-        gap: 7px;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    body.layout-desktop .vibecoding-portal-chip {
-        min-width: 32px;
-        height: 18px;
-        padding: 0 8px;
-        border-radius: 999px;
-        background: rgba(133, 255, 223, 0.14);
-        border: 1px solid rgba(133, 255, 223, 0.18);
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        font-size: 0.54rem;
-        font-weight: 800;
-        letter-spacing: 0.14em;
-        color: #baffea;
+        gap: 10px;
     }
 
     body.layout-desktop .vibecoding-portal-icon {
-        width: 30px;
-        height: 30px;
-        border-radius: 10px;
-        background: linear-gradient(180deg, rgba(133, 255, 223, 0.16), rgba(133, 255, 223, 0.08));
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: #f4fff9;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+        color: #eafff7;
+        background: linear-gradient(180deg, rgba(133, 255, 223, 0.18), rgba(133, 255, 223, 0.08));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+        transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    body.layout-desktop .vibecoding-portal:hover .vibecoding-portal-icon {
+        transform: rotate(-6deg) scale(1.06);
+    }
+
+    body.layout-desktop .vibecoding-portal-text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        line-height: 1.1;
     }
 
     body.layout-desktop .vibecoding-portal-title {
-        font-size: 0.74rem;
+        font-size: 0.82rem;
         font-weight: 800;
-        line-height: 1.02;
         letter-spacing: 0.01em;
         color: #f6fffb;
         white-space: nowrap;
-        transition: transform 0.34s ease;
     }
 
     body.layout-desktop .vibecoding-portal-sub {
-        font-size: 0.6rem;
-        line-height: 1.25;
-        color: rgba(222, 255, 245, 0.76);
-        max-width: 10ch;
-        opacity: 0;
-        transform: translateY(6px);
-        max-height: 0;
-        overflow: hidden;
-        transition:
-            opacity 0.26s ease,
-            transform 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
-            max-height 0.34s ease;
+        font-size: 0.58rem;
+        line-height: 1.2;
+        color: rgba(200, 240, 230, 0.62);
+        margin-top: 2px;
+        white-space: nowrap;
+        transition: color 0.32s ease;
     }
 
     body.layout-desktop .vibecoding-portal:hover .vibecoding-portal-sub {
-        opacity: 1;
-        transform: translateY(0);
-        max-height: 36px;
-    }
-
-    body.layout-desktop .vibecoding-portal:hover .vibecoding-portal-title {
-        transform: translateY(-1px);
-    }
-
-    body.layout-desktop .vibecoding-portal-orbit,
-    body.layout-desktop .vibecoding-portal-grid {
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-    }
-
-    body.layout-desktop .vibecoding-portal-grid {
-        opacity: 0.14;
-        background-image:
-            linear-gradient(rgba(137, 255, 224, 0.18) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(137, 255, 224, 0.14) 1px, transparent 1px);
-        background-size: 18px 18px;
-        mask-image: radial-gradient(circle at center, black 26%, transparent 80%);
-        animation: vibeGridDrift 8s linear infinite;
-        transition: opacity 0.34s ease, mask-image 0.34s ease;
-    }
-
-    body.layout-desktop .vibecoding-portal:hover .vibecoding-portal-grid {
-        opacity: 0.22;
-        mask-image: radial-gradient(circle at center, black 40%, transparent 88%);
-    }
-
-    body.layout-desktop .vibecoding-portal-orbit {
-        border-radius: 999px;
-        border: 1px solid rgba(144, 255, 227, 0.22);
-        transition: opacity 0.34s ease, inset 0.34s ease;
-    }
-
-    body.layout-desktop .vibe-orbit-a {
-        inset: 12px;
-        opacity: 0.28;
-        animation: vibeOrbitSpin 9s linear infinite;
-    }
-
-    body.layout-desktop .vibe-orbit-b {
-        inset: 18px 8px 8px 18px;
-        border-style: dashed;
-        opacity: 0.14;
-        animation: vibeOrbitSpinReverse 7s linear infinite;
-    }
-
-    body.layout-desktop .vibecoding-portal:hover .vibe-orbit-a {
-        inset: 14px;
-        opacity: 0.34;
-    }
-
-    body.layout-desktop .vibecoding-portal:hover .vibe-orbit-b {
-        inset: 30px 10px 10px 30px;
-        opacity: 0.62;
+        color: rgba(212, 246, 236, 0.82);
     }
 }
 
@@ -6936,13 +6887,6 @@ body.layout-desktop .pdf-card:hover {
 
     body.layout-desktop .vibecoding-portal {
         border-color: rgba(118, 239, 214, 0.38);
-        background:
-            radial-gradient(circle at 18% 18%, rgba(255,255,255,0.12), transparent 28%),
-            linear-gradient(145deg, rgba(8, 20, 24, 0.97), rgba(6, 44, 39, 0.96) 55%, rgba(6, 14, 18, 0.98));
-        box-shadow:
-            0 24px 50px rgba(2, 6, 10, 0.62),
-            0 0 0 1px rgba(255,255,255,0.04) inset,
-            0 0 32px rgba(43, 234, 189, 0.18);
     }
 }
 
@@ -7810,6 +7754,7 @@ body.layout-tablet .masonry-grid {
 
 .awards-page-v2.is-mobile .award-glass-lightbox {
   background: var(--art-bg) !important;
+  -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   padding: 16px;
 }
@@ -8382,6 +8327,7 @@ body.layout-tablet .masonry-grid {
   border-radius: 999px;
   border: 1px solid rgba(120, 209, 255, 0.16);
   background: rgba(8, 17, 28, 0.58);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   display: inline-flex;
   align-items: center;
@@ -8490,6 +8436,7 @@ body.layout-tablet .masonry-grid {
 .vibecoding-stats article {
   border: 1px solid rgba(123, 210, 255, 0.14);
   background: rgba(9, 17, 28, 0.52);
+  -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
 
@@ -8591,6 +8538,7 @@ body.layout-tablet .masonry-grid {
   gap: 10px;
   color: rgba(214, 232, 243, 0.76);
   text-align: center;
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
 }
 
@@ -8682,6 +8630,7 @@ body.layout-tablet .masonry-grid {
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(4, 10, 17, 0.62);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   display: inline-flex;
   align-items: center;
@@ -8852,6 +8801,7 @@ body.layout-tablet .masonry-grid {
     radial-gradient(circle at 20% 18%, rgba(101, 221, 193, 0.12), transparent 28%),
     radial-gradient(circle at 82% 14%, rgba(108, 153, 255, 0.14), transparent 30%),
     rgba(2, 8, 14, 0.78);
+  -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
   display: flex;
   align-items: center;
@@ -9135,6 +9085,7 @@ body.layout-tablet .masonry-grid {
   border-radius: 8px;
   background: rgba(24,24,27,0.9);
   box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+  -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
 
@@ -9353,6 +9304,7 @@ body.layout-tablet .masonry-grid {
   background: rgba(24,24,27,0.86);
   color: rgba(248,250,252,0.86);
   font-size: 12px;
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
 
