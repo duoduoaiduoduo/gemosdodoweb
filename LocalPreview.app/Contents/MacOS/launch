@@ -6,6 +6,12 @@ PIDFILE="$PROJ/.local-preview.pid"
 LOG="$PROJ/.local-preview.log"
 URL="http://127.0.0.1:3000"
 
+# 用绝对路径（Finder 双击时 PATH 极简，找不到 npm/node）
+NODE="/Users/duoqian/.workbuddy/binaries/node/versions/22.22.2/bin/node"
+NPM="/Users/duoqian/.workbuddy/binaries/node/versions/22.22.2/bin/npm"
+BIN_DIR="$(dirname "$NODE")"
+export PATH="$BIN_DIR:$PATH"
+
 # 若已在运行（PID 文件存在且进程存活）→ 停止
 if [ -f "$PIDFILE" ]; then
   PID=$(cat "$PIDFILE")
@@ -27,9 +33,9 @@ if [ -f "$PIDFILE" ]; then
   fi
 fi
 
-# 启动
+# 启动（用绝对路径的 npm，避免 Finder 环境找不到）
 cd "$PROJ"
-nohup npm start > "$LOG" 2>&1 &
+nohup "$NPM" start > "$LOG" 2>&1 &
 echo $! > "$PIDFILE"
 
 # 轮询等待服务就绪（最多 30 秒）
