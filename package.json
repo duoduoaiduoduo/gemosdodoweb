@@ -12,7 +12,8 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "deploy": "node scripts/deploy.mjs",
-    "deploy:gui": "node deploy-gui/server.mjs"
+    "deploy:gui": "node deploy-gui/server.mjs",
+    "local:stop": "pkill -f \"vite --port=3000\"; pkill -f \"node server.js\"; pkill -f \"npm run server\"; pkill -f \"npm run dev\"; echo \"本地预览已停止\""
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

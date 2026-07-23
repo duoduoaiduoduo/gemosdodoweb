@@ -1,0 +1,29 @@
+#!/bin/bash
+# LocalPreview.app 启动器
+# 双击 = 启动本地站点并打开浏览器；再次双击 = 停止
+PROJ="$(cd "$(dirname "$0")/../../.." && pwd)"
+PIDFILE="$PROJ/.local-preview.pid"
+LOG="$PROJ/.local-preview.log"
+
+# 若已在运行 → 停止
+if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+  echo "停止本地预览..."
+  kill "$(cat "$PIDFILE")" 2>/dev/null
+  sleep 1
+  pkill -f "vite --port=3000" 2>/dev/null
+  pkill -f "node server.js" 2>/dev/null
+  pkill -f "npm run server" 2>/dev/null
+  pkill -f "npm run dev" 2>/dev/null
+  rm -f "$PIDFILE"
+  osascript -e 'display notification "本地预览已停止" with title "Gemosdodo 本地预览"' 2>/dev/null
+  exit 0
+fi
+
+# 启动
+cd "$PROJ"
+nohup npm start > "$LOG" 2>&1 &
+echo $! > "$PIDFILE"
+sleep 4
+open http://localhost:3000
+osascript -e 'display notification "本地预览已启动 → http://localhost:3000" with title "Gemosdodo 本地预览"' 2>/dev/null
+exit 0
