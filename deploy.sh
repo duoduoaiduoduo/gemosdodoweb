@@ -2,7 +2,9 @@
 set -Eeuo pipefail
 
 # Keep only the latest N backups.
+# data.json 很小（~248K），保留 3 份做安全网；uploads 每个约 3.6G，只留 1 份避免备份把磁盘堆满。
 KEEP_BACKUPS=3
+KEEP_UPLOADS_BACKUPS=1
 
 cd "$(dirname "$0")"
 
@@ -38,7 +40,7 @@ if [[ -d uploads ]]; then
 fi
 
 prune_keep_latest "data.json.bak.*" "${KEEP_BACKUPS}"
-prune_keep_latest "uploads.bak.*" "${KEEP_BACKUPS}"
+prune_keep_latest "uploads.bak.*" "${KEEP_UPLOADS_BACKUPS}"
 
 echo "== [2/5] Pulling latest code from GitHub =="
 git pull origin main
@@ -54,4 +56,4 @@ echo "== [5/5] Restarting Node service =="
 # 若该进程尚不存在（首次改名后），自动用 server.js 新建，避免部署中断。
 pm2 restart gemosdodoweb-site || pm2 start server.js --name gemosdodoweb-site
 
-echo "== Done. Backups pruned (keep latest ${KEEP_BACKUPS}) =="
+echo "== Done. Backups pruned (data.json keep ${KEEP_BACKUPS}, uploads keep ${KEEP_UPLOADS_BACKUPS}) =="
