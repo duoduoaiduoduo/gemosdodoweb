@@ -530,6 +530,8 @@ body.site-entered .animate-item {
 .masonry-overlay {
     position: absolute;
     bottom: 0; left: 0; right: 0;
+    /* 图片带 .card-fade-image { z-index:1 }，overlay 必须更高，否则被图片盖住导致 hover 文字看不见 */
+    z-index: 2;
     padding: 50px 20px 20px 20px;
     color: #ffffff;
     display: flex;
@@ -575,6 +577,7 @@ body.site-entered .animate-item {
     position: absolute;
     top: 14px;
     right: 14px;
+    z-index: 3; /* 高于图片(1)与 overlay(2)，浮在最上层 */
     width: 18%;
     max-width: 72px;
     max-height: 72px;
