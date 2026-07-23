@@ -1,7 +1,7 @@
 import { ReactNode, Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Lock, ArrowDown, Copy, BookOpen, PenTool, Code2 } from 'lucide-react';
+import { Lock, Copy, BookOpen, PenTool, Code2 } from 'lucide-react';
 import { initApp } from './script';
 import AdminStudio from './AdminStudio';
 import AwardsPage from './AwardsPage';
@@ -371,95 +371,94 @@ function TouchHome({
     bridge.filterTimeline?.(type, el);
   };
 
+  const filters: Array<{ code: 'all' | 'project' | 'video' | 'edu'; zh: string; en: string }> = [
+    { code: 'all', zh: '全部', en: 'All' },
+    { code: 'project', zh: '作品', en: 'Work' },
+    { code: 'video', zh: '视频', en: 'Video' },
+    { code: 'edu', zh: '教育', en: 'Edu' },
+  ];
+  const activeIndex = Math.max(0, filters.findIndex((f) => f.code === activeFilter));
+
   return (
-    <div className="art-container">
-      <header className="art-topbar">
-        <div className="topbar-left" onClick={onToggleLang} style={{ cursor: 'pointer' }}>
-          <span>{lang === 'zh' ? 'EN / 中文' : 'ZH / ENG'}</span>
-        </div>
-        <div className="topbar-right">
-          <span className="icp-text">浙ICP备2026017753号</span>
+    <div className="ios-home">
+      {/* 顶部状态栏（iOS Navigation Bar 风格：语言切换 + 头像 + 管理入口） */}
+      <header className="ios-navbar">
+        <button className="ios-lang-pill" onClick={onToggleLang}>
+          {lang === 'zh' ? '中 / EN' : 'EN / 中'}
+        </button>
+        <div className="ios-navbar-right">
           {showAdminEntry && (
-            <button className="admin-btn" onClick={onOpenAdmin}>
-              <Lock size={14} strokeWidth={1.5} />
+            <button className="ios-icon-btn" onClick={onOpenAdmin} aria-label="admin">
+              <Lock size={17} strokeWidth={2} />
             </button>
           )}
+          <button className="ios-avatar" onClick={onAvatarTap} aria-label="avatar">
+            <img src="/avatar.png" alt="Avatar" />
+          </button>
         </div>
       </header>
 
-      <section className="art-hero">
-        <div className="hero-grid">
-          <div className="avatar-container" onClick={onAvatarTap}>
-            <img src="/avatar.png" alt="Avatar" className="art-avatar" />
-            <img src="/logo.png" alt="Logo" className="art-logo" />
-          </div>
-          <div className="title-container">
-            <div className="badge">{t('官网', 'OFFICIAL')}</div>
-            <h1 className="massive-title">{t('多多 GemosDodo', 'GemosDodo')}</h1>
-            <h2 className="sub-title">{t('的刻录石碑', 'The Engraved Stela')}</h2>
-          </div>
-        </div>
-
-        <div className="art-marquee">
-          <div className="marquee-content" aria-hidden="true">
-            <span>{t(heroManifesto.zh, heroManifesto.en)}&nbsp;&nbsp;/&nbsp;&nbsp;</span>
-            <span>{t(heroManifesto.zh, heroManifesto.en)}&nbsp;&nbsp;/&nbsp;&nbsp;</span>
-          </div>
-        </div>
-
-        <div className="hero-meta">
-          <p className="meta-desc">DIGITAL ARCHIVE<br/>& CREATIVE WORKS</p>
-          {/* Use the shared SocialLinks component — correctly maps lang → platform icons */}
-          <div className="art-social-links">
-            <SocialLinks lang={lang} />
-          </div>
+      {/* Hero：iOS Large Title 大标题区 */}
+      <section className="ios-hero reveal">
+        <p className="ios-eyebrow">{t('数字档案馆', 'DIGITAL ARCHIVE')}</p>
+        <h1 className="ios-large-title">
+          {t('多多', 'GemosDodo')}
+          <span className="ios-large-title-sub">GemosDodo</span>
+        </h1>
+        <p className="ios-hero-desc">{t(heroManifesto.zh, heroManifesto.en)}</p>
+        <div className="ios-hero-social">
+          <SocialLinks lang={lang} />
         </div>
       </section>
 
-      <section className="art-filters">
-        <button
-          className={`art-filter-btn ${activeFilter === 'all' ? 'active' : ''}`}
-          onClick={(e) => handleFilter('all', e.currentTarget)}
-        >{t('全部', 'ALL')}</button>
-        <button
-          className={`art-filter-btn ${activeFilter === 'project' ? 'active' : ''}`}
-          onClick={(e) => handleFilter('project', e.currentTarget)}
-        >{t('作品', 'PROJECT')}</button>
-        <button
-          className={`art-filter-btn ${activeFilter === 'video' ? 'active' : ''}`}
-          onClick={(e) => handleFilter('video', e.currentTarget)}
-        >{t('视频', 'VIDEO')}</button>
-        <button
-          className={`art-filter-btn ${activeFilter === 'edu' ? 'active' : ''}`}
-          onClick={(e) => handleFilter('edu', e.currentTarget)}
-        >{t('教育', 'EDU')}</button>
-      </section>
-
-      <section className="art-archive masonry-section m-masonry" id="masonrySection">
-        <div className="archive-header">
-          <h3>ARCHIVE</h3>
-          <ArrowDown size={16} strokeWidth={1.5} />
+      {/* 作品墙 */}
+      <section className="ios-archive" id="masonrySection">
+        <div className="ios-section-head reveal">
+          <h2 className="ios-section-title">{t('精选作品', 'Selected Works')}</h2>
         </div>
+
+        {/* iOS Segmented Control 分段筛选 */}
+        <div className="ios-segmented reveal" role="tablist">
+          <span
+            className="ios-segmented-thumb"
+            style={{ transform: `translateX(${activeIndex * 100}%)` }}
+            aria-hidden="true"
+          />
+          {filters.map((f) => (
+            <button
+              key={f.code}
+              role="tab"
+              aria-selected={activeFilter === f.code}
+              className={`ios-segment ${activeFilter === f.code ? 'active' : ''}`}
+              onClick={(e) => handleFilter(f.code, e.currentTarget)}
+            >
+              {t(f.zh, f.en)}
+            </button>
+          ))}
+        </div>
+
         <div className="art-grid masonry-grid no-grass" id="masonryGrid"></div>
       </section>
 
-      <nav className="art-bottom-nav">
-        <button onClick={onOpenAwards}>
-          <Copy size={18} strokeWidth={1.5} />
-          <span>{t('奖状', 'AWARDS')}</span>
+      {/* iOS Tab Bar 底部导航（毛玻璃） */}
+      <nav className="ios-tabbar">
+        <button className="ios-tab" onClick={onOpenAwards}>
+          <Copy size={22} strokeWidth={1.8} />
+          <span>{t('奖状', 'Awards')}</span>
         </button>
-        <button onClick={onOpenPdfs}>
-          <BookOpen size={18} strokeWidth={1.5} />
-          <span>{t('作品集', 'PORTFOLIO')}</span>
+        <button className="ios-tab" onClick={onOpenPdfs}>
+          <BookOpen size={22} strokeWidth={1.8} />
+          <span>{t('作品集', 'Portfolio')}</span>
         </button>
-        <button className="art-bottom-vibe" onClick={onOpenVibecoding}>
-          <span className="art-bottom-vibe-badge" aria-hidden="true">LAB</span>
-          <Code2 size={20} strokeWidth={1.7} />
-          <span>{t('VibeCoding', 'VIBECODING')}</span>
+        <button className="ios-tab ios-tab-accent" onClick={onOpenVibecoding}>
+          <span className="ios-tab-icon-wrap">
+            <Code2 size={22} strokeWidth={2} />
+          </span>
+          <span>{t('实验室', 'Lab')}</span>
         </button>
-        <button onClick={onOpenJournal}>
-          <PenTool size={18} strokeWidth={1.5} />
-          <span>{t('手账', 'JOURNAL')}</span>
+        <button className="ios-tab" onClick={onOpenJournal}>
+          <PenTool size={22} strokeWidth={1.8} />
+          <span>{t('手账', 'Journal')}</span>
         </button>
       </nav>
 
