@@ -946,13 +946,18 @@ export function initApp() {
             card.style.animation = `cardFadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards ${delayCount * 0.05}s`;
             
             if (isMobile) {
-                // Distribute to the shorter column
-                if (leftHeight <= rightHeight) {
-                    colLeft.appendChild(card);
-                    leftHeight += estimatedCardHeight;
+                // 放到当前较矮的列，然后用「真实渲染高度」累加——不再依赖粗糙估算。
+                // 图片容器已用 aspect-ratio 固定高度（不依赖图片是否加载完），
+                // 文字块插入 DOM 后高度即刻确定，所以此处 offsetHeight 是可信的真实高度，
+                // 由此「放最矮列」的判断准确，两列高度差被压到一张卡片以内。
+                const target = leftHeight <= rightHeight ? colLeft : colRight;
+                target.appendChild(card);
+                // 读真实高度（含边框）；aspect-ratio 让它无需等图片就已确定
+                const realH = card.getBoundingClientRect().height || estimatedCardHeight;
+                if (target === colLeft) {
+                    leftHeight += realH;
                 } else {
-                    colRight.appendChild(card);
-                    rightHeight += estimatedCardHeight;
+                    rightHeight += realH;
                 }
             } else {
                 grid.appendChild(card);
