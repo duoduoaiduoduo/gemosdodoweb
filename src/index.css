@@ -488,6 +488,10 @@ body.site-entered .animate-item {
     background: #111;
     will-change: auto;
     transform-origin: center center;
+    /* preserve-3d：让内部 overlay / logo 的 translateZ 真正浮在卡片表面之上，
+       在卡片跟随鼠标 3D 倾斜时呈现分层立体感。绝对定位瀑布流已无 CSS columns，
+       不会再触发 Safari multicol + preserve-3d 的渲染 bug（Windows/Mac 均正常）。 */
+    transform-style: preserve-3d;
 }
 .masonry-card:hover {
     will-change: transform;
@@ -544,17 +548,18 @@ body.site-entered .animate-item {
     will-change: transform, opacity;
 }
 
-/* 支持精细悬停：默认完整展示配图，悬停时文字从下方 2D 滑入（不再用 translateZ 3D，避免无 perspective 父级时的异常与溢出） */
+/* 支持精细悬停：默认完整展示配图，悬停时文字从下方滑入，并叠加 translateZ 浮出卡片表面。
+   卡片已是 preserve-3d，translateZ(40px) 让文字浮层在卡片跟随鼠标倾斜时呈立体分层悬浮感。 */
 @media (hover: hover) {
     .masonry-overlay {
-        transform: translateY(101%);
+        transform: translate3d(0, 101%, 40px);
         opacity: 0;
         transition:
             transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
             opacity 0.4s cubic-bezier(0.16, 1, 0.28, 1);
     }
     .masonry-card:hover .masonry-overlay {
-        transform: translateY(0);
+        transform: translate3d(0, 0, 40px);
         opacity: 1;
     }
 }
@@ -586,7 +591,7 @@ body.site-entered .animate-item {
     pointer-events: none;
     /* Default: invisible, collapsed to top-right corner */
     opacity: 0;
-    transform: scale(0);
+    transform: translateZ(55px) scale(0);
     transform-origin: top right;
     will-change: transform, opacity;
     backface-visibility: hidden;
@@ -597,8 +602,8 @@ body.site-entered .animate-item {
 @media (hover: hover) {
     body.layout-desktop .masonry-card:hover .masonry-card-logo {
         opacity: 1;
-        /* Spring bounce entrance */
-        transform: scale(1);
+        /* Spring bounce entrance，translateZ(55px) 浮在最上层 */
+        transform: translateZ(55px) scale(1);
         transition:
             transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
             opacity 0.18s ease;
