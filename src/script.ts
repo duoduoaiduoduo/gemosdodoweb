@@ -58,6 +58,14 @@ const WORK_VISUAL_EVENT = 'work-visual-state';
 export function initApp() {
     if (initialized) return;
     initialized = true;
+
+    // 窗口尺寸变化时用 JS 重算瀑布流列数（避免 CSS columns 在 Safari 的错位）
+    let masonryResizeRAF = 0;
+    window.addEventListener('resize', () => {
+        if (masonryResizeRAF) cancelAnimationFrame(masonryResizeRAF);
+        masonryResizeRAF = requestAnimationFrame(() => relayoutMasonry());
+    });
+
     let currentDetailCoverImage = '';
     let detailImageQueueToken = 0;
 
@@ -785,6 +793,42 @@ export function initApp() {
         return allowed.has(item?.coverAspect) ? item.coverAspect : '3:4';
     }
 
+    function getMasonryCols(width) {
+        if (width >= 1200) return 4;
+        if (width >= 900) return 3;
+        if (width >= 600) return 2;
+        return 1;
+    }
+
+    // 用绝对定位计算瀑布流（兼容 Safari / Windows，避免 CSS columns + 3D transform 在 Safari 的渲染 bug）
+    function relayoutMasonry() {
+        const grid = document.getElementById('masonryGrid');
+        if (!grid) return;
+        const cards = Array.prototype.slice.call(grid.querySelectorAll('.masonry-card'));
+        if (cards.length === 0) return;
+        const gridWidth = grid.clientWidth;
+        if (gridWidth <= 0) return;
+        const cols = getMasonryCols(gridWidth);
+        const gap = 24;
+        const colWidth = (gridWidth - gap * (cols - 1)) / cols;
+        const colHeights = new Array(cols).fill(0);
+        cards.forEach((card) => {
+            const aspect = parseFloat(card.dataset.ratio) || (3 / 4);
+            const cardHeight = colWidth / aspect;
+            card.style.width = colWidth + 'px';
+            card.style.height = Math.round(cardHeight) + 'px';
+            // 放入当前最矮的列（标准瀑布流）
+            let col = 0;
+            for (let i = 1; i < cols; i++) {
+                if (colHeights[i] < colHeights[col]) col = i;
+            }
+            card.style.left = Math.round(col * (colWidth + gap)) + 'px';
+            card.style.top = Math.round(colHeights[col]) + 'px';
+            colHeights[col] += cardHeight + gap;
+        });
+        grid.style.height = Math.round(Math.max.apply(null, colHeights)) + 'px';
+    }
+
     function renderMasonry(filterType) {
         const grid = document.getElementById('masonryGrid');
         if (!grid) return;
@@ -840,8 +884,10 @@ export function initApp() {
                   </div>
                 `;
             } else {
-                // ── Desktop: image fills card, overlay slides up on hover ──
+                // ── Desktop: 绝对定位瀑布流卡片，鼠标倾斜用内联 transform（不依赖父级 perspective）──
                 card.style.aspectRatio = ratio;
+                card.dataset.ratio = String(aspect);
+                card.style.position = 'absolute';
                 card.innerHTML = `
                     <div class="card-image-skeleton"></div>
                     <img src="${imgSrc}" class="masonry-img card-fade-image" alt="${displayTitle}" loading="lazy"
@@ -857,7 +903,7 @@ export function initApp() {
                     </div>
                 `;
 
-                card.addEventListener('mouseenter', () => { card.style.animation = 'none'; });
+                // 鼠标移动时做轻微 3D 倾斜（Safari 下不再与 CSS columns 冲突，hover 稳定）
                 card.addEventListener('mousemove', (e) => {
                     const rect = card.getBoundingClientRect();
                     const rotateX = ((e.clientY - rect.top - rect.height / 2) / (rect.height / 2)) * -12;
@@ -868,7 +914,7 @@ export function initApp() {
             }
 
             card.addEventListener('click', () => openDetailModal(item));
-            card.style.animation = `cardFadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards ${delayCount * 0.08}s`;
+            card.style.animation = `cardFadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards ${delayCount * 0.05}s`;
             
             if (isMobile) {
                 // Distribute to the shorter column
@@ -885,6 +931,10 @@ export function initApp() {
 
             delayCount++;
         });
+
+        if (!isMobile) {
+            relayoutMasonry();
+        }
     }
 
     function filterTimeline(filterType, element) {
