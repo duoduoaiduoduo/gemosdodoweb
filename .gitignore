@@ -6,6 +6,8 @@ coverage/
 *.log
 deploy-gui/.port
 deploy-gui/server.log
+.local-preview.pid
+.local-preview.log
 .env*
 !.env.example
 uploads/
