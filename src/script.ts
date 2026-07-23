@@ -55,6 +55,107 @@ const DETAIL_MODAL_ID = 'detailModal';
 const DETAIL_MODAL_ENTER_MS = 980;
 const WORK_VISUAL_EVENT = 'work-visual-state';
 
+// ── iOS 手机端「滚动入场」共享观察器 ──────────────────────────────
+// CSS 里 body.layout-phone/tablet 的 .reveal 与 .art-card 初始为 opacity:0 + translateY(18px)，
+// 进入视口后由此处补加 .in-view（一次性），触发淡入上浮；同时 .art-card.in-view 让封面从黑白苏醒为彩色。
+// 只在手机/平板启用；桌面端直接补 in-view 兜底，避免误伤（桌面 CSS 不含 opacity:0 规则，仅作无害标记）。
+let revealObserver: IntersectionObserver | null = null;
+
+function getRevealObserver(): IntersectionObserver | null {
+    if (typeof IntersectionObserver === 'undefined') return null;
+    if (revealObserver) return revealObserver;
+    revealObserver = new IntersectionObserver(
+        (entries, obs) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                    obs.unobserve(entry.target); // 一次性入场，不再反复触发
+                }
+            });
+        },
+        // rootMargin 底部留 -8% 让元素略进入视口才触发，顶部放宽保证首屏元素也能立即命中
+        { threshold: 0.06, rootMargin: '0px 0px -8% 0px' }
+    );
+    return revealObserver;
+}
+
+// 观察单个元素（进入视口时淡入）。非手机/平板环境直接标记 in-view。
+function observeReveal(el: Element | null | undefined) {
+    if (!el) return;
+    if (el.classList.contains('in-view')) return;
+    // 用 body 布局 class 判断（module 级不能引用 initApp 内的 layoutMode 闭包变量）
+    const compact = !document.body.classList.contains('layout-desktop');
+    if (!compact) {
+        el.classList.add('in-view');
+        return;
+    }
+    const io = getRevealObserver();
+    if (!io) {
+        el.classList.add('in-view'); // 不支持 IO 的环境兜底：直接可见
+        return;
+    }
+    // 首屏元素若已在视口内，IO 首次回调会立即命中；无需额外处理。
+    io.observe(el);
+}
+
+// 批量观察某容器下所有 .reveal 与 .art-card
+function observeRevealWithin(root: ParentNode | null | undefined) {
+    if (!root) return;
+    root.querySelectorAll('.reveal, .art-card').forEach((el) => observeReveal(el));
+}
+
+// ── 封面视差浮动 ─────────────────────────────────────────────────
+// 手机端随滚动给每张卡片封面一个轻微的纵向位移（图片比容器高 14%，故有 ±余量可移），
+// 制造 iOS 相册式的纵深呼吸。位移写入 --parallax-y（独立 translate 属性），不干扰 :active 的 scale。
+// 只处理视口附近的图片，rAF 节流；prefers-reduced-motion 下不启用。
+let parallaxBound = false;
+let parallaxRAF = 0;
+const PARALLAX_MAX = 9; // 单侧最大位移 px（图片高出容器 14% ≈ 足够覆盖）
+
+function prefersReducedMotion(): boolean {
+    return typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function updateParallax() {
+    parallaxRAF = 0;
+    if (document.body.classList.contains('layout-desktop')) return;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 844;
+    const center = vh / 2;
+    const imgs = document.querySelectorAll<HTMLElement>('#masonryGrid .card-fade-image');
+    imgs.forEach((img) => {
+        const wrap = img.parentElement;
+        if (!wrap) return;
+        const rect = wrap.getBoundingClientRect();
+        // 跳过完全在视口外的（含少量缓冲）
+        if (rect.bottom < -120 || rect.top > vh + 120) return;
+        // 容器中心相对视口中心的归一化偏移（-1 顶部 → +1 底部）
+        const wrapCenter = rect.top + rect.height / 2;
+        const ratio = Math.max(-1, Math.min(1, (wrapCenter - center) / center));
+        // 越靠视口下方，图片越往上偏（负值），形成「图片略慢于滚动」的视差
+        const offset = -ratio * PARALLAX_MAX;
+        img.style.setProperty('--parallax-y', `${offset.toFixed(1)}px`);
+    });
+}
+
+function scheduleParallax() {
+    if (parallaxRAF) return;
+    parallaxRAF = requestAnimationFrame(updateParallax);
+}
+
+// 绑定一次滚动/尺寸监听（手机端 body 是真实滚动容器，故监听 body 与 window 双保险）
+function ensureParallaxBound() {
+    if (parallaxBound) return;
+    if (prefersReducedMotion()) return;
+    parallaxBound = true;
+    const opts: AddEventListenerOptions = { passive: true };
+    document.body.addEventListener('scroll', scheduleParallax, opts);
+    window.addEventListener('scroll', scheduleParallax, opts);
+    window.addEventListener('resize', scheduleParallax, opts);
+    // 首次计算一帧，让首屏卡片就位
+    scheduleParallax();
+}
+
 export function initApp() {
     if (initialized) return;
     initialized = true;
@@ -769,6 +870,9 @@ export function initApp() {
             });
             if (activeRollerItems[0]) activeRollerItems[0].classList.add('active');
             renderMasonry(filterType);
+            // 观察 Hero / 分区标题 / 分段控件等静态 .reveal 元素（幂等：已 in-view 的会跳过）。
+            // 这些节点由 React 渲染、不随 filter 重建，observe 一次即可。
+            observeRevealWithin(document.querySelector('.ios-home'));
             return;
         }
         
@@ -943,8 +1047,13 @@ export function initApp() {
             }
 
             card.addEventListener('click', () => openDetailModal(item));
-            card.style.animation = `cardFadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards ${delayCount * 0.05}s`;
-            
+            // 手机/平板端：入场交给 IntersectionObserver + CSS .in-view（淡入上浮 + 封面黑白→彩色苏醒），
+            // 不再用内联 cardFadeIn（其 backwards 会强制 opacity，和 .reveal 的 opacity:0/in-view 过渡打架）。
+            // 桌面端保留原有的错峰淡入动画。
+            if (!isMobile) {
+                card.style.animation = `cardFadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards ${delayCount * 0.05}s`;
+            }
+
             if (isMobile) {
                 // 放到当前较矮的列，然后用「真实渲染高度」累加——不再依赖粗糙估算。
                 // 图片容器已用 aspect-ratio 固定高度（不依赖图片是否加载完），
@@ -966,7 +1075,21 @@ export function initApp() {
             delayCount++;
         });
 
-        if (!isMobile) {
+        if (isMobile) {
+            // 双列卡片已插入 DOM，逐张注册滚动入场观察器（进入视口淡入上浮 + 封面苏醒为彩色）。
+            // 用列内序号给一点错峰 transition-delay，让同屏卡片依次浮现而非齐刷刷同时出现。
+            [colLeft, colRight].forEach((col) => {
+                if (!col) return;
+                const cards = col.querySelectorAll('.art-card');
+                cards.forEach((card, idx) => {
+                    (card as HTMLElement).style.transitionDelay = `${Math.min(idx, 6) * 0.05}s`;
+                    observeReveal(card);
+                });
+            });
+            // 封面视差：绑定滚动监听（幂等）并立即算一帧，让首屏卡片图片就位。
+            ensureParallaxBound();
+            scheduleParallax();
+        } else {
             relayoutMasonry();
         }
     }

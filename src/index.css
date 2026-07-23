@@ -7128,607 +7128,360 @@ body.layout-desktop .pdf-card:hover {
 }
 
 
-/* ==========================================
-   MOBILE NEO-BRUTALISM & SWISS TYPOGRAPHY
-   ========================================== */
-body.layout-phone, 
+/* ============================================================
+   MOBILE — iOS UI KIT REDESIGN (SF Pro · 8pt grid · squircle)
+   强调色 iOS 坠橘 #FF9500；分组背景层次；毛玻璃 Tab Bar
+   ============================================================ */
+body.layout-phone,
 body.layout-tablet {
-  --art-bg: #EAE8E3; 
-  --art-fg: #111111;
-  --art-accent: #FF3B00; 
-  --line-width: 1.5px;
-  background-color: var(--art-bg) !important;
-  color: var(--art-fg) !important;
-  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif !important;
-  /* 彻底隐藏滚动条（body 是手机端真实滚动容器）：页面仍可正常滑动，只是永不显示滚动条 */
-  scrollbar-width: none;       /* Firefox */
-  -ms-overflow-style: none;    /* 旧版 Edge/IE */
+  --ios-bg: #F2F1F6;            /* systemGroupedBackground 暖灰米 */
+  --ios-surface: #FFFFFF;       /* 白卡 */
+  --ios-label: #1C1C1E;         /* 主文字 */
+  --ios-label-2: #3C3C43;       /* 次文字（配 opacity） */
+  --ios-label-3: #8E8E93;       /* 三级/占位灰 */
+  --ios-separator: rgba(60,60,67,0.16);
+  --ios-fill: #E9E8ED;          /* 分段控件轨道等填充 */
+  --ios-accent: #FF9500;        /* iOS 坠橘 */
+  --ios-radius-card: 20px;      /* squircle 卡片 */
+  --ios-radius-lg: 26px;
+  --ios-safe: 16px;             /* 屏幕左右安全边距 */
+  background-color: var(--ios-bg) !important;
+  color: var(--ios-label) !important;
+  font-family: -apple-system, "SF Pro Text", "SF Pro Display", "PingFang SC",
+    "Helvetica Neue", system-ui, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* 彻底隐藏滚动条（body 是手机端真实滚动容器）：仍可滑动 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-/* WebKit/Safari（含 Chrome/移动端）：隐藏 body 及页面内任意滚动容器的滚动条 */
 body.layout-phone::-webkit-scrollbar,
 body.layout-tablet::-webkit-scrollbar,
 body.layout-phone *::-webkit-scrollbar,
 body.layout-tablet *::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
-  display: none !important;
+  width: 0 !important; height: 0 !important; display: none !important;
 }
-/* 页面内其它滚动容器（如弹层）也隐藏，观感统一 */
 body.layout-phone *,
-body.layout-tablet * {
-  scrollbar-width: none;
+body.layout-tablet * { scrollbar-width: none; }
+
+/* 页面外壳 */
+body.layout-phone .ios-home,
+body.layout-tablet .ios-home {
+  position: relative;
+  min-height: 100vh;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  background: var(--ios-bg);
 }
 
-body.layout-phone .art-container,
-body.layout-tablet .art-container {
-  padding-bottom: 80px; 
-}
-
-/* 顶部栏 */
-body.layout-phone .art-topbar,
-body.layout-tablet .art-topbar {
+/* ---------- 顶部 Navigation Bar ---------- */
+body.layout-phone .ios-navbar,
+body.layout-tablet .ios-navbar {
+  height: 52px;
+  padding: 0 var(--ios-safe);
+  padding-top: env(safe-area-inset-top, 0px);
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: var(--line-width) solid var(--art-fg);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
-
-body.layout-phone .topbar-right,
-body.layout-tablet .topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-body.layout-phone .icp-text,
-body.layout-tablet .icp-text {
-  opacity: 0.5;
-}
-
-body.layout-phone .admin-btn,
-body.layout-tablet .admin-btn {
-  background: none;
+body.layout-phone .ios-lang-pill,
+body.layout-tablet .ios-lang-pill {
   border: none;
-  padding: 0;
-  color: var(--art-fg);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-/* 英雄区域 (Hero) */
-body.layout-phone .art-hero,
-body.layout-tablet .art-hero {
-  border-bottom: var(--line-width) solid var(--art-fg);
-}
-
-body.layout-phone .hero-grid,
-body.layout-tablet .hero-grid {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  border-bottom: var(--line-width) solid var(--art-fg);
-}
-
-body.layout-phone .avatar-container,
-body.layout-tablet .avatar-container {
-  border-right: var(--line-width) solid var(--art-fg);
-  padding: 18px 14px;
-  display: flex;
-  flex-direction: column; /* Stack vertically */
-  align-items: center;    /* Center horizontally */
-  justify-content: center; /* Center vertically */
-  gap: 10px;              /* 头像与 logo 之间留出呼吸 */
-  cursor: pointer;
-  align-self: stretch;
-  min-height: 160px;
-}
-
-body.layout-phone .art-avatar,
-body.layout-tablet .art-avatar,
-body.layout-phone .art-logo,
-body.layout-tablet .art-logo {
-  filter: grayscale(100%) contrast(1.2);
-  transition: filter 0.3s ease, transform 0.3s ease;
-}
-
-/* 头像为主体：正方形、cover 填满、细边框呼应线框风 */
-body.layout-phone .art-avatar,
-body.layout-tablet .art-avatar {
-  width: 100%;
-  max-width: 76px;
-  aspect-ratio: 1/1;
-  object-fit: cover;
-  border: var(--line-width) solid var(--art-fg);
-}
-
-/* logo 作为其下方的小标记，不撑满宽度、不被压扁 */
-body.layout-phone .art-logo,
-body.layout-tablet .art-logo {
-  width: auto;
-  max-width: 100%;
-  height: 22px;
-  object-fit: contain;
-}
-
-body.layout-phone .art-avatar:active,
-body.layout-tablet .art-avatar:active,
-body.layout-phone .avatar-container:active .art-avatar,
-body.layout-phone .avatar-container:active .art-logo,
-body.layout-tablet .avatar-container:active .art-avatar {
-  filter: grayscale(0%) contrast(1.1);
-  transform: scale(1.05);
-}
-
-body.layout-phone .title-container,
-body.layout-tablet .title-container {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-body.layout-phone .badge,
-body.layout-tablet .badge {
-  align-self: flex-start;
-  font-size: 9px;
-  font-weight: 700;
-  border: var(--line-width) solid var(--art-fg);
-  padding: 4px 8px;
-  margin-bottom: 12px;
-  letter-spacing: 0.1em;
-}
-
-body.layout-phone .massive-title,
-body.layout-tablet .massive-title {
-  margin: 0;
-  font-size: clamp(2.5rem, 10vw, 3.5rem);
-  line-height: 0.85;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-}
-
-body.layout-phone .sub-title,
-body.layout-tablet .sub-title {
-  margin: 8px 0 0;
-  font-size: 1rem;
-  line-height: 1.1;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-/* 走马灯 (Marquee) */
-body.layout-phone .art-marquee,
-body.layout-tablet .art-marquee {
-  overflow: hidden;
-  white-space: nowrap;
-  border-bottom: var(--line-width) solid var(--art-fg);
-  background: var(--art-fg);
-  color: var(--art-bg);
-  padding: 8px 0;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-body.layout-phone .marquee-content,
-body.layout-tablet .marquee-content {
-  display: inline-flex;
-  white-space: nowrap;
-  will-change: transform;
-  animation: marquee 22s linear infinite;
-}
-
-body.layout-phone .marquee-content span,
-body.layout-tablet .marquee-content span {
-  flex-shrink: 0;
-}
-
-/* 两份内容 + 位移一份宽度(-50%)，任意时刻首尾相接、无缝无空隙、不截断 */
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-body.layout-phone .hero-meta,
-body.layout-tablet .hero-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-}
-
-body.layout-phone .meta-desc,
-body.layout-tablet .meta-desc {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.3;
+  background: rgba(120,120,128,0.12);
+  color: var(--ios-label-2);
+  font-size: 13px;
+  font-weight: 590;
   letter-spacing: 0.02em;
-}
-
-body.layout-phone .art-social-links,
-body.layout-tablet .art-social-links {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-/* Support both old <button> pattern and new <a class="hero-social-link"> from SocialLinks */
-body.layout-phone .art-social-links button,
-body.layout-phone .art-social-links a.hero-social-link,
-body.layout-tablet .art-social-links button,
-body.layout-tablet .art-social-links a.hero-social-link {
-  width: 36px;
-  height: 36px;
-  border: var(--line-width) solid var(--art-fg);
-  background: transparent;
-  color: var(--art-fg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  flex-shrink: 0;
+  transition: transform 0.18s cubic-bezier(0.2,0.8,0.2,1), background 0.2s ease;
 }
-
-body.layout-phone .art-social-links button:active,
-body.layout-phone .art-social-links a.hero-social-link:active,
-body.layout-tablet .art-social-links button:active,
-body.layout-tablet .art-social-links a.hero-social-link:active {
-  background: var(--art-accent);
-  color: #fff;
-  border-color: var(--art-accent);
+body.layout-phone .ios-lang-pill:active,
+body.layout-tablet .ios-lang-pill:active { transform: scale(0.94); background: rgba(120,120,128,0.2); }
+body.layout-phone .ios-navbar-right,
+body.layout-tablet .ios-navbar-right { display: flex; align-items: center; gap: 12px; }
+body.layout-phone .ios-icon-btn,
+body.layout-tablet .ios-icon-btn {
+  border: none; background: none; color: var(--ios-label-3);
+  display: flex; align-items: center; cursor: pointer; padding: 4px;
+  transition: transform 0.18s cubic-bezier(0.2,0.8,0.2,1);
 }
-
-/* Icon sizing inside the Neo-Brutalism social buttons */
-body.layout-phone .art-social-links img,
-body.layout-tablet .art-social-links img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  filter: invert(0); /* respect theme */
+body.layout-phone .ios-icon-btn:active,
+body.layout-tablet .ios-icon-btn:active { transform: scale(0.9); }
+body.layout-phone .ios-avatar,
+body.layout-tablet .ios-avatar {
+  width: 34px; height: 34px; border-radius: 50%; overflow: hidden;
+  border: none; padding: 0; cursor: pointer; background: var(--ios-fill);
+  transition: transform 0.2s cubic-bezier(0.2,0.8,0.2,1);
 }
-
-body.layout-phone .art-social-links svg,
-body.layout-tablet .art-social-links svg {
-  width: 18px;
-  height: 18px;
+body.layout-phone .ios-avatar img,
+body.layout-tablet .ios-avatar img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: grayscale(100%); transition: filter 0.35s ease;
 }
+body.layout-phone .ios-avatar:active,
+body.layout-tablet .ios-avatar:active { transform: scale(0.92); }
+body.layout-phone .ios-avatar:active img,
+body.layout-tablet .ios-avatar:active img { filter: grayscale(0%); }
 
-/* 分类过滤器 (Filters) */
-body.layout-phone .art-filters,
-body.layout-tablet .art-filters {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-bottom: var(--line-width) solid var(--art-fg);
+/* ---------- Hero · Large Title ---------- */
+body.layout-phone .ios-hero,
+body.layout-tablet .ios-hero {
+  padding: 22px var(--ios-safe) 26px;
 }
-
-body.layout-phone .art-filter-btn,
-body.layout-tablet .art-filter-btn {
-  background: transparent;
-  border: none;
-  border-right: var(--line-width) solid var(--art-fg);
-  padding: 14px 0;
-  font-size: 11px;
-  font-weight: 700;
-  font-family: inherit;
-  color: var(--art-fg);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  line-height: 1;
+body.layout-phone .ios-eyebrow,
+body.layout-tablet .ios-eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px; font-weight: 640; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ios-accent);
 }
-
-body.layout-phone .art-filter-btn:last-child,
-body.layout-tablet .art-filter-btn:last-child {
-  border-right: none;
-}
-
-body.layout-phone .art-filter-btn.active,
-body.layout-tablet .art-filter-btn.active {
-  background: var(--art-fg);
-  color: var(--art-bg);
-}
-
-body.layout-phone .art-filter-btn:active,
-body.layout-tablet .art-filter-btn:active {
-  background: var(--art-accent) !important;
-  color: #fff !important;
-}
-
-/* 瀑布流/网格 (Archive Grid) — Neo-Brutalism masonry, 2 columns on phone */
-body.layout-phone .art-archive,
-body.layout-tablet .art-archive {
-  /* Only vertical containment happens at the section level if needed, 
-     but let's do it on columns for better content sync */
-}
-
-body.layout-phone .archive-header,
-body.layout-tablet .archive-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border-bottom: var(--line-width) solid var(--art-fg);
-}
-
-body.layout-phone .archive-header h3,
-body.layout-tablet .archive-header h3 {
+body.layout-phone .ios-large-title,
+body.layout-tablet .ios-large-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-size: 40px; line-height: 1.04; font-weight: 700;
+  letter-spacing: -0.035em; color: var(--ios-label);
+  display: flex; flex-direction: column;
+}
+body.layout-phone .ios-large-title-sub,
+body.layout-tablet .ios-large-title-sub {
+  font-size: 40px; font-weight: 700; letter-spacing: -0.04em;
+  color: var(--ios-label-3);
+}
+body.layout-phone .ios-hero-desc,
+body.layout-tablet .ios-hero-desc {
+  margin: 16px 0 0; max-width: 300px;
+  font-size: 16px; line-height: 1.5; font-weight: 400;
+  color: var(--ios-label-2); opacity: 0.78;
+}
+body.layout-phone .ios-hero-social,
+body.layout-tablet .ios-hero-social {
+  margin-top: 20px;
+}
+body.layout-phone .ios-hero-social .hero-social-links,
+body.layout-tablet .ios-hero-social .hero-social-links {
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 0;
+}
+/* iOS 风：无圆底无边框的纯线性图标，靠留白与灰阶层次，点击回弹 */
+body.layout-phone .ios-hero-social .hero-social-link,
+body.layout-tablet .ios-hero-social .hero-social-link {
+  width: 26px; height: 26px; border: none !important; background: none !important;
+  box-shadow: none !important; border-radius: 0;
+  color: var(--ios-label-2); opacity: 0.72;
+  transition: transform 0.2s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease;
+}
+body.layout-phone .ios-hero-social .hero-social-link svg,
+body.layout-tablet .ios-hero-social .hero-social-link svg,
+body.layout-phone .ios-hero-social .hero-social-link img,
+body.layout-tablet .ios-hero-social .hero-social-link img {
+  width: 24px; height: 24px;
+}
+/* iconSrc 是外部彩色/黑白 svg 图片，统一转灰阶贴合 iOS 单色观感 */
+body.layout-phone .ios-hero-social .hero-social-link img,
+body.layout-tablet .ios-hero-social .hero-social-link img {
+  filter: grayscale(100%) brightness(0.5); object-fit: contain;
+}
+body.layout-phone .ios-hero-social .hero-social-link:active,
+body.layout-tablet .ios-hero-social .hero-social-link:active {
+  transform: scale(0.85); opacity: 1;
 }
 
-/* art-grid: Flex container for two masonry columns.
-   align-items: stretch —— 两列容器拉伸到等高（以较高列为准），实现「两端统一」：
-   顶部天然对齐，底部由较矮列末尾的一块骨白留白补齐 + art-grid 底边线闭合。
-   卡片本身用 flex:0 0 auto 保持真实高度不被拉伸变形。
-   配合 JS「放最矮列（真实渲染高度）」的瀑布流，参差被压到一张卡片内，收口干净。 */
-body.layout-phone .art-grid,
-body.layout-tablet .art-grid {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: stretch !important;
-  border-left: var(--line-width) solid var(--art-fg);
-  border-right: var(--line-width) solid var(--art-fg);
-  border-bottom: var(--line-width) solid var(--art-fg); /* 底部统一收口线 */
+/* ---------- Archive section ---------- */
+body.layout-phone .ios-archive,
+body.layout-tablet .ios-archive { padding: 0; }
+body.layout-phone .ios-section-head,
+body.layout-tablet .ios-section-head {
+  padding: 10px var(--ios-safe) 12px;
+}
+body.layout-phone .ios-section-title,
+body.layout-tablet .ios-section-title {
+  margin: 0; font-size: 26px; font-weight: 700;
+  letter-spacing: -0.02em; color: var(--ios-label);
 }
 
-/* Base column styles */
-body.layout-phone .art-masonry-column,
-body.layout-tablet .art-masonry-column {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Left column gets the outer left border + central divider */
-body.layout-phone .art-column-left,
-body.layout-tablet .art-column-left {
-  border-left: var(--line-width) solid var(--art-fg);
-  border-right: var(--line-width) solid var(--art-fg);
-}
-
-/* Right column gets the outer right border */
-body.layout-phone .art-column-right,
-body.layout-tablet .art-column-right {
-  border-right: var(--line-width) solid var(--art-fg);
-}
-
-/* art-card inside columns —— flex:0 0 auto 保持卡片真实高度，
-   不被 stretch 列拉伸变形；短列多出的空间落在列末尾形成干净留白 */
-body.layout-phone .art-card,
-body.layout-tablet .art-card {
-  display: flex;
-  flex-direction: column;
-  flex: 0 0 auto;
-  border-bottom: var(--line-width) solid var(--art-fg);
-  border-right: none !important; /* Managed by column divider */
-  width: 100%;
-}
-
-/* 图片容器用 aspect-ratio（内联，来自卡片封面比例）固定高度，图片 cover 填满 —
-   卡片高度因此可预测，双列瀑布流「放最矮列」得以真正齐平，不再留大片背景 */
-body.layout-phone .card-img-wrapper,
-body.layout-tablet .card-img-wrapper {
-  width: 100%;
-  overflow: hidden;
-  background: #d9d7d0; /* neutral placeholder while loading */
-  flex-shrink: 0;
+/* iOS Segmented Control */
+body.layout-phone .ios-segmented,
+body.layout-tablet .ios-segmented {
   position: relative;
+  margin: 4px var(--ios-safe) 18px;
+  display: flex; padding: 2px;
+  background: var(--ios-fill); border-radius: 10px;
+  height: 36px;
 }
-
-/* Override progressive loading base styles for mobile */
-body.layout-phone .card-fade-image,
-body.layout-tablet .card-fade-image {
-  position: absolute;
-  inset: 0;
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-  object-fit: cover !important; /* 填满容器、统一观感，容器 aspect-ratio 已定死比例 */
-  filter: grayscale(100%) contrast(1.1) blur(5px) saturate(0.5);
-  transition: filter 0.4s ease, transform 0.4s ease;
+body.layout-phone .ios-segmented-thumb,
+body.layout-tablet .ios-segmented-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: calc((100% - 4px) / 4); height: calc(100% - 4px);
+  background: var(--ios-surface); border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.09), 0 0 1px rgba(0,0,0,0.04);
+  transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
 }
-
-/* 触摸按下时恢复色彩 + 轻微放大，呼应新粗野主义的即时反馈 */
-body.layout-phone .art-card:active .card-fade-image.is-loaded,
-body.layout-tablet .art-card:active .card-fade-image.is-loaded {
-  transform: scale(1.04);
+body.layout-phone .ios-segment,
+body.layout-tablet .ios-segment {
+  position: relative; z-index: 1; flex: 1;
+  border: none; background: none; cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  color: var(--ios-label-3); letter-spacing: 0.01em;
+  transition: color 0.25s ease, transform 0.15s ease;
 }
+body.layout-phone .ios-segment.active,
+body.layout-tablet .ios-segment.active { color: var(--ios-label); font-weight: 600; }
+body.layout-phone .ios-segment:active,
+body.layout-tablet .ios-segment:active { transform: scale(0.96); }
 
-body.layout-phone .card-fade-image.is-loaded,
-body.layout-tablet .card-fade-image.is-loaded {
-  filter: grayscale(0%) contrast(1) blur(0) saturate(1);
-}
-
-body.layout-phone .card-image-skeleton,
-body.layout-tablet .card-image-skeleton {
-  border-radius: 0; /* Match Neo-Brutalism sharp edges */
-}
-
-body.layout-phone .card-meta,
-body.layout-tablet .card-meta {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 10px 10px;
-  gap: 3px;
-  flex: 1;
-}
-
-body.layout-phone .card-info,
-body.layout-tablet .card-info {
-  flex: 1;
-}
-
-body.layout-phone .card-info h4,
-body.layout-tablet .card-info h4 {
-  margin: 0 0 3px 0;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-body.layout-phone .card-date,
-body.layout-tablet .card-date {
-  font-size: 9px;
-  font-weight: 600;
-  opacity: 0.5;
-  margin-top: 2px;
-}
-
-/* Hide arrow action button in 2-col grid layout */
-body.layout-phone .card-action,
-body.layout-tablet .card-action {
-  display: none;
-}
-
-/* 底部导航栏 (Bottom Nav) */
-body.layout-phone .art-bottom-nav,
-body.layout-tablet .art-bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 68px;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.22fr 1fr;
-  background: var(--art-bg);
-  border-top: var(--line-width) solid var(--art-fg);
-  z-index: 100;
-}
-
-body.layout-phone .art-bottom-nav button,
-body.layout-tablet .art-bottom-nav button {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  border-right: var(--line-width) solid var(--art-fg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  color: var(--art-fg);
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-/* VibeCoding = 底部导航主 CTA：用新粗野主义语言表达强调 —— 实心黑块 + 骨白字，
-   去掉绿色渐变/发光/圆角，让它与整站黑白线框风格统一 */
-body.layout-phone .art-bottom-nav .art-bottom-vibe,
-body.layout-tablet .art-bottom-nav .art-bottom-vibe {
-  position: relative;
-  border-right: var(--line-width) solid var(--art-fg) !important;
-  border-radius: 0;
-  background: var(--art-fg);
-  color: var(--art-bg);
-  overflow: hidden;
-}
-
-body.layout-phone .art-bottom-nav .art-bottom-vibe svg,
-body.layout-tablet .art-bottom-nav .art-bottom-vibe svg {
-  position: relative;
-  z-index: 1;
-}
-
-/* LAB 角标：线框小标签，黑块上用骨白描边表达 */
-body.layout-phone .art-bottom-vibe-badge,
-body.layout-tablet .art-bottom-vibe-badge {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  z-index: 1;
-  min-width: 24px;
-  height: 14px;
-  padding: 0 5px;
-  border-radius: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 7px;
-  font-style: normal;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  color: var(--art-bg);
-  background: transparent;
-  border: 1px solid var(--art-bg);
-}
-
-body.layout-phone .art-bottom-nav button:last-child,
-body.layout-tablet .art-bottom-nav button:last-child {
-  border-right: none;
-}
-
-body.layout-phone .art-bottom-nav button span,
-body.layout-tablet .art-bottom-nav button span {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  line-height: 1;
-}
-
-body.layout-phone .art-bottom-nav button:active,
-body.layout-tablet .art-bottom-nav button:active {
-  background: var(--art-accent) !important;
-  color: #ffffff;
-}
-
-/* 按下时反相为先锋橘红，与其他底部按钮的 :active 反馈保持一致 */
-body.layout-phone .art-bottom-nav .art-bottom-vibe:active,
-body.layout-tablet .art-bottom-nav .art-bottom-vibe:active {
-  background: var(--art-accent) !important;
-  color: #ffffff !important;
-}
-
-body.layout-phone .art-bottom-nav .art-bottom-vibe:active .art-bottom-vibe-badge,
-body.layout-tablet .art-bottom-nav .art-bottom-vibe:active .art-bottom-vibe-badge {
-  color: #ffffff;
-  border-color: #ffffff;
-}
-
-/* Hide original floating navigation and old masonry headers safely for mobile */
-body.layout-phone .m-bottom-nav,
-body.layout-phone .masonry-header,
-body.layout-phone .stela-container,
-body.layout-tablet .m-bottom-nav,
-body.layout-tablet .masonry-header {
-  display: none !important;
-}
-
+/* ---------- 双列瀑布流（无框、squircle 卡片、留白呼吸） ---------- */
 body.layout-phone .masonry-section,
-body.layout-tablet .masonry-section {
-  padding: 0 !important;
-}
-
-/* Mobile: Waterfall layout via dual columns (Flexbox fallback) */
+body.layout-tablet .masonry-section { padding: 0 !important; }
+body.layout-phone .art-grid,
 body.layout-phone .masonry-grid,
+body.layout-tablet .art-grid,
 body.layout-tablet .masonry-grid {
   display: flex !important;
   flex-direction: row !important;
-  grid-template-columns: none !important; /* Disable grid */
+  align-items: flex-start !important;
+  grid-template-columns: none !important;
+  gap: 12px;
+  padding: 0 var(--ios-safe) 8px;
+}
+body.layout-phone .art-masonry-column,
+body.layout-tablet .art-masonry-column {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;
+}
+/* 右列下沉错位，制造 iOS 画册的不对称呼吸感 */
+body.layout-phone .art-column-right,
+body.layout-tablet .art-column-right { margin-top: 24px; }
+
+/* 卡片 */
+body.layout-phone .art-card,
+body.layout-tablet .art-card {
+  display: flex; flex-direction: column; width: 100%;
+  border: none !important; background: none; cursor: pointer;
+}
+/* 图片容器：squircle 圆角，aspect-ratio 内联定高 */
+body.layout-phone .card-img-wrapper,
+body.layout-tablet .card-img-wrapper {
+  width: 100%; overflow: hidden; position: relative; flex-shrink: 0;
+  background: var(--ios-fill);
+  border-radius: var(--ios-radius-card);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+body.layout-phone .card-fade-image,
+body.layout-tablet .card-fade-image {
+  /* 图片比容器高一截（顶部上移），留出上下浮动的余量做滚动视差；
+     视差位移用独立的 translate 属性（--parallax-y），与 :active 的 transform:scale 互不覆盖。 */
+  position: absolute; left: 0; right: 0; top: -7%;
+  width: 100% !important; height: 114% !important;
+  display: block; object-fit: cover !important;
+  --parallax-y: 0px;
+  translate: 0 var(--parallax-y);
+  filter: grayscale(100%) contrast(1.02);
+  transition: filter 0.5s ease, transform 0.5s cubic-bezier(0.2,0.8,0.2,1);
+  will-change: translate;
+}
+/* 入场苏醒（reveal-in）或按压时恢复彩色 */
+body.layout-phone .art-card.in-view .card-fade-image.is-loaded,
+body.layout-tablet .art-card.in-view .card-fade-image.is-loaded { filter: grayscale(0%) contrast(1); }
+body.layout-phone .art-card:active .card-fade-image.is-loaded,
+body.layout-tablet .art-card:active .card-fade-image.is-loaded {
+  filter: grayscale(0%) contrast(1); transform: scale(1.03);
+}
+body.layout-phone .art-card:active,
+body.layout-tablet .art-card:active { transform: scale(0.975); }
+body.layout-phone .art-card,
+body.layout-tablet .art-card { transition: transform 0.2s cubic-bezier(0.2,0.8,0.2,1); }
+body.layout-phone .card-image-skeleton,
+body.layout-tablet .card-image-skeleton { border-radius: var(--ios-radius-card); }
+
+/* 卡片文字 */
+body.layout-phone .card-meta,
+body.layout-tablet .card-meta {
+  display: flex; flex-direction: column; padding: 9px 4px 2px; gap: 2px;
+}
+body.layout-phone .card-info h4,
+body.layout-tablet .card-info h4 {
+  margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3;
+  letter-spacing: -0.01em; color: var(--ios-label);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+body.layout-phone .card-date,
+body.layout-tablet .card-date {
+  font-size: 12px; font-weight: 500; color: var(--ios-label-3); margin-top: 1px;
+}
+body.layout-phone .card-action,
+body.layout-tablet .card-action { display: none; }
+
+/* ---------- iOS Tab Bar（毛玻璃底部导航） ---------- */
+body.layout-phone .ios-tabbar,
+body.layout-tablet .ios-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: rgba(248,248,250,0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+  backdrop-filter: saturate(180%) blur(22px);
+  border-top: 0.5px solid var(--ios-separator);
+}
+body.layout-phone .ios-tab,
+body.layout-tablet .ios-tab {
+  border: none; background: none; cursor: pointer; font-family: inherit;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; color: var(--ios-label-3);
+  transition: transform 0.18s cubic-bezier(0.2,0.8,0.2,1), color 0.2s ease;
+}
+body.layout-phone .ios-tab span,
+body.layout-tablet .ios-tab span {
+  font-size: 10px; font-weight: 590; letter-spacing: 0.01em; line-height: 1;
+}
+body.layout-phone .ios-tab:active,
+body.layout-tablet .ios-tab:active { transform: scale(0.9); color: var(--ios-label-2); }
+/* 实验室 Tab：坠橘强调 */
+body.layout-phone .ios-tab-accent,
+body.layout-tablet .ios-tab-accent { color: var(--ios-accent); }
+body.layout-phone .ios-tab-accent .ios-tab-icon-wrap,
+body.layout-tablet .ios-tab-accent .ios-tab-icon-wrap {
+  display: flex; align-items: center; justify-content: center;
+  width: 46px; height: 30px; border-radius: 10px;
+  background: rgba(255,149,0,0.14);
+}
+body.layout-phone .ios-tab-accent:active,
+body.layout-tablet .ios-tab-accent:active { transform: scale(0.9); }
+
+/* ---------- 滚动入场动画（reveal） ---------- */
+body.layout-phone .reveal,
+body.layout-tablet .reveal,
+body.layout-phone .art-card,
+body.layout-tablet .art-card {
+  opacity: 0; transform: translateY(18px);
+  transition: opacity 0.6s cubic-bezier(0.2,0.8,0.2,1), transform 0.6s cubic-bezier(0.2,0.8,0.2,1);
+}
+body.layout-phone .reveal.in-view,
+body.layout-tablet .reveal.in-view,
+body.layout-phone .art-card.in-view,
+body.layout-tablet .art-card.in-view {
+  opacity: 1; transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  body.layout-phone .reveal,
+  body.layout-tablet .reveal,
+  body.layout-phone .art-card,
+  body.layout-tablet .art-card { opacity: 1 !important; transform: none !important; transition: none; }
+  body.layout-phone .card-fade-image,
+  body.layout-tablet .card-fade-image { translate: none !important; }
 }
 
-/* Ultra-narrow phones (<340px): drop to 1 column */
+/* 隐藏旧首页残留结构 */
+body.layout-phone .m-bottom-nav,
+body.layout-phone .masonry-header,
+body.layout-phone .stela-container,
+body.layout-phone .art-marquee,
+body.layout-tablet .m-bottom-nav,
+body.layout-tablet .masonry-header,
+body.layout-tablet .art-marquee { display: none !important; }
+
+/* 超窄屏（<340px）降为单列 */
 @media (max-width: 340px) {
-  body.layout-phone .art-grid {
-    flex-direction: column !important;
-  }
-  body.layout-phone .art-column-left {
-    border-right: none !important;
-  }
+  body.layout-phone .art-grid { flex-direction: column !important; }
+  body.layout-phone .art-column-right { margin-top: 0 !important; }
 }
 
 @keyframes shimmer {
