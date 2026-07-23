@@ -482,17 +482,20 @@ body.site-entered .animate-item {
     box-shadow: 0 10px 30px var(--shadow-color);
     cursor: pointer;
     transform: perspective(1000px) translateY(0) scale(1) rotateX(0) rotateY(0);
-    transition: transform 0.2s ease-out, box-shadow 0.3s ease-out;
+    /* 默认（离开时）transform 用过渡平滑回位；hover 跟手时由 .is-tilting 关掉过渡实现瞬时响应 */
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease-out;
     background: #111;
     will-change: auto;
+    transform-origin: center center;
 }
 .masonry-card:hover {
     will-change: transform;
-}
-
-.masonry-card:hover {
     z-index: 5;
     box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+}
+/* 鼠标在卡片上移动时（JS 加上），transform 立即跟手、不做插值，避免 rAF 每帧新目标值与 0.2s 过渡打架造成的漂移/抖动 */
+.masonry-card.is-tilting {
+    transition: box-shadow 0.3s ease-out;
 }
 
 /* ── Desktop card: image fills card absolutely, overlay slides up on hover ── */

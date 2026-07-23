@@ -624,6 +624,7 @@ export function initApp() {
     const rollerRadius = 450; 
     let snapTimeout; 
     let rollerScrollBound = false;
+    let lastInputWasTrackpad = false;
     let layoutMode = 'desktop';
 
     function computeLayoutMode() {
@@ -903,14 +904,38 @@ export function initApp() {
                     </div>
                 `;
 
-                // 鼠标移动时做轻微 3D 倾斜（Safari 下不再与 CSS columns 冲突，hover 稳定）
-                card.addEventListener('mousemove', (e) => {
-                    const rect = card.getBoundingClientRect();
-                    const rotateX = ((e.clientY - rect.top - rect.height / 2) / (rect.height / 2)) * -12;
-                    const rotateY = ((e.clientX - rect.left - rect.width / 2) / (rect.width / 2)) * 12;
-                    card.style.transform = `perspective(1000px) translateY(-15px) scale(1.03) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                // 鼠标移动时做轻微 3D 倾斜。
+                // 关键修复：mouseenter 时缓存「未变形」的原始 rect，mousemove 只基于缓存计算，
+                // 不再每帧调用 getBoundingClientRect()——否则读到的是被 scale/translate 变形后的矩形，
+                // 会形成角度反复漂移的反馈回路，在 Mac/Safari 上表现为卡片持续抖动。
+                let baseRect = null;
+                let tiltRAF = 0;
+                let pendingX = 0, pendingY = 0;
+                const applyTilt = () => {
+                    tiltRAF = 0;
+                    if (!baseRect) return;
+                    const rx = ((pendingY - baseRect.top - baseRect.height / 2) / (baseRect.height / 2)) * -6;
+                    const ry = ((pendingX - baseRect.left - baseRect.width / 2) / (baseRect.width / 2)) * 6;
+                    card.style.transform = `perspective(1000px) translateY(-10px) scale(1.02) rotateX(${rx}deg) rotateY(${ry}deg)`;
+                };
+                card.addEventListener('mouseenter', () => {
+                    // 进入时先把当前（未变形）矩形缓存下来，并切到「跟手瞬时」模式
+                    baseRect = card.getBoundingClientRect();
+                    card.classList.add('is-tilting');
                 });
-                card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+                card.addEventListener('mousemove', (e) => {
+                    if (!baseRect) baseRect = card.getBoundingClientRect();
+                    pendingX = e.clientX;
+                    pendingY = e.clientY;
+                    if (!tiltRAF) tiltRAF = requestAnimationFrame(applyTilt);
+                });
+                card.addEventListener('mouseleave', () => {
+                    baseRect = null;
+                    if (tiltRAF) { cancelAnimationFrame(tiltRAF); tiltRAF = 0; }
+                    // 移除跟手模式 → transform 走 0.35s 过渡平滑回位
+                    card.classList.remove('is-tilting');
+                    card.style.transform = '';
+                });
             }
 
             card.addEventListener('click', () => openDetailModal(item));
@@ -949,17 +974,45 @@ export function initApp() {
         if (rollerScrollBound) return;
         rollerScrollBound = true;
         const container = document.getElementById('rollerContainer');
+
+        // rAF 累积滚动，避免高频 wheel 事件逐个触发重排造成的顿挫
+        let wheelAccum = 0;
+        let wheelRAF = 0;
+        const flushWheel = () => {
+            wheelRAF = 0;
+            if (wheelAccum === 0) return;
+            const delta = wheelAccum;
+            wheelAccum = 0;
+            handleRollerMovement(delta);
+        };
+
         container.addEventListener('wheel', (e) => {
             if (isCompactRollerMode()) return;
-            if(activeRollerItems.length === 0) return;
+            if (activeRollerItems.length === 0) return;
             const maxRotation = Math.max(0, (activeRollerItems.length - 1) * anglePerItem);
-            
+
+            // 到边界时放行，让页面正常滚动
             if ((e.deltaY < 0 && currentRotation <= 0) || (e.deltaY > 0 && currentRotation >= maxRotation)) {
                 return;
             }
-            
-            e.preventDefault(); 
-            handleRollerMovement(e.deltaY * 0.12);
+
+            e.preventDefault();
+
+            // 识别触控板（像素模式、小 delta、高频）vs 鼠标滚轮（行模式或大 delta）
+            const isLineMode = e.deltaMode === 1;           // 传统鼠标滚轮常见
+            const isTrackpad = !isLineMode && Math.abs(e.deltaY) < 50;
+
+            if (isTrackpad) {
+                // 触控板：小系数 + rAF 累积，跟手连续，snap 由 handleRollerMovement 内部按类型放宽
+                wheelAccum += e.deltaY * 0.10;
+                lastInputWasTrackpad = true;
+                if (!wheelRAF) wheelRAF = requestAnimationFrame(flushWheel);
+            } else {
+                // 鼠标滚轮：保留原有手感（较大步进 + snap 归位）
+                lastInputWasTrackpad = false;
+                const step = isLineMode ? e.deltaY * anglePerItem * 0.5 : e.deltaY * 0.12;
+                handleRollerMovement(step);
+            }
         }, { passive: false });
 
         let touchStartY = 0;
@@ -978,6 +1031,7 @@ export function initApp() {
             
             if (e.cancelable) e.preventDefault(); 
             touchStartY = touchY;
+            lastInputWasTrackpad = true;
             handleRollerMovement(deltaY * 0.3); 
         }, { passive: false });
     }
@@ -991,12 +1045,15 @@ export function initApp() {
         updateRoller();
 
         clearTimeout(snapTimeout);
+        // 触控板惯性滚动更连续：延长 snap 等待时间，避免惯性未停就被强行归位造成回弹卡顿；
+        // 鼠标滚轮保持较快的干脆归位手感。
+        const snapDelay = lastInputWasTrackpad ? 260 : 700;
         snapTimeout = setTimeout(() => {
             let targetIndex = Math.round(currentRotation / anglePerItem);
             targetIndex = Math.max(0, Math.min(targetIndex, activeRollerItems.length - 1));
             currentRotation = targetIndex * anglePerItem;
             updateRoller();
-        }, 800); 
+        }, snapDelay);
     }
 
     function updateRoller() {
