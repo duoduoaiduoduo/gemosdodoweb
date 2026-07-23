@@ -7200,14 +7200,14 @@ body.layout-tablet .hero-grid {
 body.layout-phone .avatar-container,
 body.layout-tablet .avatar-container {
   border-right: var(--line-width) solid var(--art-fg);
-  padding: 16px;
+  padding: 18px 14px;
   display: flex;
   flex-direction: column; /* Stack vertically */
   align-items: center;    /* Center horizontally */
   justify-content: center; /* Center vertically */
-  gap: 0;                 /* No space between avatar and logo */
+  gap: 10px;              /* 头像与 logo 之间留出呼吸 */
   cursor: pointer;
-  align-self: stretch; 
+  align-self: stretch;
   min-height: 160px;
 }
 
@@ -7215,15 +7215,27 @@ body.layout-phone .art-avatar,
 body.layout-tablet .art-avatar,
 body.layout-phone .art-logo,
 body.layout-tablet .art-logo {
-  width: 100%;
-  object-fit: contain;
-  filter: grayscale(100%) contrast(1.2); 
+  filter: grayscale(100%) contrast(1.2);
   transition: filter 0.3s ease, transform 0.3s ease;
 }
 
-body.layout-phone .art-avatar {
+/* 头像为主体：正方形、cover 填满、细边框呼应线框风 */
+body.layout-phone .art-avatar,
+body.layout-tablet .art-avatar {
+  width: 100%;
+  max-width: 76px;
   aspect-ratio: 1/1;
   object-fit: cover;
+  border: var(--line-width) solid var(--art-fg);
+}
+
+/* logo 作为其下方的小标记，不撑满宽度、不被压扁 */
+body.layout-phone .art-logo,
+body.layout-tablet .art-logo {
+  width: auto;
+  max-width: 100%;
+  height: 22px;
+  object-fit: contain;
 }
 
 body.layout-phone .art-avatar:active,
@@ -7288,18 +7300,21 @@ body.layout-tablet .art-marquee {
 
 body.layout-phone .marquee-content,
 body.layout-tablet .marquee-content {
-  display: inline-block;
-  animation: marquee 15s linear infinite;
+  display: inline-flex;
+  white-space: nowrap;
+  will-change: transform;
+  animation: marquee 22s linear infinite;
 }
 
 body.layout-phone .marquee-content span,
 body.layout-tablet .marquee-content span {
-  margin-right: 4px;
+  flex-shrink: 0;
 }
 
+/* 两份内容 + 位移一份宽度(-50%)，任意时刻首尾相接、无缝无空隙、不截断 */
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-33.33%); }
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 body.layout-phone .hero-meta,
@@ -7433,12 +7448,14 @@ body.layout-tablet .archive-header h3 {
   letter-spacing: 0.05em;
 }
 
-/* art-grid: Flex container for two masonry columns */
+/* art-grid: Flex container for two masonry columns.
+   align-items: flex-start —— 两列各自按内容自然高度，短列不被拉伸留白；
+   配合 JS「放最矮列」的瀑布流，两列高度差被压到最小，底部不再出现大片空背景 */
 body.layout-phone .art-grid,
 body.layout-tablet .art-grid {
   display: flex !important;
   flex-direction: row !important;
-  align-items: stretch !important;
+  align-items: flex-start !important;
   border-left: var(--line-width) solid var(--art-fg);
   border-right: var(--line-width) solid var(--art-fg);
 }
@@ -7475,26 +7492,34 @@ body.layout-tablet .art-card {
   width: 100%;
 }
 
-/* Reset height for mobile cards to let images dictate height */
+/* 图片容器用 aspect-ratio（内联，来自卡片封面比例）固定高度，图片 cover 填满 —
+   卡片高度因此可预测，双列瀑布流「放最矮列」得以真正齐平，不再留大片背景 */
 body.layout-phone .card-img-wrapper,
 body.layout-tablet .card-img-wrapper {
   width: 100%;
   overflow: hidden;
-  background: var(--art-bg); /* Use page bg for neutral placeholder */
+  background: #d9d7d0; /* neutral placeholder while loading */
   flex-shrink: 0;
   position: relative;
-  min-height: 100px;
 }
 
 /* Override progressive loading base styles for mobile */
 body.layout-phone .card-fade-image,
 body.layout-tablet .card-fade-image {
+  position: absolute;
+  inset: 0;
   width: 100% !important;
-  height: auto !important;
+  height: 100% !important;
   display: block;
-  object-fit: contain !important; /* Never crop posters */
+  object-fit: cover !important; /* 填满容器、统一观感，容器 aspect-ratio 已定死比例 */
   filter: grayscale(100%) contrast(1.1) blur(5px) saturate(0.5);
   transition: filter 0.4s ease, transform 0.4s ease;
+}
+
+/* 触摸按下时恢复色彩 + 轻微放大，呼应新粗野主义的即时反馈 */
+body.layout-phone .art-card:active .card-fade-image.is-loaded,
+body.layout-tablet .art-card:active .card-fade-image.is-loaded {
+  transform: scale(1.04);
 }
 
 body.layout-phone .card-fade-image.is-loaded,
@@ -7579,31 +7604,16 @@ body.layout-tablet .art-bottom-nav button {
   transition: background 0.2s ease;
 }
 
+/* VibeCoding = 底部导航主 CTA：用新粗野主义语言表达强调 —— 实心黑块 + 骨白字，
+   去掉绿色渐变/发光/圆角，让它与整站黑白线框风格统一 */
 body.layout-phone .art-bottom-nav .art-bottom-vibe,
 body.layout-tablet .art-bottom-nav .art-bottom-vibe {
   position: relative;
-  margin: 4px 6px;
-  border-right: none !important;
-  border-radius: 14px;
-  background:
-    radial-gradient(circle at 16% 18%, rgba(255,255,255,0.28), transparent 26%),
-    linear-gradient(145deg, #163f38, #0e1e23 62%, #153228);
-  color: #effff8;
-  box-shadow:
-    0 14px 30px rgba(9, 17, 20, 0.28),
-    0 0 0 1px rgba(154, 255, 228, 0.14) inset,
-    0 0 18px rgba(77, 237, 194, 0.16);
+  border-right: var(--line-width) solid var(--art-fg) !important;
+  border-radius: 0;
+  background: var(--art-fg);
+  color: var(--art-bg);
   overflow: hidden;
-}
-
-body.layout-phone .art-bottom-nav .art-bottom-vibe::after,
-body.layout-tablet .art-bottom-nav .art-bottom-vibe::after {
-  content: "";
-  position: absolute;
-  inset: 8px;
-  border-radius: 14px;
-  border: 1px solid rgba(167, 255, 233, 0.18);
-  pointer-events: none;
 }
 
 body.layout-phone .art-bottom-nav .art-bottom-vibe svg,
@@ -7612,25 +7622,27 @@ body.layout-tablet .art-bottom-nav .art-bottom-vibe svg {
   z-index: 1;
 }
 
+/* LAB 角标：线框小标签，黑块上用骨白描边表达 */
 body.layout-phone .art-bottom-vibe-badge,
 body.layout-tablet .art-bottom-vibe-badge {
   position: absolute;
   top: 6px;
   right: 8px;
   z-index: 1;
-  min-width: 26px;
-  height: 16px;
-  padding: 0 6px;
-  border-radius: 999px;
+  min-width: 24px;
+  height: 14px;
+  padding: 0 5px;
+  border-radius: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 7px;
   font-style: normal;
   font-weight: 800;
-  letter-spacing: 0.16em;
-  color: #b9ffea;
-  background: rgba(154, 255, 228, 0.12);
+  letter-spacing: 0.14em;
+  color: var(--art-bg);
+  background: transparent;
+  border: 1px solid var(--art-bg);
 }
 
 body.layout-phone .art-bottom-nav button:last-child,
@@ -7652,12 +7664,17 @@ body.layout-tablet .art-bottom-nav button:active {
   color: #ffffff;
 }
 
+/* 按下时反相为先锋橘红，与其他底部按钮的 :active 反馈保持一致 */
 body.layout-phone .art-bottom-nav .art-bottom-vibe:active,
 body.layout-tablet .art-bottom-nav .art-bottom-vibe:active {
-  background:
-    radial-gradient(circle at 16% 18%, rgba(255,255,255,0.24), transparent 26%),
-    linear-gradient(145deg, #1f5d52, #15333a 62%, #184436) !important;
-  color: #effff8 !important;
+  background: var(--art-accent) !important;
+  color: #ffffff !important;
+}
+
+body.layout-phone .art-bottom-nav .art-bottom-vibe:active .art-bottom-vibe-badge,
+body.layout-tablet .art-bottom-nav .art-bottom-vibe:active .art-bottom-vibe-badge {
+  color: #ffffff;
+  border-color: #ffffff;
 }
 
 /* Hide original floating navigation and old masonry headers safely for mobile */

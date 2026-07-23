@@ -401,10 +401,9 @@ function TouchHome({
         </div>
 
         <div className="art-marquee">
-          <div className="marquee-content">
-            <span>{t(heroManifesto.zh, heroManifesto.en)} / </span>
-            <span>{t(heroManifesto.zh, heroManifesto.en)} / </span>
-            <span>{t(heroManifesto.zh, heroManifesto.en)} / </span>
+          <div className="marquee-content" aria-hidden="true">
+            <span>{t(heroManifesto.zh, heroManifesto.en)}&nbsp;&nbsp;/&nbsp;&nbsp;</span>
+            <span>{t(heroManifesto.zh, heroManifesto.en)}&nbsp;&nbsp;/&nbsp;&nbsp;</span>
           </div>
         </div>
 
