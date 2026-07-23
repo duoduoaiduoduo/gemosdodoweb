@@ -479,6 +479,7 @@ body.site-entered .animate-item {
     -webkit-column-break-inside: avoid;
     break-inside: avoid;
     border-radius: 16px;
+    overflow: hidden; /* 裁掉溢出卡片下方的 overlay 与 hover 放大的图，修复「作品标签跑到卡片下方」 */
     box-shadow: 0 10px 30px var(--shadow-color);
     cursor: pointer;
     transform: perspective(1000px) translateY(0) scale(1) rotateX(0) rotateY(0);
@@ -536,22 +537,22 @@ body.site-entered .animate-item {
     pointer-events: none;
     border-bottom-left-radius: inherit;
     border-bottom-right-radius: inherit;
-    transform-origin: 50% 100%;
-    transform-style: preserve-3d;
+    /* 深色渐变背景，保证任意配图上文字都可读 */
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0) 100%);
     will-change: transform, opacity;
 }
 
-/* 支持精细悬停：默认完整展示配图，悬停时文字从下方滑入 */
+/* 支持精细悬停：默认完整展示配图，悬停时文字从下方 2D 滑入（不再用 translateZ 3D，避免无 perspective 父级时的异常与溢出） */
 @media (hover: hover) {
     .masonry-overlay {
-        transform: translate3d(0, 105%, 35px);
+        transform: translateY(101%);
         opacity: 0;
         transition:
-            transform 0.62s cubic-bezier(0.16, 1, 0.3, 1),
-            opacity 0.48s cubic-bezier(0.16, 1, 0.28, 1);
+            transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+            opacity 0.4s cubic-bezier(0.16, 1, 0.28, 1);
     }
     .masonry-card:hover .masonry-overlay {
-        transform: translate3d(0, 0, 35px);
+        transform: translateY(0);
         opacity: 1;
     }
 }
@@ -582,7 +583,7 @@ body.site-entered .animate-item {
     pointer-events: none;
     /* Default: invisible, collapsed to top-right corner */
     opacity: 0;
-    transform: translateZ(17px) scale(0);
+    transform: scale(0);
     transform-origin: top right;
     will-change: transform, opacity;
     backface-visibility: hidden;
@@ -594,7 +595,7 @@ body.site-entered .animate-item {
     body.layout-desktop .masonry-card:hover .masonry-card-logo {
         opacity: 1;
         /* Spring bounce entrance */
-        transform: translateZ(17px) scale(1);
+        transform: scale(1);
         transition:
             transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
             opacity 0.18s ease;
