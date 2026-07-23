@@ -7140,6 +7140,23 @@ body.layout-tablet {
   background-color: var(--art-bg) !important;
   color: var(--art-fg) !important;
   font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif !important;
+  /* 彻底隐藏滚动条（body 是手机端真实滚动容器）：页面仍可正常滑动，只是永不显示滚动条 */
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* 旧版 Edge/IE */
+}
+/* WebKit/Safari（含 Chrome/移动端）：隐藏 body 及页面内任意滚动容器的滚动条 */
+body.layout-phone::-webkit-scrollbar,
+body.layout-tablet::-webkit-scrollbar,
+body.layout-phone *::-webkit-scrollbar,
+body.layout-tablet *::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+/* 页面内其它滚动容器（如弹层）也隐藏，观感统一 */
+body.layout-phone *,
+body.layout-tablet * {
+  scrollbar-width: none;
 }
 
 body.layout-phone .art-container,
