@@ -7277,19 +7277,27 @@ body.layout-tablet .stack-area {
   display: flex; align-items: center; justify-content: center;
   padding: 10px 0;
 }
+/* 竞技场：给不同比例的卡片一个统一的居中舞台。
+   宽度约束卡片横向尺寸；高度容纳最高的竖图（9:16）。 */
 body.layout-phone .card-stack,
 body.layout-tablet .card-stack {
   position: relative;
-  width: 72vw; max-width: 300px;
-  height: min(52vh, 400px);
+  width: min(72vw, 300px);
+  height: min(64vh, 460px);
   touch-action: pan-y;
 }
 
-/* 单张作品卡：始终深底，作品在其上「发光」 */
+/* 单张作品卡（方案 A：卡 = 封面真实比例，零裁切）。
+   宽/高不再框死为 100%，而是由 buildStackCard 写入的 aspect-ratio 决定：
+   - 宽图（如 16:9）：受 width 约束 → 变成矮而宽的卡；
+   - 竖图（如 9:16）：受 max-height 约束 → 变成窄而高的卡；
+   两者都完整显示、居中悬浮，绝不裁切。 */
 body.layout-phone .stack-card,
 body.layout-tablet .stack-card {
   position: absolute; top: 50%; left: 50%;
-  width: 100%; height: 100%;
+  width: min(100%, calc(min(64vh, 460px) * var(--st-ar)));
+  height: auto;
+  max-width: 100%; max-height: 100%;
   border-radius: var(--st-radius); overflow: hidden;
   background: #0C0B0A;
   border: 0.5px solid var(--st-hair-strong);

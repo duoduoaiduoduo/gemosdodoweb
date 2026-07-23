@@ -1115,12 +1115,16 @@ export function initApp() {
     }
 
     // 根据某卡在牌堆里的深度（0=顶）给出堆叠 transform（未拖拽的静止态）
+    // 方案 A 后卡片高矮不一：用「固定像素」偏移而非百分比，保证不论卡片尺寸，
+    // 影卡都能从栈顶卡下方 + 侧向稳定探出一截，恢复「一叠卡」的层叠感。
     function stackRestTransform(depth: number) {
         if (depth <= 0) return 'translate(-50%, -50%) rotate(-1.2deg)';
-        const ty = -50 + depth * 4.2;        // 逐层下沉（%）
+        const ty = -50;                      // 垂直仍居中（用侧移+旋转制造错落）
+        const tx = depth % 2 === 0 ? depth * 10 : -depth * 12; // 左右交错像素平移露出
+        const dy = depth * 14;               // 逐层向下探出的像素量
         const scale = 1 - depth * 0.05;      // 逐层缩小
-        const rot = depth % 2 === 0 ? depth * 1.6 : -depth * 1.8; // 左右交错微旋
-        return `translate(-50%, ${ty}%) scale(${scale}) rotate(${rot}deg)`;
+        const rot = depth % 2 === 0 ? depth * 2.2 : -depth * 2.6; // 交错微旋
+        return `translate(calc(-50% + ${tx}px), calc(${ty}% + ${dy}px)) scale(${scale}) rotate(${rot}deg)`;
     }
 
     function stackDepthOpacity(depth: number) {
@@ -1147,6 +1151,16 @@ export function initApp() {
         card.style.opacity = String(stackDepthOpacity(depth));
         card.style.zIndex = String(STACK_VISIBLE - depth);
         card.dataset.depth = String(depth);
+        // 方案 A：每张牌 = 它封面的真实比例，零裁切零留边。
+        // aspect-ratio 用 W/H 表达；卡片宽度由容器约束、高度随比例自适应，
+        // 但受 .card-stack 的 max-height 约束（极端宽/高图不会溢出屏幕）。
+        const aspectStr = getCardAspect(item);           // 如 '16:9' / '3:4'
+        const [aw, ah] = aspectStr.split(':').map(Number);
+        card.style.aspectRatio = `${aw} / ${ah}`;
+        // --st-ar = 数值宽高比（宽/高），供 CSS 计算卡宽：
+        // width = min(容器宽, 竞技场高 × --st-ar)，保证等比缩放到同时满足宽/高约束。
+        card.style.setProperty('--st-ar', String(aw / ah));
+        card.dataset.aspect = aspectStr;
 
         const placeholderUrl = `https://via.placeholder.com/600x800/141210/8A857C?text=${encodeURIComponent(getCategoryLabel(item.category))}`;
         const imgSrc = item.thumbnailImage || item.image || placeholderUrl;
@@ -1272,14 +1286,17 @@ export function initApp() {
             const rot = stackReduceMotion ? 0 : dx * 0.06;
             activeCard.style.transform =
                 `translate(calc(-50% + ${dx}px), calc(-50% + ${dy * 0.35}px)) rotate(${-1.2 + rot}deg)`;
-            // 拖动时后面第一张卡稍微上浮补位（跟随横向位移比例）
+            // 拖动时后面第一张卡向栈顶态补位（从 depth=1 静止态插值到栈顶态）。
+            // 基准与 stackRestTransform(1) 一致：tx -12px, dy 14px, scale .95, rot -2.6deg。
             const second = stack.querySelector('.stack-card[data-depth="1"]') as HTMLElement | null;
             if (second && !stackReduceMotion) {
                 const prog = Math.min(1, Math.abs(dx) / 140);
-                const ty = -50 + 4.2 - prog * 4.2;
-                const sc = 0.95 + prog * 0.05;
+                const tx = -12 + prog * 12;           // -12 → 0
+                const dyPx = 14 - prog * 14;           // 14 → 0
+                const sc = 0.95 + prog * 0.05;         // .95 → 1
+                const rot = -2.6 + prog * 1.4;         // -2.6 → -1.2
                 second.style.transition = 'none';
-                second.style.transform = `translate(-50%, ${ty}%) scale(${sc}) rotate(${-1.8 + prog * 0.6}deg)`;
+                second.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${dyPx}px)) scale(${sc}) rotate(${rot}deg)`;
                 second.style.opacity = String(0.63 + prog * 0.37);
             }
         };
