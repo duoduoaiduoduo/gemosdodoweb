@@ -869,10 +869,14 @@ export function initApp() {
                 }
             });
             if (activeRollerItems[0]) activeRollerItems[0].classList.add('active');
-            renderMasonry(filterType);
-            // 观察 Hero / 分区标题 / 分段控件等静态 .reveal 元素（幂等：已 in-view 的会跳过）。
-            // 这些节点由 React 渲染、不随 filter 重建，observe 一次即可。
-            observeRevealWithin(document.querySelector('.ios-home'));
+            // 手机端首页新框架：卡片牌堆（#cardStack）。若容器存在则渲染牌堆，
+            // 否则回退到旧的瀑布流（兼容尚未改造的场景）。
+            if (document.getElementById('cardStack')) {
+                renderCardStack(filterType);
+            } else {
+                renderMasonry(filterType);
+                observeRevealWithin(document.querySelector('.ios-home'));
+            }
             return;
         }
         
@@ -1092,6 +1096,259 @@ export function initApp() {
         } else {
             relayoutMasonry();
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  卡片牌堆（手机端首页新框架）
+    //  一叠可拨弄的作品卡：拖拽跟手旋转、松手按速度甩出/回弹、循环补位、
+    //  上滑或点击展开进详情、后面卡片错落浮出。深/浅色随系统。
+    // ─────────────────────────────────────────────────────────────
+    const STACK_VISIBLE = 4;        // 同时渲染的卡片数（栈顶 + 后面 3 张影卡）
+    let stackItems: any[] = [];     // 当前筛选后的作品数组
+    let stackTop = 0;               // 栈顶在 stackItems 中的索引
+    let stackBusy = false;          // 甩出动画进行中，锁输入
+    let stackReduceMotion = false;
+
+    function stackPrefersReduced() {
+        return typeof window.matchMedia === 'function'
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    // 根据某卡在牌堆里的深度（0=顶）给出堆叠 transform（未拖拽的静止态）
+    function stackRestTransform(depth: number) {
+        if (depth <= 0) return 'translate(-50%, -50%) rotate(-1.2deg)';
+        const ty = -50 + depth * 4.2;        // 逐层下沉（%）
+        const scale = 1 - depth * 0.05;      // 逐层缩小
+        const rot = depth % 2 === 0 ? depth * 1.6 : -depth * 1.8; // 左右交错微旋
+        return `translate(-50%, ${ty}%) scale(${scale}) rotate(${rot}deg)`;
+    }
+
+    function stackDepthOpacity(depth: number) {
+        if (depth <= 0) return 1;
+        return Math.max(0, 0.85 - depth * 0.22);
+    }
+
+    // 更新进度指示（01 / 09）
+    function updateStackProgress() {
+        const cur = document.getElementById('stackProgressCur');
+        const total = document.getElementById('stackProgressTotal');
+        if (total) total.textContent = String(stackItems.length).padStart(2, '0');
+        if (cur) {
+            const n = stackItems.length ? ((stackTop % stackItems.length) + 1) : 0;
+            cur.textContent = String(n).padStart(2, '0');
+        }
+    }
+
+    // 构建一张牌堆卡片 DOM（正面 = 封面主视觉 + 底部渐隐标题）
+    function buildStackCard(item: any, depth: number) {
+        const card = document.createElement('div');
+        card.className = 'stack-card';
+        card.style.transform = stackRestTransform(depth);
+        card.style.opacity = String(stackDepthOpacity(depth));
+        card.style.zIndex = String(STACK_VISIBLE - depth);
+        card.dataset.depth = String(depth);
+
+        const placeholderUrl = `https://via.placeholder.com/600x800/141210/8A857C?text=${encodeURIComponent(getCategoryLabel(item.category))}`;
+        const imgSrc = item.thumbnailImage || item.image || placeholderUrl;
+        const title = window.currentLang === 'en' ? (item.titleEn || item.title) : item.title;
+        const desc = window.currentLang === 'en' ? (item.descEn || item.desc) : (item.desc || '');
+        const shortDesc = desc ? String(desc).slice(0, 40) : '';
+
+        card.innerHTML = `
+          <div class="stack-card-media">
+            <img src="${imgSrc}" alt="${title}" loading="eager" decoding="async">
+            <div class="stack-card-scrim"></div>
+            <span class="stack-card-badge">${getCategoryLabel(item.category)}</span>
+          </div>
+          <div class="stack-card-caption">
+            <h3>${title}</h3>
+            ${shortDesc ? `<p class="stack-card-desc">${shortDesc}</p>` : ''}
+            <p class="stack-card-date">${item.date || ''}</p>
+          </div>
+        `;
+        return card;
+    }
+
+    // 渲染整叠牌（重建可见窗口）
+    function renderCardStack(filterType: string) {
+        const stack = document.getElementById('cardStack');
+        if (!stack) return;
+        stackReduceMotion = stackPrefersReduced();
+        stackItems = timelineData.filter((it: any) => filterType === 'all' || it.category === filterType);
+        stackTop = 0;
+        stack.innerHTML = '';
+
+        const empty = document.getElementById('stackEmpty');
+        if (empty) empty.style.display = stackItems.length ? 'none' : 'flex';
+
+        const n = Math.min(STACK_VISIBLE, stackItems.length);
+        // 后面的卡片先加入（z-index 小），栈顶最后加入（在最上层）——这里用 zIndex 控制，顺序无所谓
+        for (let d = 0; d < n; d++) {
+            const item = stackItems[(stackTop + d) % stackItems.length];
+            stack.appendChild(buildStackCard(item, d));
+        }
+        updateStackProgress();
+        bindStackGestures();
+    }
+
+    // 甩走栈顶卡后：整叠前移一位、各卡 depth-1 重排、末尾补一张新卡
+    function advanceStack(direction: number) {
+        const stack = document.getElementById('cardStack');
+        if (!stack || !stackItems.length) return;
+        const cards = Array.prototype.slice.call(stack.querySelectorAll('.stack-card')) as HTMLElement[];
+        const topCard = cards.find((c) => c.dataset.depth === '0');
+        if (!topCard) return;
+
+        stackBusy = true;
+        // 顶卡甩出屏外
+        const flyX = direction >= 0 ? 130 : -130;
+        const flyRot = direction >= 0 ? 22 : -22;
+        topCard.style.transition = stackReduceMotion
+            ? 'opacity 0.2s ease'
+            : 'transform 0.42s cubic-bezier(0.22,0.61,0.36,1), opacity 0.42s ease';
+        topCard.style.transform = `translate(${flyX}%, -46%) scale(0.94) rotate(${flyRot}deg)`;
+        topCard.style.opacity = '0';
+
+        // 其余卡片各升一层
+        cards.forEach((c) => {
+            if (c === topCard) return;
+            const d = parseInt(c.dataset.depth || '0', 10) - 1;
+            c.dataset.depth = String(d);
+            c.style.transition = stackReduceMotion
+                ? 'none'
+                : 'transform 0.42s cubic-bezier(0.22,0.61,0.36,1), opacity 0.42s ease';
+            c.style.transform = stackRestTransform(d);
+            c.style.opacity = String(stackDepthOpacity(d));
+            c.style.zIndex = String(STACK_VISIBLE - d);
+        });
+
+        stackTop = (stackTop + 1) % stackItems.length;
+
+        window.setTimeout(() => {
+            // 移除甩出的卡，末尾补一张新的最深卡（循环）
+            topCard.remove();
+            const remaining = stack.querySelectorAll('.stack-card').length;
+            if (stackItems.length > remaining) {
+                const newDepth = STACK_VISIBLE - 1;
+                const item = stackItems[(stackTop + newDepth) % stackItems.length];
+                const fresh = buildStackCard(item, newDepth);
+                fresh.style.transition = 'none';
+                stack.appendChild(fresh);
+            }
+            updateStackProgress();
+            stackBusy = false;
+        }, stackReduceMotion ? 200 : 430);
+    }
+
+    let stackGesturesBound = false;
+    function bindStackGestures() {
+        const stack = document.getElementById('cardStack');
+        if (!stack || stackGesturesBound) return;
+        stackGesturesBound = true;
+
+        let dragging = false;
+        let startX = 0, startY = 0, startT = 0;
+        let dx = 0, dy = 0;
+        let activeCard: HTMLElement | null = null;
+
+        const getTopCard = () =>
+            (stack.querySelector('.stack-card[data-depth="0"]') as HTMLElement | null);
+
+        const onDown = (e: PointerEvent) => {
+            if (stackBusy) return;
+            activeCard = getTopCard();
+            if (!activeCard) return;
+            dragging = true;
+            startX = e.clientX; startY = e.clientY; startT = performance.now();
+            dx = 0; dy = 0;
+            activeCard.style.transition = 'none';
+            try { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); } catch {}
+        };
+
+        const onMove = (e: PointerEvent) => {
+            if (!dragging || !activeCard) return;
+            dx = e.clientX - startX;
+            dy = e.clientY - startY;
+            const rot = stackReduceMotion ? 0 : dx * 0.06;
+            activeCard.style.transform =
+                `translate(calc(-50% + ${dx}px), calc(-50% + ${dy * 0.35}px)) rotate(${-1.2 + rot}deg)`;
+            // 拖动时后面第一张卡稍微上浮补位（跟随横向位移比例）
+            const second = stack.querySelector('.stack-card[data-depth="1"]') as HTMLElement | null;
+            if (second && !stackReduceMotion) {
+                const prog = Math.min(1, Math.abs(dx) / 140);
+                const ty = -50 + 4.2 - prog * 4.2;
+                const sc = 0.95 + prog * 0.05;
+                second.style.transition = 'none';
+                second.style.transform = `translate(-50%, ${ty}%) scale(${sc}) rotate(${-1.8 + prog * 0.6}deg)`;
+                second.style.opacity = String(0.63 + prog * 0.37);
+            }
+        };
+
+        const resetSecond = () => {
+            const second = stack.querySelector('.stack-card[data-depth="1"]') as HTMLElement | null;
+            if (second) {
+                second.style.transition = stackReduceMotion ? 'none'
+                    : 'transform 0.35s cubic-bezier(0.22,0.61,0.36,1), opacity 0.35s ease';
+                second.style.transform = stackRestTransform(1);
+                second.style.opacity = String(stackDepthOpacity(1));
+            }
+        };
+
+        const onUp = () => {
+            if (!dragging || !activeCard) return;
+            dragging = false;
+            const dt = Math.max(1, performance.now() - startT);
+            const vx = dx / dt; // px/ms
+            const absX = Math.abs(dx), absY = Math.abs(dy);
+            const card = activeCard;
+            activeCard = null;
+
+            // 上滑展开：竖直位移明显向上且大于横向 → 进详情
+            if (dy < -60 && absY > absX) {
+                card.style.transition = 'transform 0.3s cubic-bezier(0.2,0.8,0.2,1), opacity 0.3s ease';
+                card.style.transform = 'translate(-50%, -60%) scale(1.04) rotate(-1.2deg)';
+                const idx = (stackTop) % stackItems.length;
+                const item = stackItems[idx];
+                window.setTimeout(() => {
+                    card.style.transition = 'none';
+                    card.style.transform = stackRestTransform(0);
+                    resetSecond();
+                    if (item) openDetailModal(item);
+                }, 200);
+                return;
+            }
+
+            // 点击（几乎无位移）→ 展开
+            if (absX < 8 && absY < 8) {
+                card.style.transform = stackRestTransform(0);
+                resetSecond();
+                const item = stackItems[stackTop % stackItems.length];
+                if (item) openDetailModal(item);
+                return;
+            }
+
+            // 横向甩出判定：位移过阈值或速度够快
+            if (absX > 96 || Math.abs(vx) > 0.55) {
+                advanceStack(dx >= 0 ? 1 : -1);
+            } else {
+                // 回弹
+                card.style.transition = stackReduceMotion ? 'none'
+                    : 'transform 0.38s cubic-bezier(0.34,1.56,0.64,1)';
+                card.style.transform = stackRestTransform(0);
+                resetSecond();
+            }
+        };
+
+        stack.addEventListener('pointerdown', onDown);
+        window.addEventListener('pointermove', onMove, { passive: true });
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
+
+        // 左右箭头按钮（无障碍/非触摸设备）
+        const btnPrev = document.getElementById('stackPrev');
+        const btnNext = document.getElementById('stackNext');
+        btnPrev?.addEventListener('click', () => { if (!stackBusy) advanceStack(-1); });
+        btnNext?.addEventListener('click', () => { if (!stackBusy) advanceStack(1); });
     }
 
     function filterTimeline(filterType, element) {

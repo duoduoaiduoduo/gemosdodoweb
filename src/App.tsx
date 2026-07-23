@@ -1,7 +1,7 @@
 import { ReactNode, Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Lock, Copy, BookOpen, PenTool, Code2 } from 'lucide-react';
+import { Lock, Copy, BookOpen, PenTool, Code2, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
 import { initApp } from './script';
 import AdminStudio from './AdminStudio';
 import AwardsPage from './AwardsPage';
@@ -377,87 +377,92 @@ function TouchHome({
     { code: 'video', zh: '视频', en: 'Video' },
     { code: 'edu', zh: '教育', en: 'Edu' },
   ];
-  const activeIndex = Math.max(0, filters.findIndex((f) => f.code === activeFilter));
 
   return (
-    <div className="ios-home">
-      {/* 顶部状态栏（iOS Navigation Bar 风格：语言切换 + 头像 + 管理入口） */}
-      <header className="ios-navbar">
-        <button className="ios-lang-pill" onClick={onToggleLang}>
-          {lang === 'zh' ? '中 / EN' : 'EN / 中'}
-        </button>
-        <div className="ios-navbar-right">
+    <div className="stack-home">
+      {/* 顶部：品牌引子 + 语言/头像/管理 + 进度 */}
+      <header className="stack-topbar">
+        <div className="stack-brand">
+          <p className="stack-eyebrow">GEMOSDODO</p>
+          <p className="stack-subtitle">{t('数字档案馆 · 拨开每一件', 'Digital archive · flick to explore')}</p>
+        </div>
+        <div className="stack-topbar-right">
+          <button className="stack-lang" onClick={onToggleLang}>
+            {lang === 'zh' ? '中 / EN' : 'EN / 中'}
+          </button>
           {showAdminEntry && (
-            <button className="ios-icon-btn" onClick={onOpenAdmin} aria-label="admin">
-              <Lock size={17} strokeWidth={2} />
+            <button className="stack-icon-btn" onClick={onOpenAdmin} aria-label="admin">
+              <Lock size={16} strokeWidth={2} />
             </button>
           )}
-          <button className="ios-avatar" onClick={onAvatarTap} aria-label="avatar">
+          <button className="stack-avatar" onClick={onAvatarTap} aria-label="avatar">
             <img src="/avatar.png" alt="Avatar" />
           </button>
         </div>
       </header>
 
-      {/* Hero：iOS Large Title 大标题区 */}
-      <section className="ios-hero reveal">
-        <p className="ios-eyebrow">{t('数字档案馆', 'DIGITAL ARCHIVE')}</p>
-        <h1 className="ios-large-title">
-          {t('多多', 'GemosDodo')}
-          <span className="ios-large-title-sub">GemosDodo</span>
-        </h1>
-        <p className="ios-hero-desc">{t(heroManifesto.zh, heroManifesto.en)}</p>
-        <div className="ios-hero-social">
-          <SocialLinks lang={lang} />
+      {/* 极简筛选（切换换整叠牌） */}
+      <div className="stack-filter" role="tablist">
+        {filters.map((f) => (
+          <button
+            key={f.code}
+            role="tab"
+            aria-selected={activeFilter === f.code}
+            className={`stack-filter-item ${activeFilter === f.code ? 'active' : ''}`}
+            onClick={(e) => handleFilter(f.code, e.currentTarget)}
+          >
+            {t(f.zh, f.en)}
+          </button>
+        ))}
+        <span className="stack-progress">
+          <span id="stackProgressCur">01</span>
+          <span className="stack-progress-sep"> / </span>
+          <span id="stackProgressTotal">00</span>
+        </span>
+      </div>
+
+      {/* 中央：可拨弄的作品卡牌堆（DOM 由 script.ts 填充） */}
+      <section className="stack-area">
+        <div id="cardStack" className="card-stack" aria-label={t('作品卡牌堆', 'Work card stack')}></div>
+        <div id="stackEmpty" className="stack-empty" style={{ display: 'none' }}>
+          <p>{t('这一类还没有作品', 'Nothing here yet')}</p>
         </div>
       </section>
 
-      {/* 作品墙 */}
-      <section className="ios-archive" id="masonrySection">
-        <div className="ios-section-head reveal">
-          <h2 className="ios-section-title">{t('精选作品', 'Selected Works')}</h2>
+      {/* 拨弄提示 + 左右按钮 */}
+      <div className="stack-controls">
+        <button id="stackPrev" className="stack-nav-btn" aria-label={t('上一张', 'Previous')}>
+          <ArrowLeft size={18} strokeWidth={2} />
+        </button>
+        <div className="stack-hint">
+          <span>{t('上滑展开', 'Swipe up to open')}</span>
+          <ArrowUp size={14} strokeWidth={2.4} />
         </div>
+        <button id="stackNext" className="stack-nav-btn" aria-label={t('下一张', 'Next')}>
+          <ArrowRight size={18} strokeWidth={2} />
+        </button>
+      </div>
 
-        {/* iOS Segmented Control 分段筛选 */}
-        <div className="ios-segmented reveal" role="tablist">
-          <span
-            className="ios-segmented-thumb"
-            style={{ transform: `translateX(${activeIndex * 100}%)` }}
-            aria-hidden="true"
-          />
-          {filters.map((f) => (
-            <button
-              key={f.code}
-              role="tab"
-              aria-selected={activeFilter === f.code}
-              className={`ios-segment ${activeFilter === f.code ? 'active' : ''}`}
-              onClick={(e) => handleFilter(f.code, e.currentTarget)}
-            >
-              {t(f.zh, f.en)}
-            </button>
-          ))}
-        </div>
-
-        <div className="art-grid masonry-grid no-grass" id="masonryGrid"></div>
-      </section>
-
-      {/* iOS Tab Bar 底部导航（毛玻璃） */}
-      <nav className="ios-tabbar">
-        <button className="ios-tab" onClick={onOpenAwards}>
-          <Copy size={22} strokeWidth={1.8} />
+      {/* 底部：极简圆点入口 */}
+      <nav className="stack-dock">
+        <button className="stack-dock-item" onClick={onOpenAwards}>
+          <Copy size={19} strokeWidth={1.7} />
           <span>{t('奖状', 'Awards')}</span>
         </button>
-        <button className="ios-tab" onClick={onOpenPdfs}>
-          <BookOpen size={22} strokeWidth={1.8} />
+        <button className="stack-dock-item" onClick={onOpenPdfs}>
+          <BookOpen size={19} strokeWidth={1.7} />
           <span>{t('作品集', 'Portfolio')}</span>
         </button>
-        <button className="ios-tab ios-tab-accent" onClick={onOpenVibecoding}>
-          <span className="ios-tab-icon-wrap">
-            <Code2 size={22} strokeWidth={2} />
-          </span>
+        <button className="stack-dock-item active" aria-current="page">
+          <span className="stack-dock-dot" />
+          <span>{t('档案', 'Archive')}</span>
+        </button>
+        <button className="stack-dock-item" onClick={onOpenVibecoding}>
+          <Code2 size={19} strokeWidth={1.8} />
           <span>{t('实验室', 'Lab')}</span>
         </button>
-        <button className="ios-tab" onClick={onOpenJournal}>
-          <PenTool size={22} strokeWidth={1.8} />
+        <button className="stack-dock-item" onClick={onOpenJournal}>
+          <PenTool size={19} strokeWidth={1.7} />
           <span>{t('手账', 'Journal')}</span>
         </button>
       </nav>

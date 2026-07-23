@@ -7129,360 +7129,294 @@ body.layout-desktop .pdf-card:hover {
 
 
 /* ============================================================
-   MOBILE — iOS UI KIT REDESIGN (SF Pro · 8pt grid · squircle)
-   强调色 iOS 坠橘 #FF9500；分组背景层次；毛玻璃 Tab Bar
+   MOBILE — 卡片牌堆 · 暖黑/暖白双模式（随系统 prefers-color-scheme）
+   一叠可拨弄的作品卡；强调色 坠橘（深色 #FF9500 / 浅色 #E07B00）
+   作品卡本身始终深底，让暗调作品在两种模式下都发光。
    ============================================================ */
 body.layout-phone,
 body.layout-tablet {
-  --ios-bg: #F2F1F6;            /* systemGroupedBackground 暖灰米 */
-  --ios-surface: #FFFFFF;       /* 白卡 */
-  --ios-label: #1C1C1E;         /* 主文字 */
-  --ios-label-2: #3C3C43;       /* 次文字（配 opacity） */
-  --ios-label-3: #8E8E93;       /* 三级/占位灰 */
-  --ios-separator: rgba(60,60,67,0.16);
-  --ios-fill: #E9E8ED;          /* 分段控件轨道等填充 */
-  --ios-accent: #FF9500;        /* iOS 坠橘 */
-  --ios-radius-card: 20px;      /* squircle 卡片 */
-  --ios-radius-lg: 26px;
-  --ios-safe: 16px;             /* 屏幕左右安全边距 */
-  background-color: var(--ios-bg) !important;
-  color: var(--ios-label) !important;
-  font-family: -apple-system, "SF Pro Text", "SF Pro Display", "PingFang SC",
-    "Helvetica Neue", system-ui, sans-serif !important;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  /* 彻底隐藏滚动条（body 是手机端真实滚动容器）：仍可滑动 */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  /* 默认 = 暖黑 */
+  --st-bg: #141210;
+  --st-bg-2: #1b1712;
+  --st-ink: #F4F1EA;
+  --st-ink-2: #B8B2A6;
+  --st-ink-3: #8A857C;
+  --st-ink-4: #6E6A62;
+  --st-hair: rgba(255,255,255,0.10);
+  --st-hair-strong: rgba(255,255,255,0.16);
+  --st-ghost: #1e1a15;
+  --st-ghost-2: #1a1712;
+  --st-accent: #FF9500;
+  --st-accent-soft: rgba(255,149,0,0.16);
+  --st-card-shadow: 0 24px 50px rgba(0,0,0,0.55);
+  --st-dock-bg: rgba(30,27,23,0.82);
+  --st-radius: 26px;
+  --st-safe: 22px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif;
 }
+
+@media (prefers-color-scheme: light) {
+  body.layout-phone,
+  body.layout-tablet {
+    --st-bg: #F5F3EE;         /* 暖白纸 */
+    --st-bg-2: #EDEAE3;
+    --st-ink: #1C1A16;
+    --st-ink-2: #4A463F;
+    --st-ink-3: #6E6A62;
+    --st-ink-4: #A8A399;
+    --st-hair: rgba(0,0,0,0.10);
+    --st-hair-strong: rgba(0,0,0,0.16);
+    --st-ghost: #EDE9DF;      /* 浅色下的影卡：米灰纸片 */
+    --st-ghost-2: #E6E2D8;
+    --st-accent: #E07B00;     /* 浅底压深一档保对比 */
+    --st-accent-soft: rgba(224,123,0,0.14);
+    --st-card-shadow: 0 22px 44px rgba(40,34,24,0.22);
+    --st-dock-bg: rgba(255,255,255,0.78);
+  }
+}
+
+/* 手机端隐藏旧滚动条、锁死页面滚动（牌堆是定屏交互，不整页滚） */
+body.layout-phone,
+body.layout-tablet { background: var(--st-bg); color: var(--st-ink); }
 body.layout-phone::-webkit-scrollbar,
-body.layout-tablet::-webkit-scrollbar,
-body.layout-phone *::-webkit-scrollbar,
-body.layout-tablet *::-webkit-scrollbar {
-  width: 0 !important; height: 0 !important; display: none !important;
-}
-body.layout-phone *,
-body.layout-tablet * { scrollbar-width: none; }
+body.layout-tablet::-webkit-scrollbar { display: none; }
+body.layout-phone, body.layout-tablet { scrollbar-width: none; -ms-overflow-style: none; }
 
-/* 页面外壳 */
-body.layout-phone .ios-home,
-body.layout-tablet .ios-home {
+/* ---------- 外壳：占满一屏、纵向分区 ---------- */
+body.layout-phone .stack-home,
+body.layout-tablet .stack-home {
   position: relative;
-  min-height: 100vh;
-  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
-  background: var(--ios-bg);
-}
-
-/* ---------- 顶部 Navigation Bar ---------- */
-body.layout-phone .ios-navbar,
-body.layout-tablet .ios-navbar {
-  height: 52px;
-  padding: 0 var(--ios-safe);
-  padding-top: env(safe-area-inset-top, 0px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-body.layout-phone .ios-lang-pill,
-body.layout-tablet .ios-lang-pill {
-  border: none;
-  background: rgba(120,120,128,0.12);
-  color: var(--ios-label-2);
-  font-size: 13px;
-  font-weight: 590;
-  letter-spacing: 0.02em;
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: transform 0.18s cubic-bezier(0.2,0.8,0.2,1), background 0.2s ease;
-}
-body.layout-phone .ios-lang-pill:active,
-body.layout-tablet .ios-lang-pill:active { transform: scale(0.94); background: rgba(120,120,128,0.2); }
-body.layout-phone .ios-navbar-right,
-body.layout-tablet .ios-navbar-right { display: flex; align-items: center; gap: 12px; }
-body.layout-phone .ios-icon-btn,
-body.layout-tablet .ios-icon-btn {
-  border: none; background: none; color: var(--ios-label-3);
-  display: flex; align-items: center; cursor: pointer; padding: 4px;
-  transition: transform 0.18s cubic-bezier(0.2,0.8,0.2,1);
-}
-body.layout-phone .ios-icon-btn:active,
-body.layout-tablet .ios-icon-btn:active { transform: scale(0.9); }
-body.layout-phone .ios-avatar,
-body.layout-tablet .ios-avatar {
-  width: 34px; height: 34px; border-radius: 50%; overflow: hidden;
-  border: none; padding: 0; cursor: pointer; background: var(--ios-fill);
-  transition: transform 0.2s cubic-bezier(0.2,0.8,0.2,1);
-}
-body.layout-phone .ios-avatar img,
-body.layout-tablet .ios-avatar img {
-  width: 100%; height: 100%; object-fit: cover;
-  filter: grayscale(100%); transition: filter 0.35s ease;
-}
-body.layout-phone .ios-avatar:active,
-body.layout-tablet .ios-avatar:active { transform: scale(0.92); }
-body.layout-phone .ios-avatar:active img,
-body.layout-tablet .ios-avatar:active img { filter: grayscale(0%); }
-
-/* ---------- Hero · Large Title ---------- */
-body.layout-phone .ios-hero,
-body.layout-tablet .ios-hero {
-  padding: 22px var(--ios-safe) 26px;
-}
-body.layout-phone .ios-eyebrow,
-body.layout-tablet .ios-eyebrow {
-  margin: 0 0 6px;
-  font-size: 12px; font-weight: 640; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--ios-accent);
-}
-body.layout-phone .ios-large-title,
-body.layout-tablet .ios-large-title {
-  margin: 0;
-  font-size: 40px; line-height: 1.04; font-weight: 700;
-  letter-spacing: -0.035em; color: var(--ios-label);
+  min-height: 100svh; min-height: 100vh;
   display: flex; flex-direction: column;
-}
-body.layout-phone .ios-large-title-sub,
-body.layout-tablet .ios-large-title-sub {
-  font-size: 40px; font-weight: 700; letter-spacing: -0.04em;
-  color: var(--ios-label-3);
-}
-body.layout-phone .ios-hero-desc,
-body.layout-tablet .ios-hero-desc {
-  margin: 16px 0 0; max-width: 300px;
-  font-size: 16px; line-height: 1.5; font-weight: 400;
-  color: var(--ios-label-2); opacity: 0.78;
-}
-body.layout-phone .ios-hero-social,
-body.layout-tablet .ios-hero-social {
-  margin-top: 20px;
-}
-body.layout-phone .ios-hero-social .hero-social-links,
-body.layout-tablet .ios-hero-social .hero-social-links {
-  display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 0;
-}
-/* iOS 风：无圆底无边框的纯线性图标，靠留白与灰阶层次，点击回弹 */
-body.layout-phone .ios-hero-social .hero-social-link,
-body.layout-tablet .ios-hero-social .hero-social-link {
-  width: 26px; height: 26px; border: none !important; background: none !important;
-  box-shadow: none !important; border-radius: 0;
-  color: var(--ios-label-2); opacity: 0.72;
-  transition: transform 0.2s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease;
-}
-body.layout-phone .ios-hero-social .hero-social-link svg,
-body.layout-tablet .ios-hero-social .hero-social-link svg,
-body.layout-phone .ios-hero-social .hero-social-link img,
-body.layout-tablet .ios-hero-social .hero-social-link img {
-  width: 24px; height: 24px;
-}
-/* iconSrc 是外部彩色/黑白 svg 图片，统一转灰阶贴合 iOS 单色观感 */
-body.layout-phone .ios-hero-social .hero-social-link img,
-body.layout-tablet .ios-hero-social .hero-social-link img {
-  filter: grayscale(100%) brightness(0.5); object-fit: contain;
-}
-body.layout-phone .ios-hero-social .hero-social-link:active,
-body.layout-tablet .ios-hero-social .hero-social-link:active {
-  transform: scale(0.85); opacity: 1;
+  background: var(--st-bg);
+  overflow: hidden;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* ---------- Archive section ---------- */
-body.layout-phone .ios-archive,
-body.layout-tablet .ios-archive { padding: 0; }
-body.layout-phone .ios-section-head,
-body.layout-tablet .ios-section-head {
-  padding: 10px var(--ios-safe) 12px;
+/* ---------- 顶栏 ---------- */
+body.layout-phone .stack-topbar,
+body.layout-tablet .stack-topbar {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 16px var(--st-safe) 0;
 }
-body.layout-phone .ios-section-title,
-body.layout-tablet .ios-section-title {
-  margin: 0; font-size: 26px; font-weight: 700;
-  letter-spacing: -0.02em; color: var(--ios-label);
+body.layout-phone .stack-eyebrow,
+body.layout-tablet .stack-eyebrow {
+  margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.3em;
+  color: var(--st-accent);
 }
+body.layout-phone .stack-subtitle,
+body.layout-tablet .stack-subtitle {
+  margin: 6px 0 0; font-size: 14px; font-weight: 400; color: var(--st-ink-3);
+}
+body.layout-phone .stack-topbar-right,
+body.layout-tablet .stack-topbar-right { display: flex; align-items: center; gap: 10px; }
+body.layout-phone .stack-lang,
+body.layout-tablet .stack-lang {
+  border: 0.5px solid var(--st-hair-strong); background: transparent;
+  color: var(--st-ink-2); font-family: inherit;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.02em;
+  padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  transition: transform 0.18s ease, opacity 0.2s ease;
+}
+body.layout-phone .stack-lang:active,
+body.layout-tablet .stack-lang:active { transform: scale(0.94); }
+body.layout-phone .stack-icon-btn,
+body.layout-tablet .stack-icon-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 0.5px solid var(--st-hair-strong); background: transparent;
+  color: var(--st-ink-3); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: transform 0.18s ease;
+}
+body.layout-phone .stack-icon-btn:active,
+body.layout-tablet .stack-icon-btn:active { transform: scale(0.9); }
+body.layout-phone .stack-avatar,
+body.layout-tablet .stack-avatar {
+  width: 34px; height: 34px; border-radius: 50%; padding: 0; border: 0.5px solid var(--st-hair-strong);
+  overflow: hidden; background: var(--st-bg-2); cursor: pointer;
+  transition: transform 0.18s ease;
+}
+body.layout-phone .stack-avatar img,
+body.layout-tablet .stack-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+body.layout-phone .stack-avatar:active,
+body.layout-tablet .stack-avatar:active { transform: scale(0.92); }
 
-/* iOS Segmented Control */
-body.layout-phone .ios-segmented,
-body.layout-tablet .ios-segmented {
+/* ---------- 筛选 + 进度 ---------- */
+body.layout-phone .stack-filter,
+body.layout-tablet .stack-filter {
+  display: flex; align-items: center; gap: 18px;
+  padding: 20px var(--st-safe) 0;
+}
+body.layout-phone .stack-filter-item,
+body.layout-tablet .stack-filter-item {
+  border: none; background: none; font-family: inherit; cursor: pointer; padding: 0;
+  font-size: 14px; font-weight: 500; color: var(--st-ink-4);
+  transition: color 0.22s ease, transform 0.18s ease;
+}
+body.layout-phone .stack-filter-item.active,
+body.layout-tablet .stack-filter-item.active {
+  color: var(--st-ink); font-weight: 600;
+}
+body.layout-phone .stack-filter-item.active::after,
+body.layout-tablet .stack-filter-item.active::after {
+  content: ''; display: block; width: 18px; height: 2px; border-radius: 2px;
+  background: var(--st-accent); margin-top: 5px;
+}
+body.layout-phone .stack-filter-item:active,
+body.layout-tablet .stack-filter-item:active { transform: scale(0.94); }
+body.layout-phone .stack-progress,
+body.layout-tablet .stack-progress {
+  margin-left: auto; font-size: 13px; color: var(--st-ink-4); font-variant-numeric: tabular-nums;
+}
+body.layout-phone .stack-progress #stackProgressCur,
+body.layout-tablet .stack-progress #stackProgressCur { color: var(--st-ink); font-weight: 700; font-size: 15px; }
+
+/* ---------- 中央牌堆区 ---------- */
+body.layout-phone .stack-area,
+body.layout-tablet .stack-area {
+  position: relative; flex: 1; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px 0;
+}
+body.layout-phone .card-stack,
+body.layout-tablet .card-stack {
   position: relative;
-  margin: 4px var(--ios-safe) 18px;
-  display: flex; padding: 2px;
-  background: var(--ios-fill); border-radius: 10px;
-  height: 36px;
+  width: 72vw; max-width: 300px;
+  height: min(52vh, 400px);
+  touch-action: pan-y;
 }
-body.layout-phone .ios-segmented-thumb,
-body.layout-tablet .ios-segmented-thumb {
-  position: absolute; top: 2px; left: 2px;
-  width: calc((100% - 4px) / 4); height: calc(100% - 4px);
-  background: var(--ios-surface); border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.09), 0 0 1px rgba(0,0,0,0.04);
-  transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
-}
-body.layout-phone .ios-segment,
-body.layout-tablet .ios-segment {
-  position: relative; z-index: 1; flex: 1;
-  border: none; background: none; cursor: pointer;
-  font-family: inherit; font-size: 14px; font-weight: 500;
-  color: var(--ios-label-3); letter-spacing: 0.01em;
-  transition: color 0.25s ease, transform 0.15s ease;
-}
-body.layout-phone .ios-segment.active,
-body.layout-tablet .ios-segment.active { color: var(--ios-label); font-weight: 600; }
-body.layout-phone .ios-segment:active,
-body.layout-tablet .ios-segment:active { transform: scale(0.96); }
 
-/* ---------- 双列瀑布流（无框、squircle 卡片、留白呼吸） ---------- */
-body.layout-phone .masonry-section,
-body.layout-tablet .masonry-section { padding: 0 !important; }
-body.layout-phone .art-grid,
-body.layout-phone .masonry-grid,
-body.layout-tablet .art-grid,
-body.layout-tablet .masonry-grid {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: flex-start !important;
-  grid-template-columns: none !important;
-  gap: 12px;
-  padding: 0 var(--ios-safe) 8px;
+/* 单张作品卡：始终深底，作品在其上「发光」 */
+body.layout-phone .stack-card,
+body.layout-tablet .stack-card {
+  position: absolute; top: 50%; left: 50%;
+  width: 100%; height: 100%;
+  border-radius: var(--st-radius); overflow: hidden;
+  background: #0C0B0A;
+  border: 0.5px solid var(--st-hair-strong);
+  box-shadow: var(--st-card-shadow);
+  transform: translate(-50%, -50%) rotate(-1.2deg);
+  will-change: transform, opacity;
+  cursor: grab;
+  -webkit-user-select: none; user-select: none;
 }
-body.layout-phone .art-masonry-column,
-body.layout-tablet .art-masonry-column {
-  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;
+body.layout-phone .stack-card:active,
+body.layout-tablet .stack-card:active { cursor: grabbing; }
+body.layout-phone .stack-card-media,
+body.layout-tablet .stack-card-media { position: absolute; inset: 0; }
+body.layout-phone .stack-card-media img,
+body.layout-tablet .stack-card-media img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  pointer-events: none;
 }
-/* 右列下沉错位，制造 iOS 画册的不对称呼吸感 */
-body.layout-phone .art-column-right,
-body.layout-tablet .art-column-right { margin-top: 24px; }
-
-/* 卡片 */
-body.layout-phone .art-card,
-body.layout-tablet .art-card {
-  display: flex; flex-direction: column; width: 100%;
-  border: none !important; background: none; cursor: pointer;
+body.layout-phone .stack-card-scrim,
+body.layout-tablet .stack-card-scrim {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 62%;
+  background: linear-gradient(to top, rgba(6,7,6,0.95) 0%, rgba(6,7,6,0.55) 42%, transparent 100%);
 }
-/* 图片容器：squircle 圆角，aspect-ratio 内联定高 */
-body.layout-phone .card-img-wrapper,
-body.layout-tablet .card-img-wrapper {
-  width: 100%; overflow: hidden; position: relative; flex-shrink: 0;
-  background: var(--ios-fill);
-  border-radius: var(--ios-radius-card);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+body.layout-phone .stack-card-badge,
+body.layout-tablet .stack-card-badge {
+  position: absolute; top: 16px; left: 16px;
+  background: var(--st-accent-soft); color: var(--st-accent);
+  font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
+  padding: 5px 10px; border-radius: 8px;
 }
-body.layout-phone .card-fade-image,
-body.layout-tablet .card-fade-image {
-  /* 图片比容器高一截（顶部上移），留出上下浮动的余量做滚动视差；
-     视差位移用独立的 translate 属性（--parallax-y），与 :active 的 transform:scale 互不覆盖。 */
-  position: absolute; left: 0; right: 0; top: -7%;
-  width: 100% !important; height: 114% !important;
-  display: block; object-fit: cover !important;
-  --parallax-y: 0px;
-  translate: 0 var(--parallax-y);
-  filter: grayscale(100%) contrast(1.02);
-  transition: filter 0.5s ease, transform 0.5s cubic-bezier(0.2,0.8,0.2,1);
-  will-change: translate;
+@media (prefers-color-scheme: light) {
+  body.layout-phone .stack-card-badge,
+  body.layout-tablet .stack-card-badge { background: rgba(255,184,77,0.22); color: #FFB84D; }
 }
-/* 入场苏醒（reveal-in）或按压时恢复彩色 */
-body.layout-phone .art-card.in-view .card-fade-image.is-loaded,
-body.layout-tablet .art-card.in-view .card-fade-image.is-loaded { filter: grayscale(0%) contrast(1); }
-body.layout-phone .art-card:active .card-fade-image.is-loaded,
-body.layout-tablet .art-card:active .card-fade-image.is-loaded {
-  filter: grayscale(0%) contrast(1); transform: scale(1.03);
+body.layout-phone .stack-card-caption,
+body.layout-tablet .stack-card-caption {
+  position: absolute; left: 18px; right: 18px; bottom: 20px;
 }
-body.layout-phone .art-card:active,
-body.layout-tablet .art-card:active { transform: scale(0.975); }
-body.layout-phone .art-card,
-body.layout-tablet .art-card { transition: transform 0.2s cubic-bezier(0.2,0.8,0.2,1); }
-body.layout-phone .card-image-skeleton,
-body.layout-tablet .card-image-skeleton { border-radius: var(--ios-radius-card); }
-
-/* 卡片文字 */
-body.layout-phone .card-meta,
-body.layout-tablet .card-meta {
-  display: flex; flex-direction: column; padding: 9px 4px 2px; gap: 2px;
-}
-body.layout-phone .card-info h4,
-body.layout-tablet .card-info h4 {
-  margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3;
-  letter-spacing: -0.01em; color: var(--ios-label);
+body.layout-phone .stack-card-caption h3,
+body.layout-tablet .stack-card-caption h3 {
+  margin: 0; font-size: 19px; font-weight: 700; line-height: 1.3;
+  letter-spacing: -0.01em; color: #F7F4EE;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-body.layout-phone .card-date,
-body.layout-tablet .card-date {
-  font-size: 12px; font-weight: 500; color: var(--ios-label-3); margin-top: 1px;
+body.layout-phone .stack-card-desc,
+body.layout-tablet .stack-card-desc {
+  margin: 7px 0 0; font-size: 13px; color: #B4AEA4; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
-body.layout-phone .card-action,
-body.layout-tablet .card-action { display: none; }
+body.layout-phone .stack-card-date,
+body.layout-tablet .stack-card-date {
+  margin: 11px 0 0; font-size: 12px; color: #847E74; letter-spacing: 0.03em;
+}
 
-/* ---------- iOS Tab Bar（毛玻璃底部导航） ---------- */
-body.layout-phone .ios-tabbar,
-body.layout-tablet .ios-tabbar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
-  height: calc(64px + env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  background: rgba(248,248,250,0.72);
+/* 空态 */
+body.layout-phone .stack-empty,
+body.layout-tablet .stack-empty {
+  position: absolute; inset: 0; align-items: center; justify-content: center;
+}
+body.layout-phone .stack-empty p,
+body.layout-tablet .stack-empty p { color: var(--st-ink-4); font-size: 14px; }
+
+/* ---------- 拨弄提示 + 左右按钮 ---------- */
+body.layout-phone .stack-controls,
+body.layout-tablet .stack-controls {
+  display: flex; align-items: center; justify-content: center; gap: 22px;
+  padding: 4px 0 14px;
+}
+body.layout-phone .stack-nav-btn,
+body.layout-tablet .stack-nav-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 0.5px solid var(--st-hair-strong); background: transparent;
+  color: var(--st-ink-3); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: transform 0.18s ease, color 0.2s ease;
+}
+body.layout-phone .stack-nav-btn:active,
+body.layout-tablet .stack-nav-btn:active { transform: scale(0.88); color: var(--st-ink); }
+body.layout-phone .stack-hint,
+body.layout-tablet .stack-hint {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  color: var(--st-ink-4); font-size: 12px;
+}
+body.layout-phone .stack-hint svg,
+body.layout-tablet .stack-hint svg { color: var(--st-accent); }
+
+/* ---------- 底部 dock（悬浮胶囊，五入口） ---------- */
+body.layout-phone .stack-dock,
+body.layout-tablet .stack-dock {
+  margin: 0 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  height: 64px; border-radius: var(--st-radius);
+  background: var(--st-dock-bg);
   -webkit-backdrop-filter: saturate(180%) blur(22px);
   backdrop-filter: saturate(180%) blur(22px);
-  border-top: 0.5px solid var(--ios-separator);
+  border: 0.5px solid var(--st-hair);
+  display: grid; grid-template-columns: repeat(5, 1fr);
 }
-body.layout-phone .ios-tab,
-body.layout-tablet .ios-tab {
+body.layout-phone .stack-dock-item,
+body.layout-tablet .stack-dock-item {
   border: none; background: none; cursor: pointer; font-family: inherit;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 4px; color: var(--ios-label-3);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  color: var(--st-ink-3);
   transition: transform 0.18s cubic-bezier(0.2,0.8,0.2,1), color 0.2s ease;
 }
-body.layout-phone .ios-tab span,
-body.layout-tablet .ios-tab span {
-  font-size: 10px; font-weight: 590; letter-spacing: 0.01em; line-height: 1;
+body.layout-phone .stack-dock-item span:last-child,
+body.layout-tablet .stack-dock-item span:last-child {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.01em; line-height: 1;
 }
-body.layout-phone .ios-tab:active,
-body.layout-tablet .ios-tab:active { transform: scale(0.9); color: var(--ios-label-2); }
-/* 实验室 Tab：坠橘强调 */
-body.layout-phone .ios-tab-accent,
-body.layout-tablet .ios-tab-accent { color: var(--ios-accent); }
-body.layout-phone .ios-tab-accent .ios-tab-icon-wrap,
-body.layout-tablet .ios-tab-accent .ios-tab-icon-wrap {
-  display: flex; align-items: center; justify-content: center;
-  width: 46px; height: 30px; border-radius: 10px;
-  background: rgba(255,149,0,0.14);
+body.layout-phone .stack-dock-item:active,
+body.layout-tablet .stack-dock-item:active { transform: scale(0.9); }
+body.layout-phone .stack-dock-item.active,
+body.layout-tablet .stack-dock-item.active { color: var(--st-accent); }
+body.layout-phone .stack-dock-dot,
+body.layout-tablet .stack-dock-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--st-accent);
+  margin: 5px 0 2px;
 }
-body.layout-phone .ios-tab-accent:active,
-body.layout-tablet .ios-tab-accent:active { transform: scale(0.9); }
 
-/* ---------- 滚动入场动画（reveal） ---------- */
-body.layout-phone .reveal,
-body.layout-tablet .reveal,
-body.layout-phone .art-card,
-body.layout-tablet .art-card {
-  opacity: 0; transform: translateY(18px);
-  transition: opacity 0.6s cubic-bezier(0.2,0.8,0.2,1), transform 0.6s cubic-bezier(0.2,0.8,0.2,1);
-}
-body.layout-phone .reveal.in-view,
-body.layout-tablet .reveal.in-view,
-body.layout-phone .art-card.in-view,
-body.layout-tablet .art-card.in-view {
-  opacity: 1; transform: translateY(0);
-}
+/* reduce-motion：去掉旋转与惯性观感，仅保留最基础的可用性（transform 仍在 JS 里设） */
 @media (prefers-reduced-motion: reduce) {
-  body.layout-phone .reveal,
-  body.layout-tablet .reveal,
-  body.layout-phone .art-card,
-  body.layout-tablet .art-card { opacity: 1 !important; transform: none !important; transition: none; }
-  body.layout-phone .card-fade-image,
-  body.layout-tablet .card-fade-image { translate: none !important; }
+  body.layout-phone .stack-card,
+  body.layout-tablet .stack-card { transition: opacity 0.2s ease !important; }
 }
 
-/* 隐藏旧首页残留结构 */
-body.layout-phone .m-bottom-nav,
-body.layout-phone .masonry-header,
-body.layout-phone .stela-container,
-body.layout-phone .art-marquee,
-body.layout-tablet .m-bottom-nav,
-body.layout-tablet .masonry-header,
-body.layout-tablet .art-marquee { display: none !important; }
-
-/* 超窄屏（<340px）降为单列 */
-@media (max-width: 340px) {
-  body.layout-phone .art-grid { flex-direction: column !important; }
-  body.layout-phone .art-column-right { margin-top: 0 !important; }
-}
+/* 旧结构兜底隐藏（万一有残留） */
+body.layout-phone .ios-home,
+body.layout-phone .ios-tabbar,
+body.layout-phone .art-marquee { display: none !important; }
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }
