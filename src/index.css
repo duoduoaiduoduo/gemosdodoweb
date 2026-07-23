@@ -7449,15 +7449,18 @@ body.layout-tablet .archive-header h3 {
 }
 
 /* art-grid: Flex container for two masonry columns.
-   align-items: flex-start —— 两列各自按内容自然高度，短列不被拉伸留白；
-   配合 JS「放最矮列」的瀑布流，两列高度差被压到最小，底部不再出现大片空背景 */
+   align-items: stretch —— 两列容器拉伸到等高（以较高列为准），实现「两端统一」：
+   顶部天然对齐，底部由较矮列末尾的一块骨白留白补齐 + art-grid 底边线闭合。
+   卡片本身用 flex:0 0 auto 保持真实高度不被拉伸变形。
+   配合 JS「放最矮列（真实渲染高度）」的瀑布流，参差被压到一张卡片内，收口干净。 */
 body.layout-phone .art-grid,
 body.layout-tablet .art-grid {
   display: flex !important;
   flex-direction: row !important;
-  align-items: flex-start !important;
+  align-items: stretch !important;
   border-left: var(--line-width) solid var(--art-fg);
   border-right: var(--line-width) solid var(--art-fg);
+  border-bottom: var(--line-width) solid var(--art-fg); /* 底部统一收口线 */
 }
 
 /* Base column styles */
@@ -7482,11 +7485,13 @@ body.layout-tablet .art-column-right {
   border-right: var(--line-width) solid var(--art-fg);
 }
 
-/* art-card inside columns */
+/* art-card inside columns —— flex:0 0 auto 保持卡片真实高度，
+   不被 stretch 列拉伸变形；短列多出的空间落在列末尾形成干净留白 */
 body.layout-phone .art-card,
 body.layout-tablet .art-card {
   display: flex;
   flex-direction: column;
+  flex: 0 0 auto;
   border-bottom: var(--line-width) solid var(--art-fg);
   border-right: none !important; /* Managed by column divider */
   width: 100%;
