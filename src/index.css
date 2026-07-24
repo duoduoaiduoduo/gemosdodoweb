@@ -1807,6 +1807,10 @@ body.pdfs-mode .cow-entity,
 body.pdfs-mode .grass {
     display: none !important;
 }
+body.pasture-mode .cow-entity,
+body.pasture-mode .grass {
+    display: none !important;
+}
 
 .awards-page {
     min-height: 100vh;
@@ -9280,4 +9284,456 @@ body.layout-phone .vibecoding-open-pill {
 @media (prefers-color-scheme: light) {
   body.layout-phone .vibecoding-atmosphere { opacity: 0.32 !important; }
   body.layout-phone .journal-card-cover { background: #fff !important; }
+}
+
+/* ============================================================
+   牛牛牧场 (Pasture Page) — 清新日系牧场
+   蓝天白云 + 暖阳 + 起伏嫩绿草地 + 木栅栏牛栏
+   ============================================================ */
+.pasture-root {
+  --sky-top: #8fd3ff;
+  --sky-mid: #bfeaff;
+  --sky-low: #e9f8ff;
+  --grass-a: #a7e06a;
+  --grass-b: #7fc949;
+  --grass-c: #6cbb3c;
+  --grass-d: #5aa832;
+  --wood: #c98f4f;
+  --wood-dark: #a86f34;
+  --ink: #3a4a2f;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  z-index: 40;
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 34%, var(--sky-low) 58%);
+  animation: pastureFadeIn 0.6s ease both;
+}
+@keyframes pastureFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ---------- 天空层：太阳 / 云 / 山丘 ---------- */
+.pasture-sky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.pasture-sun {
+  position: absolute;
+  top: 7%;
+  right: 9%;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fff6c8 0%, #ffe38a 42%, #ffcf5e 70%, rgba(255,207,94,0) 72%);
+  box-shadow: 0 0 60px 24px rgba(255, 221, 120, 0.55);
+  animation: sunGlow 6s ease-in-out infinite;
+}
+@keyframes sunGlow {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.05); filter: brightness(1.08); }
+}
+.pasture-cloud {
+  position: absolute;
+  background: #ffffff;
+  border-radius: 100px;
+  filter: drop-shadow(0 8px 12px rgba(120, 170, 210, 0.22));
+  opacity: 0.96;
+}
+.pasture-cloud::before,
+.pasture-cloud::after {
+  content: '';
+  position: absolute;
+  background: #ffffff;
+  border-radius: 50%;
+}
+.pasture-cloud::before { width: 60%; height: 150%; top: -55%; left: 12%; }
+.pasture-cloud::after { width: 46%; height: 130%; top: -42%; right: 14%; }
+.pc-1 { width: 150px; height: 42px; top: 12%; left: -20%; animation: cloudDrift 46s linear infinite; }
+.pc-2 { width: 108px; height: 32px; top: 24%; left: -20%; animation: cloudDrift 62s linear infinite; animation-delay: -18s; opacity: 0.85; }
+.pc-3 { width: 190px; height: 50px; top: 6%; left: -25%; animation: cloudDrift 78s linear infinite; animation-delay: -40s; }
+.pc-4 { width: 96px; height: 28px; top: 32%; left: -20%; animation: cloudDrift 54s linear infinite; animation-delay: -8s; opacity: 0.8; }
+@keyframes cloudDrift {
+  from { transform: translateX(0); }
+  to { transform: translateX(135vw); }
+}
+.pasture-hill {
+  position: absolute;
+  left: -5%;
+  right: -5%;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.pasture-hill-back {
+  bottom: 40%;
+  height: 22vh;
+  background: linear-gradient(180deg, #b6e884 0%, #98d766 100%);
+  opacity: 0.9;
+}
+.pasture-hill-front {
+  bottom: 38%;
+  left: 30%;
+  right: -20%;
+  height: 26vh;
+  background: linear-gradient(180deg, #a6df6f 0%, #8ace55 100%);
+  opacity: 0.95;
+}
+
+/* ---------- 顶栏 ---------- */
+.pasture-topbar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 26px;
+}
+.pasture-topbar .pasture-back { position: absolute; left: 26px; top: 18px; }
+.pasture-topbar .pasture-lang { position: absolute; right: 26px; top: 18px; }
+.pasture-back,
+.pasture-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(90, 140, 60, 0.18);
+  backdrop-filter: blur(8px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.pasture-lang { min-width: 48px; justify-content: center; }
+.pasture-back:hover,
+.pasture-lang:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(90, 140, 60, 0.26);
+  background: #ffffff;
+}
+.pasture-back svg { display: block; }
+
+/* 木牌标题 */
+.pasture-sign {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--wood) 0%, var(--wood-dark) 100%);
+  box-shadow: 0 8px 20px rgba(120, 80, 30, 0.32), inset 0 2px 0 rgba(255, 255, 255, 0.28);
+  color: #fff8ec;
+  text-shadow: 0 1px 2px rgba(90, 50, 10, 0.5);
+}
+.pasture-sign::before,
+.pasture-sign::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 20px;
+  background: var(--wood-dark);
+  border-radius: 4px;
+}
+.pasture-sign::before { left: 22px; transform: rotate(-14deg); }
+.pasture-sign::after { right: 22px; transform: rotate(14deg); }
+.pasture-sign-emoji { font-size: 22px; }
+.pasture-sign-text { font-size: 18px; font-weight: 800; letter-spacing: 0.5px; }
+.pasture-sign-count {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 248, 236, 0.22);
+}
+
+/* ---------- 草地 ---------- */
+.pasture-field {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+}
+.pasture-lawn {
+  position: relative;
+  width: 100%;
+  height: 62vh;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 60% at 50% 118%, rgba(60, 130, 40, 0.35) 0%, rgba(60, 130, 40, 0) 60%),
+    linear-gradient(180deg, var(--grass-a) 0%, var(--grass-b) 34%, var(--grass-c) 66%, var(--grass-d) 100%);
+  border-radius: 46% 46% 0 0 / 12% 12% 0 0;
+  box-shadow: inset 0 6px 20px rgba(255, 255, 255, 0.25);
+}
+/* 草地纹理：横向明暗带模拟起伏 */
+.pasture-lawn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.05) 0 3px, rgba(0,0,0,0) 3px 22px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* 木栅栏牛栏 */
+.pasture-fence {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  height: 46px;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  z-index: 2;
+  pointer-events: none;
+}
+.fence-post {
+  width: 9px;
+  height: 46px;
+  background: linear-gradient(90deg, var(--wood-dark) 0%, var(--wood) 45%, var(--wood-dark) 100%);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 2px 4px rgba(90, 50, 10, 0.25);
+}
+.fence-post::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  width: 9px;
+  height: 6px;
+  background: var(--wood-dark);
+  border-radius: 4px 4px 0 0;
+}
+.fence-rail {
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  height: 8px;
+  background: linear-gradient(180deg, var(--wood) 0%, var(--wood-dark) 100%);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(90, 50, 10, 0.2);
+}
+.fence-rail-top { top: 10px; }
+.fence-rail-bottom { top: 28px; }
+
+/* 深度分带：仅做 z 分层，牛用绝对 top/left 散布整片草地 */
+.pasture-band {
+  position: absolute;
+  inset: 0;
+}
+.band-0 { z-index: 4; }
+.band-1 { z-index: 5; }
+.band-2 { z-index: 6; }
+
+/* 单只牛 */
+.pasture-cow {
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transform: scale(var(--cow-scale, 1));
+  transform-origin: bottom center;
+  animation: cowStroll var(--cow-dur, 12s) ease-in-out infinite alternate;
+  animation-delay: var(--cow-delay, 0s);
+  transition: filter 0.18s ease;
+}
+.pasture-cow.flip .pasture-cow-svg { transform: scaleX(-1); }
+.pasture-cow:hover { filter: drop-shadow(0 6px 10px rgba(60, 90, 30, 0.4)) brightness(1.04); z-index: 20; }
+.pasture-cow:hover .pasture-nametag { opacity: 1; transform: translate(-50%, 0); }
+@keyframes cowStroll {
+  0%   { transform: scale(var(--cow-scale, 1)) translateX(0); }
+  50%  { transform: scale(var(--cow-scale, 1)) translateX(38px); }
+  100% { transform: scale(var(--cow-scale, 1)) translateX(0); }
+}
+.pasture-cow-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 3px 4px rgba(50, 80, 30, 0.22));
+  animation: cowGraze 3.4s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+@keyframes cowGraze {
+  0%, 62%, 100% { transform: rotate(0deg); }
+  72%, 86% { transform: rotate(6deg) translateY(2px); }
+}
+.pasture-cow.flip .pasture-cow-svg { animation: cowGrazeFlip 3.4s ease-in-out infinite; }
+@keyframes cowGrazeFlip {
+  0%, 62%, 100% { transform: scaleX(-1) rotate(0deg); }
+  72%, 86% { transform: scaleX(-1) rotate(6deg) translateY(2px); }
+}
+.pasture-cow-shadow {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  width: 62%;
+  height: 12px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(40, 70, 20, 0.28) 0%, rgba(40, 70, 20, 0) 72%);
+  z-index: -1;
+}
+
+/* 吃的草丛 */
+.pasture-graze {
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  pointer-events: none;
+}
+.graze-tuft {
+  width: 4px;
+  height: 12px;
+  background: linear-gradient(180deg, #7fc949 0%, #4f9c2c 100%);
+  border-radius: 3px 3px 0 0;
+  transform-origin: bottom center;
+  animation: tuftSway 2.6s ease-in-out infinite;
+}
+.graze-tuft:nth-child(2) { height: 16px; animation-delay: 0.3s; }
+.graze-tuft:nth-child(3) { height: 10px; animation-delay: 0.6s; }
+@keyframes tuftSway {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+
+/* 名牌 */
+.pasture-nametag {
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translate(-50%, 4px);
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px rgba(60, 90, 30, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+/* 花草点缀 */
+.pasture-decor { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.decor-item {
+  position: absolute;
+  line-height: 1;
+  animation: decorSway 3.8s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+.decor-item:nth-child(3n) { animation-duration: 4.6s; }
+.decor-item:nth-child(3n+1) { animation-duration: 3.2s; }
+@keyframes decorSway {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+
+.pasture-empty {
+  width: 100%;
+  padding-bottom: 22vh;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  color: #4a6a34;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+/* ---------- 留言弹窗 ---------- */
+.pasture-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(40, 60, 30, 0.32);
+  backdrop-filter: blur(3px);
+  animation: pastureFadeIn 0.2s ease both;
+}
+.pasture-dialog {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: 440px;
+  width: 100%;
+  padding: 22px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #f4fbe9 100%);
+  box-shadow: 0 24px 60px rgba(50, 80, 30, 0.32);
+  animation: pasturePop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes pasturePop {
+  from { opacity: 0; transform: translateY(16px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pasture-dialog-portrait {
+  flex: 0 0 96px;
+  width: 96px;
+  height: 96px;
+  border-radius: 20px;
+  background: radial-gradient(circle at 50% 40%, #eaf7d4 0%, #d4edb0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 6px rgba(90, 140, 60, 0.18);
+}
+.pasture-dialog-svg { width: 84px; height: 84px; }
+.pasture-dialog-body { flex: 1 1 auto; min-width: 0; }
+.pasture-dialog-name {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.pasture-dialog-message {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #506b3c;
+  word-break: break-word;
+  margin-bottom: 14px;
+}
+.pasture-dialog-close {
+  height: 38px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #8ace55 0%, #6cbb3c 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(90, 160, 50, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.pasture-dialog-close:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(90, 160, 50, 0.42); }
+
+/* 窄屏 / 手机端兜底（本页仅桌面入口，但仍保证可用） */
+@media (max-width: 640px) {
+  .pasture-sign-text { font-size: 16px; }
+  .pasture-sun { width: 92px; height: 92px; }
+  .pasture-cow { width: 78px; height: 78px; }
+  .pasture-dialog { flex-direction: column; text-align: center; }
+  .pasture-dialog-body { text-align: center; }
 }

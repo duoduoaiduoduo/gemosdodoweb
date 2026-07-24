@@ -9,6 +9,7 @@ import PdfsPage from './PdfsPage';
 import JournalPage from './JournalPage';
 import VibecodingPage from './VibecodingPage';
 import VibecodingLaunchPage from './VibecodingLaunchPage';
+import PasturePage from './PasturePage';
 import { getAppBridge } from './appBridge';
 import { runLanguageErosionTransition } from './langErosion';
 import { detectLayoutMode, type LayoutMode } from './layoutMode';
@@ -487,6 +488,7 @@ function DesktopHome({
   onOpenVibecoding,
   onOpenJournal,
   onOpenAdmin,
+  onOpenPasture,
   onScrollArchive,
 }: {
   lang: AppLang;
@@ -501,6 +503,7 @@ function DesktopHome({
   onOpenVibecoding: () => void;
   onOpenJournal: () => void;
   onOpenAdmin: () => void;
+  onOpenPasture: () => void;
   onScrollArchive: () => void;
 }) {
   return (
@@ -606,6 +609,16 @@ function DesktopHome({
         <span className="desktop-quick-text">{t('手账本', 'Journal')}</span>
       </button>
 
+      <button
+        type="button"
+        className="pasture-floating-entry desktop-quick-entry desktop-quick-pasture no-grass animate-item"
+        onClick={onOpenPasture}
+        aria-label={t('进入牛牛牧场', 'Open cow pasture')}
+      >
+        <span className="desktop-quick-icon" aria-hidden="true">🐮</span>
+        <span className="desktop-quick-text">{t('牛牛牧场', 'Pasture')}</span>
+      </button>
+
       <button className="create-btn no-grass animate-item" onClick={() => bridge.openModal?.('diyPanel')}>
         ✦ {t('创造专属牛牛', 'Create Exclusive Cow')}
       </button>
@@ -645,6 +658,7 @@ export default function App() {
   const isJournalRoute = pathname === '/journal';
   const isVibecodingRoute = pathname === '/vibecoding';
   const isProposalRoute = pathname === '/proposal';
+  const isPastureRoute = pathname === '/pasture';
   const vibecodingSlug =
     pathname.startsWith('/vibecoding/') && pathname.length > '/vibecoding/'.length
       ? decodeURIComponent(pathname.slice('/vibecoding/'.length))
@@ -657,7 +671,8 @@ export default function App() {
     !isJournalRoute &&
     !isProposalRoute &&
     !isVibecodingRoute &&
-    !isVibecodingLaunchRoute;
+    !isVibecodingLaunchRoute &&
+    !isPastureRoute;
 
   const onAvatarTap = () => {
     const now = Date.now();
@@ -789,12 +804,14 @@ export default function App() {
     document.body.classList.toggle('awards-mode', isAwardsRoute);
     document.body.classList.toggle('pdfs-mode', isPdfsRoute);
     document.body.classList.toggle('journals-mode', isJournalRoute);
+    document.body.classList.toggle('pasture-mode', isPastureRoute);
     return () => {
       document.body.classList.remove('awards-mode');
       document.body.classList.remove('pdfs-mode');
       document.body.classList.remove('journals-mode');
+      document.body.classList.remove('pasture-mode');
     };
-  }, [isAwardsRoute, isPdfsRoute, isJournalRoute]);
+  }, [isAwardsRoute, isPdfsRoute, isJournalRoute, isPastureRoute]);
 
   useEffect(() => {
     if (!showAdminEntry) return;
@@ -844,7 +861,7 @@ export default function App() {
     navigate(`/?work=${encodeURIComponent(entryId)}`);
   };
 
-  const navigateToPath = (path: '/awards' | '/pdfs' | '/vibecoding' | '/journal' | '/admin') => {
+  const navigateToPath = (path: '/awards' | '/pdfs' | '/vibecoding' | '/journal' | '/admin' | '/pasture') => {
     window.scrollTo({ top: 0, behavior: 'auto' });
     navigate(path);
   };
@@ -891,6 +908,7 @@ export default function App() {
             onOpenVibecoding={() => navigateToPath('/vibecoding')}
             onOpenJournal={() => navigateToPath('/journal')}
             onOpenAdmin={() => navigateToPath('/admin')}
+            onOpenPasture={() => navigateToPath('/pasture')}
             onScrollArchive={() => {
               document.getElementById('masonrySection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
@@ -905,6 +923,7 @@ export default function App() {
       {isVibecodingRoute ? <VibecodingPage lang={lang} onBack={goHome} onToggleLang={handleToggleLang} /> : null}
       {isVibecodingLaunchRoute ? <VibecodingLaunchPage lang={lang} slug={vibecodingSlug} onBackToList={() => navigateToPath('/vibecoding')} /> : null}
       {isJournalRoute ? <JournalPage lang={lang} focusJournalId={journalFocusId} onBack={goHome} /> : null}
+      {isPastureRoute ? <PasturePage lang={lang} onBack={goHome} onToggleLang={handleToggleLang} /> : null}
       {isProposalRoute ? (
         <Suspense fallback={<div className="proposal-loading">正在加载 PDF...</div>}>
           <ProposalPdfPage />
