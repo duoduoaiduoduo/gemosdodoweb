@@ -27,6 +27,7 @@ declare global {
     openDetailById: (id: string) => void;
     refreshSiteData: () => void;
     navigateApp?: (to: string) => void;
+    relayoutMasonry?: () => void;
   }
 }
 
@@ -166,6 +167,10 @@ export function initApp() {
         if (masonryResizeRAF) cancelAnimationFrame(masonryResizeRAF);
         masonryResizeRAF = requestAnimationFrame(() => relayoutMasonry());
     });
+
+    // 暴露给 React：从其它路由（如牧场页）切回主页时，主页 DOM 是 display 切换而非重挂载，
+    // script.ts 的初始化只跑一次，瀑布流不会自动重排。React 侧在回到主页时调用此函数重排。
+    window.relayoutMasonry = () => relayoutMasonry();
 
     let currentDetailCoverImage = '';
     let detailImageQueueToken = 0;
@@ -922,13 +927,20 @@ export function initApp() {
     }
 
     // 用绝对定位计算瀑布流（兼容 Safari / Windows，避免 CSS columns + 3D transform 在 Safari 的渲染 bug）
+    let relayoutRetryRAF = 0;
     function relayoutMasonry() {
         const grid = document.getElementById('masonryGrid');
         if (!grid) return;
         const cards = Array.prototype.slice.call(grid.querySelectorAll('.masonry-card'));
         if (cards.length === 0) return;
         const gridWidth = grid.clientWidth;
-        if (gridWidth <= 0) return;
+        if (gridWidth <= 0) {
+            // 容器仍处于 display:none / 尺寸未就绪（如从其它路由切回主页的瞬间），下一帧再试
+            if (relayoutRetryRAF) cancelAnimationFrame(relayoutRetryRAF);
+            relayoutRetryRAF = requestAnimationFrame(() => relayoutMasonry());
+            return;
+        }
+        if (relayoutRetryRAF) { cancelAnimationFrame(relayoutRetryRAF); relayoutRetryRAF = 0; }
         const cols = getMasonryCols(gridWidth);
         const gap = 24;
         const colWidth = (gridWidth - gap * (cols - 1)) / cols;

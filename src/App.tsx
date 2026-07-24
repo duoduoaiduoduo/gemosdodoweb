@@ -871,6 +871,27 @@ export default function App() {
     window.dispatchEvent(new CustomEvent('work-visual-state', { detail: { active: false, coverImage: '' } }));
   }, [showHome]);
 
+  // 从其它路由（如牧场页）切回主页时，主页用 display 切换而非重挂载，
+  // 瀑布流是 script.ts 用绝对定位计算的，display:none 期间无法测量宽度，
+  // 恢复显示后必须重新触发一次布局，否则卡片会塌成默认堆叠（全景纪事变样）。
+  useEffect(() => {
+    if (!showHome || layoutMode !== 'desktop') return;
+    const relayout = () => {
+      if (typeof (window as any).relayoutMasonry === 'function') {
+        (window as any).relayoutMasonry();
+      }
+    };
+    // 双 rAF：等 display 恢复、浏览器完成一帧布局后再测量宽度
+    const r1 = requestAnimationFrame(() => {
+      const r2 = requestAnimationFrame(relayout);
+      (window as any).__relayoutRAF2 = r2;
+    });
+    return () => {
+      cancelAnimationFrame(r1);
+      if ((window as any).__relayoutRAF2) cancelAnimationFrame((window as any).__relayoutRAF2);
+    };
+  }, [showHome, layoutMode]);
+
   return (
     <>
       <ParticleBackdrop enabled={showHome && layoutMode === 'desktop'} />
