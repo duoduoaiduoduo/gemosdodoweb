@@ -7432,132 +7432,100 @@ body.layout-phone .art-marquee { display: none !important; }
 }
 
 /* ============================================================
-   AWARDS PAGE MOBILE REDESIGN (NEO-BRUTALISM 3-COLUMN MASONRY)
+   AWARDS PAGE MOBILE — 暖黑/暖白双模式 · 沉浸三列瀑布流
+   证书图在暖底上「发光」，页头统一，去除硬边框/白缝隙。
    ============================================================ */
-
 .awards-page-v2.is-mobile {
-  --art-bg: #EAE8E3;
-  --art-fg: #111111;
-  --line-width: 1.5px;
-  background: var(--art-bg) !important;
-  color: var(--art-fg) !important;
-  font-family: "Space Grotesk", sans-serif !important;
+  background: var(--st-bg) !important;
+  color: var(--st-ink) !important;
+  font-family: inherit !important;
+  min-height: 100svh;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
 }
 
 .awards-page-v2.is-mobile .awards-header-v2 {
-  padding: 12px 16px;
-  border-bottom: var(--line-width) solid var(--art-fg);
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: var(--art-bg);
+  padding: 16px var(--st-safe) 14px;
+  border-bottom: 0.5px solid var(--st-hair);
+  display: flex; align-items: center; gap: 14px;
+  background: transparent;
+  position: sticky; top: 0; z-index: 20;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
 }
 
 .awards-page-v2.is-mobile .awards-v2-back {
-  width: 32px;
-  height: 32px;
-  border: var(--line-width) solid var(--art-fg);
-  border-radius: 0;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 36px; height: 36px; flex: 0 0 36px;
+  border: 0.5px solid var(--st-hair-strong);
+  border-radius: 50%; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--st-ink-2);
+  transition: transform 0.18s ease;
 }
+.awards-page-v2.is-mobile .awards-v2-back:active { transform: scale(0.9); }
 
 .awards-page-v2.is-mobile .awards-title-v2 h1 {
-  font-size: 14px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0;
+  font-size: 17px; font-weight: 600; letter-spacing: -0.01em;
+  text-transform: none; margin: 0; color: var(--st-ink);
 }
 
-.awards-page-v2.is-mobile .awards-dynamic-stage.is-mobile {
-  padding: 0 !important;
-}
-
-.awards-page-v2.is-mobile .awards-deck-viewport {
-  overflow: visible;
-}
+.awards-page-v2.is-mobile .awards-dynamic-stage.is-mobile { padding: 14px var(--st-safe) 0 !important; }
+.awards-page-v2.is-mobile .awards-deck-viewport { overflow: visible; }
 
 .awards-page-v2.is-mobile .awards-masonry-grid {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: stretch !important;
-  border-left: var(--line-width) solid var(--art-fg);
-  border-right: var(--line-width) solid var(--art-fg);
+  display: flex !important; flex-direction: row !important;
+  align-items: flex-start !important; gap: 10px;
+  border: none;
 }
-
 .awards-page-v2.is-mobile .awards-masonry-column {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;
 }
-
 .awards-page-v2.is-mobile .awards-masonry-column.col-0,
-.awards-page-v2.is-mobile .awards-masonry-column.col-1 {
-  border-right: var(--line-width) solid var(--art-fg);
-}
+.awards-page-v2.is-mobile .awards-masonry-column.col-1 { border-right: none; }
 
+/* 卡片：暖黑发光卡，证书图铺满 */
 .awards-page-v2.is-mobile .award-card-v2 {
-  display: flex !important;
-  flex-direction: column;
-  border-bottom: var(--line-width) solid var(--art-fg);
-  border-radius: 0 !important;
+  display: flex !important; flex-direction: column;
+  border: 0.5px solid var(--st-hair);
+  border-radius: 14px !important; overflow: hidden;
   width: 100% !important;
-  box-shadow: none !important;
-  background: var(--art-bg);
-  padding: 0;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.28) !important;
+  background: #0C0B0A;
+  padding: 0; cursor: pointer;
+  transition: transform 0.2s ease;
 }
-
-.awards-page-v2.is-mobile .card-minimal-panel,
+.awards-page-v2.is-mobile .award-card-v2:active { transform: scale(0.97); }
+.awards-page-v2.is-mobile .card-minimal-panel { border-radius: 0 !important; background: transparent; }
 .awards-page-v2.is-mobile .card-minimal-media {
-  border-radius: 0 !important;
+  border-radius: 0 !important; background: #0C0B0A; display: block;
 }
+.awards-page-v2.is-mobile .card-minimal-media img { display: block; width: 100%; height: auto; }
 
+/* 详情灯箱：暖底玻璃卡 */
 .awards-page-v2.is-mobile .award-glass-lightbox {
-  background: var(--art-bg) !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-  padding: 16px;
+  background: rgba(8,7,6,0.72) !important;
+  backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important;
+  padding: 18px;
 }
-
 .awards-page-v2.is-mobile .award-glass-panel {
-  background: var(--art-bg) !important;
-  border: var(--line-width) solid var(--art-fg) !important;
-  box-shadow: 4px 4px 0 var(--art-fg) !important;
-  border-radius: 0 !important;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
+  background: var(--st-bg-2) !important;
+  border: 0.5px solid var(--st-hair-strong) !important;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5) !important;
+  border-radius: 20px !important;
+  max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden;
 }
-
 .awards-page-v2.is-mobile .award-glass-media {
-  background: #000;
-  border-bottom: var(--line-width) solid var(--art-fg);
-  max-height: 50vh;
+  background: #000; border-bottom: 0.5px solid var(--st-hair); max-height: 50vh;
 }
-
-.awards-page-v2.is-mobile .award-glass-meta {
-  padding: 24px 16px;
-  background: var(--art-bg);
-}
-
+.awards-page-v2.is-mobile .award-glass-meta { padding: 22px 18px; background: transparent; }
 .awards-page-v2.is-mobile .award-glass-title {
-  font-size: 20px;
-  line-height: 1.2;
-  font-weight: 800;
-  text-transform: uppercase;
-  margin-bottom: 20px;
+  font-size: 20px; line-height: 1.25; font-weight: 700; text-transform: none;
+  margin-bottom: 18px; color: var(--st-ink);
 }
-
 .awards-page-v2.is-mobile .award-glass-fact {
-  border-radius: 0 !important;
-  border: var(--line-width) solid var(--art-fg) !important;
-  background: #fff !important;
-  margin: 4px;
+  border-radius: 12px !important;
+  border: 0.5px solid var(--st-hair) !important;
+  background: var(--st-bg) !important;
+  margin: 4px; color: var(--st-ink-2);
 }
 
 @keyframes vibeOrbitSpin {
@@ -9116,3 +9084,200 @@ body.layout-phone .art-marquee { display: none !important; }
 }
 
 
+
+/* ============================================================
+   SUBPAGES MOBILE — 暖黑/暖白双模式统一（Pdfs / Journal / Vibecoding）
+   布局各自最优，共享 --st-* 变量与页头/返回按钮语言。
+   用高特异度 body.layout-phone 覆盖桌面样式，不改组件 DOM。
+   ============================================================ */
+
+/* ---------- 共用：页面外壳 + 统一页头 + 返回按钮 ---------- */
+body.layout-phone .pdf-page,
+body.layout-phone .journal-page,
+body.layout-phone .vibecoding-page {
+  background: var(--st-bg) !important;
+  color: var(--st-ink) !important;
+  min-height: 100svh;
+  font-family: inherit;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
+}
+
+body.layout-phone .pdf-header,
+body.layout-phone .journal-header,
+body.layout-phone .vibecoding-topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex !important; flex-direction: row !important; align-items: center !important; gap: 14px;
+  padding: 16px var(--st-safe) 14px !important;
+  margin: 0 !important;
+  background: color-mix(in srgb, var(--st-bg) 78%, transparent) !important;
+  border-bottom: 0.5px solid var(--st-hair) !important;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+body.layout-phone .awards-back-btn.icon-only {
+  width: 36px !important; height: 36px !important; flex: 0 0 36px !important;
+  border-radius: 50% !important;
+  border: 0.5px solid var(--st-hair-strong) !important;
+  background: transparent !important; color: var(--st-ink-2) !important;
+  box-shadow: none !important;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.18s ease;
+}
+body.layout-phone .awards-back-btn.icon-only:active { transform: scale(0.9); }
+body.layout-phone .awards-back-icon { color: inherit !important; }
+
+body.layout-phone .pdf-title-wrap h1,
+body.layout-phone .journal-title-wrap h1,
+body.layout-phone .pdf-title-wrap > *:first-child,
+body.layout-phone .journal-title-wrap > *:first-child {
+  font-size: 17px !important; font-weight: 600 !important;
+  letter-spacing: -0.01em !important; color: var(--st-ink) !important; margin: 0 !important;
+}
+body.layout-phone .pdf-title-wrap p,
+body.layout-phone .journal-title-wrap p {
+  font-size: 12px !important; color: var(--st-ink-3) !important; margin: 3px 0 0 !important;
+}
+
+/* ---------- PDFS：暖黑发光单列大卡 ---------- */
+body.layout-phone .pdf-grid {
+  display: flex !important; flex-direction: column !important; gap: 18px !important;
+  grid-template-columns: none !important;
+  padding: 18px var(--st-safe) 0 !important;
+}
+body.layout-phone .pdf-card {
+  background: #0C0B0A !important;
+  border: 0.5px solid var(--st-hair) !important;
+  border-radius: 20px !important; overflow: hidden !important;
+  box-shadow: 0 16px 38px rgba(0,0,0,0.34) !important;
+  transition: transform 0.2s ease !important;
+}
+body.layout-phone .pdf-card:active { transform: scale(0.98) !important; }
+body.layout-phone .pdf-card-cover {
+  border-radius: 0 !important; background: #0C0B0A !important;
+  aspect-ratio: 16 / 10; overflow: hidden;
+}
+body.layout-phone .pdf-card-cover img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+body.layout-phone .pdf-card-body { background: transparent !important; padding: 16px 18px 18px !important; }
+body.layout-phone .pdf-card-date { color: var(--st-ink-3) !important; }
+body.layout-phone .pdf-card-badge {
+  background: var(--st-accent-soft) !important; color: var(--st-accent) !important;
+  border: none !important;
+}
+body.layout-phone .pdf-card-title { color: var(--st-ink) !important; font-weight: 700 !important; }
+body.layout-phone .pdf-card-desc { color: var(--st-ink-2) !important; }
+body.layout-phone .pdf-card-meta > * {
+  background: var(--st-bg-2) !important; color: var(--st-ink-2) !important;
+  border: 0.5px solid var(--st-hair) !important;
+}
+
+/* PDF 灯箱 */
+body.layout-phone .pdf-lightbox { background: rgba(8,7,6,0.78) !important; backdrop-filter: blur(20px); }
+body.layout-phone .pdf-lightbox-panel {
+  background: var(--st-bg-2) !important; border: 0.5px solid var(--st-hair-strong) !important;
+  border-radius: 20px !important;
+}
+
+/* ---------- JOURNAL：卡片流接双模式（保留原布局） ---------- */
+body.layout-phone .journal-grid {
+  padding: 18px var(--st-safe) 0 !important;
+  gap: 18px !important;
+}
+body.layout-phone .journal-card {
+  background: var(--st-bg-2) !important;
+  border: 0.5px solid var(--st-hair) !important;
+  border-radius: 20px !important; overflow: hidden !important;
+  box-shadow: 0 16px 38px rgba(0,0,0,0.28) !important;
+  transition: transform 0.2s ease !important;
+}
+body.layout-phone .journal-card:active { transform: scale(0.98) !important; }
+body.layout-phone .journal-card-cover { background: #fff !important; }
+body.layout-phone .journal-card-body { background: transparent !important; }
+body.layout-phone .journal-card-date { color: var(--st-ink-3) !important; }
+body.layout-phone .journal-card-title { color: var(--st-ink) !important; font-weight: 700 !important; }
+body.layout-phone .journal-card-note { color: var(--st-ink-2) !important; }
+
+body.layout-phone .journal-lightbox { background: rgba(8,7,6,0.78) !important; backdrop-filter: blur(20px); }
+body.layout-phone .journal-lightbox-panel {
+  background: var(--st-bg-2) !important; border: 0.5px solid var(--st-hair-strong) !important;
+  border-radius: 20px !important;
+}
+body.layout-phone .journal-lightbox-title { color: var(--st-ink) !important; }
+body.layout-phone .journal-lightbox-date { color: var(--st-ink-3) !important; }
+body.layout-phone .journal-lightbox-note { color: var(--st-ink-2) !important; }
+
+/* ---------- VIBECODING：保留科技氛围，接入双模式 ---------- */
+body.layout-phone .vibecoding-hero-shell,
+body.layout-phone .vibecoding-collection-shell { padding-left: var(--st-safe) !important; padding-right: var(--st-safe) !important; }
+body.layout-phone .vibecoding-topbar { flex-wrap: nowrap !important; }
+body.layout-phone .vibecoding-topbar-actions {
+  display: flex !important; flex-direction: row !important; align-items: center !important;
+  gap: 10px !important; margin-left: auto !important; min-width: 0 !important; flex: 1 1 auto !important; flex-wrap: nowrap !important;
+}
+body.layout-phone .vibecoding-topbar-chip {
+  background: var(--st-accent-soft) !important; color: var(--st-accent) !important; border: none !important;
+  flex: 1 1 auto !important; min-width: 0 !important; width: auto !important; justify-content: center !important;
+  overflow: hidden !important; white-space: nowrap !important;
+  text-overflow: ellipsis !important; padding: 7px 14px !important; font-size: 12px !important;
+  min-height: 38px !important;
+}
+body.layout-phone .vibecoding-topbar-chip span {
+  overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important;
+}
+body.layout-phone .vibecoding-lang-toggle {
+  background: transparent !important; border: 0.5px solid var(--st-hair-strong) !important;
+  color: var(--st-ink-2) !important; flex: 0 0 auto !important;
+  width: auto !important; min-width: 52px !important;
+  padding: 0 14px !important; min-height: 38px !important; border-radius: 999px !important;
+}
+/* Hero 区固定深色「发光装置」：两种模式都深底浅字，保留科技调、避免浅色下深字压深底看不清 */
+body.layout-phone .vibecoding-hero {
+  background: linear-gradient(160deg, #14202a 0%, #0d1620 60%, #0b1017 100%) !important;
+  border: 0.5px solid rgba(120, 209, 255, 0.14) !important;
+  border-radius: 22px !important; overflow: hidden !important;
+  box-shadow: 0 18px 44px rgba(0,0,0,0.42) !important;
+  padding: 26px 22px 24px !important;
+}
+body.layout-phone .vibecoding-hero-copy { background: transparent !important; padding: 0 !important; }
+body.layout-phone .vibecoding-hero-copy .vibecoding-title,
+body.layout-phone .vibecoding-hero h1,
+body.layout-phone .vibecoding-hero h2 { color: #F4F1EC !important; }
+body.layout-phone .vibecoding-hero p,
+body.layout-phone .vibecoding-hero-desc { color: rgba(244,241,236,0.72) !important; }
+body.layout-phone .vibecoding-hero-tags > * {
+  background: rgba(255,255,255,0.05) !important; border: 0.5px solid rgba(255,255,255,0.1) !important;
+  color: rgba(244,241,236,0.82) !important;
+}
+body.layout-phone .vibecoding-kicker { color: var(--st-accent) !important; }
+body.layout-phone .vibecoding-stats > * {
+  background: var(--st-bg-2) !important; border: 0.5px solid var(--st-hair) !important; color: var(--st-ink-2) !important;
+}
+body.layout-phone .vibecoding-section-kicker { color: var(--st-accent) !important; }
+
+body.layout-phone .vibecoding-grid {
+  display: flex !important; flex-direction: column !important; gap: 18px !important;
+  grid-template-columns: none !important;
+}
+body.layout-phone .vibecoding-card {
+  background: transparent !important;
+}
+body.layout-phone .vibecoding-card-shell,
+body.layout-phone .vibecoding-card-chassis {
+  background: #0C0B0A !important; border: 0.5px solid var(--st-hair) !important;
+  border-radius: 20px !important; overflow: hidden !important;
+  box-shadow: 0 16px 38px rgba(0,0,0,0.34) !important;
+}
+body.layout-phone .vibecoding-card:active .vibecoding-card-chassis { transform: scale(0.98); }
+body.layout-phone .vibecoding-card-screen { background: #0C0B0A !important; }
+body.layout-phone .vibecoding-card-body { background: transparent !important; }
+body.layout-phone .vibecoding-card-title { color: var(--st-ink) !important; font-weight: 700 !important; }
+body.layout-phone .vibecoding-card-desc { color: var(--st-ink-2) !important; }
+body.layout-phone .vibecoding-open-pill {
+  background: var(--st-accent-soft) !important; color: var(--st-accent) !important; border: none !important;
+}
+
+/* 浅色模式：Vibecoding 氛围光减淡，避免浅底上过艳 */
+@media (prefers-color-scheme: light) {
+  body.layout-phone .vibecoding-atmosphere { opacity: 0.32 !important; }
+  body.layout-phone .journal-card-cover { background: #fff !important; }
+}
