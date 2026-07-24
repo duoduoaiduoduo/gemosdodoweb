@@ -754,11 +754,23 @@ export function initApp() {
         cows = [];
     }
 
+    function pickRandomCows(list, count) {
+        if (!Array.isArray(list) || list.length <= count) return Array.isArray(list) ? list.slice() : [];
+        const pool = list.slice();
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        return pool.slice(0, count);
+    }
+
     function renderCowsByLayout() {
         clearRenderedCows();
         if (!shouldRenderCows()) return;
         if (!Array.isArray(cowsSeedData)) return;
-        cowsSeedData.forEach((c) => {
+        // 主页只随机放养 2 只，其余圈养在 /pasture 牧场页
+        const homeCows = pickRandomCows(cowsSeedData, 2);
+        homeCows.forEach((c) => {
             cows.push(
                 new Cow(
                     c.name,
