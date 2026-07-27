@@ -1,15 +1,7 @@
-import {useEffect, useState, type CSSProperties} from 'react';
-import {ArrowUpRight, Code2, Copy, Orbit, Sparkles} from 'lucide-react';
+import {useEffect, useRef, useState, type CSSProperties} from 'react';
+import {ArrowUpRight, Copy} from 'lucide-react';
 import {adminApi, type VibecodingProject} from './adminApi';
 import {resolveRuntimeContentUrl} from './runtimeUrls';
-
-const palettePresets = [
-  {accent: '#7cf7cf', glow: 'rgba(124, 247, 207, 0.35)', panel: '#0c191b', ink: '#e9fff7'},
-  {accent: '#ff8f5b', glow: 'rgba(255, 143, 91, 0.3)', panel: '#1b1210', ink: '#fff0e8'},
-  {accent: '#61c8ff', glow: 'rgba(97, 200, 255, 0.28)', panel: '#0c141d', ink: '#edf8ff'},
-  {accent: '#f06fff', glow: 'rgba(240, 111, 255, 0.28)', panel: '#19111f', ink: '#fff0ff'},
-  {accent: '#ffe66f', glow: 'rgba(255, 230, 111, 0.24)', panel: '#1b170d', ink: '#fffbe8'},
-];
 
 const openSlugInNewTab = (slug: string) => {
   window.open(`/vibecoding/${encodeURIComponent(slug)}`, '_blank', 'noopener,noreferrer');
@@ -45,6 +37,8 @@ export default function VibecodingPage({
   const [loading, setLoading] = useState(true);
   const [copyingSlug, setCopyingSlug] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<VibecodingProject | null>(null);
+  const [detailClosing, setDetailClosing] = useState(false);
+  const gridRef = useRef<HTMLDivElement | null>(null);
   const t = (zh: string, en: string) => (lang === 'zh' ? zh : en);
 
   useEffect(() => {
@@ -68,12 +62,37 @@ export default function VibecodingPage({
     };
   }, []);
 
+  // Scroll-reveal: elements marked [data-reveal] fade/rise in as they enter the viewport.
+  useEffect(() => {
+    if (loading) return;
+    const root = gridRef.current;
+    if (!root) return;
+    const targets: HTMLElement[] = Array.from(root.querySelectorAll<HTMLElement>('[data-reveal]'));
+    if (targets.length === 0) return;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      targets.forEach((el) => el.classList.add('is-revealed'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            (entry.target as HTMLElement).classList.add('is-revealed');
+            io.unobserve(entry.target);
+          }
+        });
+      },
+      {threshold: 0.12, rootMargin: '0px 0px -8% 0px'},
+    );
+    targets.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [loading, projects.length]);
+
   useEffect(() => {
     if (!selectedProject) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setSelectedProject(null);
-      }
+      if (event.key === 'Escape') requestCloseDetail();
     };
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -82,7 +101,16 @@ export default function VibecodingPage({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', onKeyDown);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProject]);
+
+  const requestCloseDetail = () => {
+    setDetailClosing(true);
+    window.setTimeout(() => {
+      setSelectedProject(null);
+      setDetailClosing(false);
+    }, 240);
+  };
 
   const copyShareLink = async (slug: string) => {
     if (!navigator.clipboard?.writeText) return;
@@ -105,10 +133,7 @@ export default function VibecodingPage({
   return (
     <div className="vibecoding-page no-grass">
       <div className="vibecoding-atmosphere" aria-hidden="true">
-        <div className="vibe-aurora vibe-aurora-a" />
-        <div className="vibe-aurora vibe-aurora-b" />
-        <div className="vibe-grid-haze" />
-        <div className="vibe-noise-lines" />
+        <div className="vibe-soft-glow" />
       </div>
 
       <section className="vibecoding-hero-shell">
@@ -127,8 +152,8 @@ export default function VibecodingPage({
 
           <div className="vibecoding-topbar-actions">
             <div className="vibecoding-topbar-chip">
-              <Sparkles size={14} strokeWidth={1.8} />
-              <span>{t('浏览器实验展厅', 'Browser-native art lab')}</span>
+              <span className="vibe-chip-dot" aria-hidden="true" />
+              <span>{t('浏览器实验展厅', 'Browser Lab')}</span>
             </div>
             <button
               type="button"
@@ -144,36 +169,36 @@ export default function VibecodingPage({
         <div className="vibecoding-hero">
           <div className="vibecoding-hero-copy">
             <div className="vibecoding-kicker">
-              <Orbit size={15} strokeWidth={1.8} />
-              <span>VIBECODING SIGNAL / 01</span>
+              <span>VIBECODING</span>
+              <span className="vibe-kicker-sep" aria-hidden="true" />
+              <span>{t('实验索引', 'Experiment Index')}</span>
             </div>
-            <h1>{t('把代码写成可分享的互动艺术', 'Turning code into shareable interactive art')}</h1>
+            <h1>
+              {t('把代码写成', 'Code, reshaped into')}
+              <br />
+              <em>{t('可分享的互动艺术', 'shareable interactive art')}</em>
+            </h1>
             <p>
               {t(
-                '这里不是普通作品列表，而是一组可以直接打开、试玩、传播的浏览器实验。每个页面都像一个小型数字装置，在别人的电脑里继续生长。',
-                'This is not a plain project archive. It is a shelf of browser experiments designed to be opened, played with, and passed around like small digital installations.',
+                '这里不是普通作品列表，而是一组可以直接打开、试玩、传播的浏览器实验。每个页面都像一件小型数字装置。',
+                'Not a plain archive — a shelf of browser experiments made to be opened, played with, and passed around like small digital installations.',
               )}
             </p>
 
-            <div className="vibecoding-hero-tags" aria-label={t('页面特性', 'Page highlights')}>
-              <span>{t('可直接打开', 'Open instantly')}</span>
-              <span>{t('可复制分享', 'Shareable links')}</span>
-              <span>{t('HTML / CSS / JS', 'HTML / CSS / JS')}</span>
-              <span>{t('作者友好型实验', 'Artist-friendly experiments')}</span>
-            </div>
-
-            <div className="vibecoding-stats">
+            <div className="vibecoding-stats" aria-label={t('页面数据', 'Page stats')}>
               <article>
                 <strong>{String(projectCount).padStart(2, '0')}</strong>
-                <span>{t('已发布实验', 'Published experiments')}</span>
+                <span>{t('已发布实验', 'Experiments')}</span>
               </article>
+              <span className="vibe-stat-div" aria-hidden="true" />
               <article>
                 <strong>{latestProject ? formatDateLabel(latestProject.updatedAt, lang) : '--'}</strong>
                 <span>{t('最近更新', 'Latest update')}</span>
               </article>
+              <span className="vibe-stat-div" aria-hidden="true" />
               <article>
-                <strong>{t('本地运行', 'Runs locally')}</strong>
-                <span>{t('由访问者设备实时执行', 'Executed live on the visitor device')}</span>
+                <strong>{t('本地运行', 'Local')}</strong>
+                <span>{t('访客设备实时执行', 'Runs on your device')}</span>
               </article>
             </div>
           </div>
@@ -182,48 +207,38 @@ export default function VibecodingPage({
 
       <section className="vibecoding-collection-shell">
         <div className="vibecoding-section-head">
-          <div>
-            <span className="vibecoding-section-kicker">EXPERIMENT INDEX</span>
-            <h2>{t('实验卡片墙', 'Experiment card wall')}</h2>
-          </div>
+          <h2>{t('实验作品', 'The experiments')}</h2>
           <p>
             {t(
               '每一张卡片都不是静态封面，而是一个待展开的实验入口。',
-              'Each card is treated less like a thumbnail and more like a portal into a runnable experiment.',
+              'Each card is less a thumbnail, more a portal into a runnable experiment.',
             )}
           </p>
         </div>
 
-        <section className="vibecoding-grid">
-          {loading ? <div className="vibecoding-empty">{t('正在校准实验信号...', 'Calibrating experiment signals...')}</div> : null}
+        <div className="vibecoding-grid" ref={gridRef}>
+          {loading ? <div className="vibecoding-empty">{t('正在载入实验…', 'Loading experiments…')}</div> : null}
           {!loading && projectCount === 0 ? (
             <div className="vibecoding-empty">
               <strong>{t('这里还没有公开实验', 'No public experiment yet')}</strong>
-              <span>{t('等你放入第一个 VibeCoding 项目后，这面墙就会开始发光。', 'As soon as the first VibeCoding project is published, this wall will light up.')}</span>
+              <span>{t('放入第一个 VibeCoding 项目后，这面墙就会亮起来。', 'Publish the first VibeCoding project and this wall lights up.')}</span>
             </div>
           ) : null}
 
           {projects.map((project, idx) => {
-            const palette = palettePresets[idx % palettePresets.length];
             const folderName = getProjectFolder(project);
             const localizedTitle = getLocalizedProjectTitle(project, lang);
             const localizedDescription = getLocalizedProjectDescription(project, lang);
+            const ext = project.entryRelativePath.split('.').pop()?.toUpperCase() || 'HTML';
 
             return (
               <article
                 key={project.id}
                 className="vibecoding-card"
+                data-reveal=""
                 role="button"
                 tabIndex={0}
-                style={
-                  {
-                    ['--vibe-accent' as string]: palette.accent,
-                    ['--vibe-glow' as string]: palette.glow,
-                    ['--vibe-panel' as string]: palette.panel,
-                    ['--vibe-light-ink' as string]: palette.ink,
-                    ['--card-index' as string]: String(idx),
-                  } as CSSProperties
-                }
+                style={{['--card-index' as string]: String(idx)} as CSSProperties}
                 onClick={() => setSelectedProject(project)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
@@ -233,79 +248,68 @@ export default function VibecodingPage({
                 }}
                 title={localizedTitle}
               >
-                <div className="vibecoding-card-shell">
-                  <div className="vibecoding-card-chassis">
-                    <div className="vibecoding-card-screen">
-                      {project.coverImage ? (
-                        <img
-                          src={resolveRuntimeContentUrl(project.coverImage)}
-                          alt={localizedTitle || 'VibeCoding cover'}
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="vibecoding-card-fallback">
-                          <div className="vibecoding-card-fallback-grid" />
-                          <div className="vibecoding-card-fallback-ring vibe-fallback-ring-a" />
-                          <div className="vibecoding-card-fallback-ring vibe-fallback-ring-b" />
-                          <div className="vibecoding-card-fallback-copy">
-                            <span className="vibecoding-card-badge">HTML LAB</span>
-                            <strong>{localizedTitle}</strong>
-                            <span>{folderName}</span>
-                          </div>
-                        </div>
-                      )}
-                      <div className="vibecoding-card-overlay">
-                        <span>{t('可交互实验', 'Interactive experiment')}</span>
-                        <ArrowUpRight size={15} strokeWidth={1.8} />
-                      </div>
+                <div className="vibecoding-card-media">
+                  {project.coverImage ? (
+                    <img
+                      src={resolveRuntimeContentUrl(project.coverImage)}
+                      alt={localizedTitle || 'VibeCoding cover'}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="vibecoding-card-fallback">
+                      <span className="vibecoding-card-fallback-mark">{(localizedTitle || 'V').slice(0, 1)}</span>
+                      <span className="vibecoding-card-fallback-folder">{folderName}</span>
                     </div>
+                  )}
+                  <span className="vibecoding-card-open" aria-hidden="true">
+                    <ArrowUpRight size={16} strokeWidth={1.9} />
+                  </span>
+                </div>
 
-                    <div className="vibecoding-card-body">
-                      <div className="vibecoding-card-topline">
-                        <span>{project.slug}</span>
-                        <span>{folderName}</span>
-                      </div>
-                      <div className="vibecoding-card-title">{localizedTitle}</div>
-                      <div className="vibecoding-card-desc">
-                        {localizedDescription ||
-                          t('这是一个可直接在浏览器中打开的实验页面。', 'A browser-native experiment ready to be opened instantly.')}
-                      </div>
-
-                      <div className="vibecoding-card-telemetry">
-                        <span>{formatDateLabel(project.updatedAt, lang)}</span>
-                        <span>{project.entryRelativePath.split('.').pop()?.toUpperCase() || 'HTML'}</span>
-                      </div>
-
-                      <div className="vibecoding-card-actions">
-                        <span className="vibecoding-open-pill">
-                          {t('打开实验', 'Open experiment')}
-                          <ArrowUpRight size={14} strokeWidth={1.8} />
-                        </span>
-                        <button
-                          type="button"
-                          className="share-link-btn vibecoding-share-btn"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            void copyShareLink(project.slug);
-                          }}
-                        >
-                          <Copy size={14} strokeWidth={1.8} />
-                          <span>{copyingSlug === project.slug ? t('已复制', 'Copied') : t('复制链接', 'Copy Link')}</span>
-                        </button>
-                      </div>
-                    </div>
+                <div className="vibecoding-card-body">
+                  <div className="vibecoding-card-meta">
+                    <span>{ext}</span>
+                    <span className="vibe-meta-dot" aria-hidden="true" />
+                    <span>{formatDateLabel(project.updatedAt, lang)}</span>
+                  </div>
+                  <h3 className="vibecoding-card-title">{localizedTitle}</h3>
+                  <p className="vibecoding-card-desc">
+                    {localizedDescription ||
+                      t('一个可直接在浏览器中打开的实验页面。', 'A browser-native experiment, ready to open.')}
+                  </p>
+                  <div className="vibecoding-card-actions">
+                    <span className="vibecoding-open-pill">
+                      {t('打开实验', 'Open')}
+                      <ArrowUpRight size={13} strokeWidth={2} />
+                    </span>
+                    <button
+                      type="button"
+                      className="vibecoding-share-btn"
+                      aria-label={t('复制分享链接', 'Copy share link')}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void copyShareLink(project.slug);
+                      }}
+                    >
+                      <Copy size={13} strokeWidth={1.9} />
+                      <span>{copyingSlug === project.slug ? t('已复制', 'Copied') : t('复制链接', 'Copy')}</span>
+                    </button>
                   </div>
                 </div>
               </article>
             );
           })}
-        </section>
+        </div>
       </section>
 
       {selectedProject ? (
-        <div className="vibecoding-detail-overlay" onClick={() => setSelectedProject(null)} role="presentation">
+        <div
+          className={`vibecoding-detail-overlay${detailClosing ? ' is-closing' : ''}`}
+          onClick={requestCloseDetail}
+          role="presentation"
+        >
           <div
-            className="vibecoding-detail-panel"
+            className={`vibecoding-detail-panel${detailClosing ? ' is-closing' : ''}`}
             onClick={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -314,7 +318,7 @@ export default function VibecodingPage({
             <button
               type="button"
               className="vibecoding-detail-close"
-              onClick={() => setSelectedProject(null)}
+              onClick={requestCloseDetail}
               aria-label={t('关闭详情', 'Close details')}
             >
               ×
@@ -328,25 +332,26 @@ export default function VibecodingPage({
                 />
               ) : (
                 <div className="vibecoding-detail-fallback">
-                  <Code2 size={44} strokeWidth={1.7} />
+                  <span className="vibecoding-detail-fallback-mark">
+                    {(getLocalizedProjectTitle(selectedProject, lang) || 'V').slice(0, 1)}
+                  </span>
                   <span>{selectedProjectFolder}</span>
                 </div>
               )}
             </div>
 
             <div className="vibecoding-detail-copy">
-              <div className="vibecoding-detail-kicker">VIBECODING DETAIL</div>
+              <div className="vibecoding-detail-kicker">VIBECODING · {selectedProjectFolder}</div>
               <h3>{getLocalizedProjectTitle(selectedProject, lang)}</h3>
               <div className="vibecoding-detail-meta">
                 <span>{selectedProject.slug}</span>
-                <span>{selectedProjectFolder}</span>
                 <span>{formatDateLabel(selectedProject.updatedAt, lang)}</span>
               </div>
               <p>
                 {getLocalizedProjectDescription(selectedProject, lang) ||
                   t(
-                    '这是一个可以直接在浏览器中运行的实验项目。你可以先阅读它，再决定是否进入实验页面。',
-                    'This is a browser-native experiment. Read it first, then decide when to enter the project.',
+                    '这是一个可以直接在浏览器中运行的实验项目。你可以先了解它，再决定是否进入实验页面。',
+                    'A browser-native experiment. Read it first, then step inside whenever you like.',
                   )}
               </p>
               <div className="vibecoding-detail-actions">
@@ -355,16 +360,16 @@ export default function VibecodingPage({
                   className="vibecoding-detail-enter"
                   onClick={() => openSlugInNewTab(selectedProject.slug)}
                 >
-                  <span>{t('进入项目', 'Enter Project')}</span>
-                  <ArrowUpRight size={16} strokeWidth={1.9} />
+                  <span>{t('进入项目', 'Enter project')}</span>
+                  <ArrowUpRight size={16} strokeWidth={2} />
                 </button>
                 <button
                   type="button"
-                  className="share-link-btn vibecoding-detail-share"
+                  className="vibecoding-detail-share"
                   onClick={() => void copyShareLink(selectedProject.slug)}
                 >
-                  <Copy size={14} strokeWidth={1.8} />
-                  <span>{copyingSlug === selectedProject.slug ? t('已复制', 'Copied') : t('复制链接', 'Copy Link')}</span>
+                  <Copy size={14} strokeWidth={1.9} />
+                  <span>{copyingSlug === selectedProject.slug ? t('已复制', 'Copied') : t('复制链接', 'Copy link')}</span>
                 </button>
               </div>
             </div>

@@ -7958,546 +7958,468 @@ body.layout-phone .art-marquee { display: none !important; }
   }
 }
 
+/* ============================================================
+   VIBECODING — 浏览器实验展厅 · 桌面极简改版
+   跟随 prefers-color-scheme：暖白纸 / 近黑双模式
+   大留白 · 细排版 · 发丝边框 · 坠橘单色点缀 · 顶级克制动效
+   (手机端由 body.layout-phone 段覆盖，本段仅桌面基础层)
+   ============================================================ */
 .vibecoding-page {
-  --vibe-bg: #050b12;
-  --vibe-surface: rgba(7, 13, 22, 0.74);
-  --vibe-card: rgba(8, 15, 24, 0.78);
-  --vibe-ink: #eef7ff;
-  --vibe-muted: rgba(207, 226, 243, 0.72);
+  /* 默认 = 暖白纸（浅色） */
+  --vc-bg: #F6F5F1;
+  --vc-bg-soft: #FBFAF7;
+  --vc-surface: #FFFFFF;
+  --vc-ink: #16150F;
+  --vc-ink-2: #57534A;
+  --vc-ink-3: #8B867B;
+  --vc-hair: rgba(22, 21, 15, 0.10);
+  --vc-hair-2: rgba(22, 21, 15, 0.06);
+  --vc-accent: #E07B00;
+  --vc-accent-ink: #B85F00;
+  --vc-glow: rgba(224, 123, 0, 0.10);
+  --vc-shadow: 0 22px 60px rgba(40, 34, 24, 0.12);
+  --vc-shadow-soft: 0 10px 30px rgba(40, 34, 24, 0.08);
   position: relative;
   overflow: hidden;
-  padding: 22px 24px 42px;
-  background:
-    radial-gradient(circle at 12% 12%, rgba(76, 229, 192, 0.18), transparent 28%),
-    radial-gradient(circle at 86% 10%, rgba(93, 157, 255, 0.2), transparent 34%),
-    radial-gradient(circle at 50% 120%, rgba(255, 116, 87, 0.12), transparent 42%),
-    linear-gradient(180deg, #041019 0%, #07131d 38%, #091723 100%);
-  color: var(--vibe-ink);
+  padding: 26px 32px 88px;
+  background: var(--vc-bg);
+  color: var(--vc-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
+@media (prefers-color-scheme: dark) {
+  .vibecoding-page {
+    --vc-bg: #0C0B09;
+    --vc-bg-soft: #131210;
+    --vc-surface: #17150F;
+    --vc-ink: #F4F1EA;
+    --vc-ink-2: #ADA89C;
+    --vc-ink-3: #79746A;
+    --vc-hair: rgba(255, 255, 255, 0.11);
+    --vc-hair-2: rgba(255, 255, 255, 0.06);
+    --vc-accent: #FF9500;
+    --vc-accent-ink: #FFB44D;
+    --vc-glow: rgba(255, 149, 0, 0.14);
+    --vc-shadow: 0 26px 64px rgba(0, 0, 0, 0.55);
+    --vc-shadow-soft: 0 12px 34px rgba(0, 0, 0, 0.42);
+  }
+}
+
+/* 返回按钮：极简描边圆 */
 .vibecoding-page .awards-back-btn {
-  background: rgba(9, 16, 26, 0.72) !important;
-  border-color: rgba(122, 210, 255, 0.18) !important;
-  color: #e5f7ff !important;
-  box-shadow:
-    0 16px 34px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: var(--vc-surface) !important;
+  border: 1px solid var(--vc-hair) !important;
+  color: var(--vc-ink) !important;
+  box-shadow: var(--vc-shadow-soft) !important;
+  transition: transform var(--motion-fast) var(--ease-clean), border-color var(--motion-fast) var(--ease-clean) !important;
+}
+.vibecoding-page .awards-back-btn:hover {
+  transform: translateY(-1px) !important;
+  border-color: var(--vc-accent) !important;
 }
 
+/* 氛围层：仅保留一抹极淡的角落柔光，其余全部移除 */
 .vibecoding-atmosphere {
   position: absolute;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+  z-index: 0;
 }
-
-.vibe-aurora,
-.vibe-grid-haze,
-.vibe-noise-lines {
+.vibe-soft-glow {
   position: absolute;
-  inset: 0;
-}
-
-.vibe-aurora-a {
-  background:
-    radial-gradient(circle at 24% 20%, rgba(112, 255, 218, 0.18), transparent 30%),
-    radial-gradient(circle at 40% 44%, rgba(101, 164, 255, 0.12), transparent 34%);
-  filter: blur(18px);
-  animation: vibeAuroraFloat 14s ease-in-out infinite;
-}
-
-.vibe-aurora-b {
-  background:
-    radial-gradient(circle at 80% 12%, rgba(255, 144, 108, 0.16), transparent 28%),
-    radial-gradient(circle at 72% 62%, rgba(174, 113, 255, 0.12), transparent 30%);
-  filter: blur(24px);
-  animation: vibeAuroraFloatReverse 18s ease-in-out infinite;
-}
-
-.vibe-grid-haze {
-  background-image:
-    linear-gradient(rgba(110, 199, 255, 0.09) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(110, 199, 255, 0.09) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: radial-gradient(circle at center, black 38%, transparent 82%);
-  opacity: 0.28;
-  animation: vibeGridSlide 18s linear infinite;
-}
-
-.vibe-noise-lines {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent 28%, rgba(255, 255, 255, 0.012) 42%, transparent 72%);
-  mix-blend-mode: screen;
-  opacity: 0.7;
+  top: -12%;
+  right: -6%;
+  width: 46vw;
+  height: 46vw;
+  max-width: 720px;
+  max-height: 720px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--vc-glow), transparent 68%);
+  filter: blur(20px);
+  opacity: 0.9;
+  animation: vibeGlowDrift 22s ease-in-out infinite;
 }
 
 .vibecoding-hero-shell,
 .vibecoding-collection-shell {
   position: relative;
   z-index: 1;
-  width: min(1340px, 100%);
+  width: min(1160px, 100%);
   margin: 0 auto;
 }
 
-.vibecoding-hero-shell {
-  padding: 4px 0 18px;
-}
-
+/* ---------- 顶栏 ---------- */
 .vibecoding-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: 56px;
 }
-
 .vibecoding-topbar-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-
 .vibecoding-topbar-chip {
-  min-height: 42px;
-  padding: 0 16px;
+  min-height: 38px;
+  padding: 0 15px;
   border-radius: 999px;
-  border: 1px solid rgba(120, 209, 255, 0.16);
-  background: rgba(8, 17, 28, 0.58);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
+  border: 1px solid var(--vc-hair);
+  background: var(--vc-surface);
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.78rem;
+  gap: 9px;
+  font-size: 0.76rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(229, 247, 255, 0.84);
+  color: var(--vc-ink-2);
+  box-shadow: var(--vc-shadow-soft);
 }
-
+.vibe-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--vc-accent);
+  box-shadow: 0 0 0 4px var(--vc-glow);
+  animation: vibeDotPulse 2.6s ease-in-out infinite;
+}
 .vibecoding-lang-toggle {
-  min-width: 62px;
-  height: 42px;
-  padding: 0 16px;
+  min-width: 58px;
+  height: 38px;
+  padding: 0 15px;
   border-radius: 999px;
-  border: 1px solid rgba(120, 209, 255, 0.18);
-  background: rgba(8, 17, 28, 0.62);
-  color: #ecf9ff;
+  border: 1px solid var(--vc-hair);
+  background: var(--vc-surface);
+  color: var(--vc-ink);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+  box-shadow: var(--vc-shadow-soft);
+  transition: transform var(--motion-fast) var(--ease-clean), border-color var(--motion-fast) var(--ease-clean);
 }
-
 .vibecoding-lang-toggle:hover {
   transform: translateY(-1px);
-  border-color: rgba(147, 226, 255, 0.34);
-  background: rgba(10, 22, 36, 0.82);
+  border-color: var(--vc-accent);
 }
 
+/* ---------- Hero：纯排版，无边框卡片 ---------- */
 .vibecoding-hero {
   display: block;
 }
-
 .vibecoding-hero-copy {
   position: relative;
-  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  max-width: 100%;
 }
-
-.vibecoding-hero-copy {
-  padding: 34px 34px 30px;
-  border-radius: 34px;
-  border: 1px solid rgba(123, 210, 255, 0.14);
-  background:
-    linear-gradient(180deg, rgba(11, 21, 34, 0.86), rgba(5, 12, 20, 0.9)),
-    linear-gradient(130deg, rgba(124, 247, 207, 0.08), transparent 46%);
-  box-shadow:
-    0 28px 80px rgba(1, 6, 13, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-
-.vibecoding-hero-copy::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(120deg, rgba(124, 247, 207, 0.08), transparent 34%, transparent 65%, rgba(90, 150, 255, 0.08));
-  pointer-events: none;
-}
-
 .vibecoding-kicker {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 34px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(128, 214, 255, 0.16);
-  background: rgba(9, 17, 28, 0.6);
-  color: #8cecd0;
+  gap: 12px;
+  color: var(--vc-accent-ink);
   font-size: 0.74rem;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
+  animation: cleanFadeUp var(--motion-base) var(--ease-clean) both;
 }
-
+.vibe-kicker-sep {
+  width: 26px;
+  height: 1px;
+  background: var(--vc-accent);
+  opacity: 0.5;
+}
 .vibecoding-hero-copy h1 {
-  margin: 18px 0 0;
-  max-width: 9ch;
-  font-family: "Space Grotesk", "IBM Plex Sans", "Segoe UI", sans-serif;
-  font-size: clamp(2.4rem, 6vw, 5.8rem);
-  line-height: 0.94;
-  letter-spacing: -0.05em;
-  color: #f3fbff;
+  margin: 22px 0 0;
+  max-width: 20ch;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", sans-serif;
+  font-weight: 600;
+  font-size: clamp(2.6rem, 5.4vw, 4.8rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: var(--vc-ink);
+  animation: cleanFadeUp var(--motion-base) var(--ease-clean) both;
+  animation-delay: 60ms;
 }
-
+.vibecoding-hero-copy h1 em {
+  font-style: normal;
+  color: var(--vc-ink-3);
+}
 .vibecoding-hero-copy p {
-  margin: 20px 0 0;
-  max-width: 62ch;
-  color: var(--vibe-muted);
-  font-size: 1rem;
-  line-height: 1.86;
+  margin: 26px 0 0;
+  max-width: 56ch;
+  color: var(--vc-ink-2);
+  font-size: 1.04rem;
+  line-height: 1.78;
+  animation: cleanFadeUp var(--motion-base) var(--ease-clean) both;
+  animation-delay: 120ms;
 }
 
-.vibecoding-hero-tags {
+/* Hero 底部统计：一条极细分隔的横排数据，无卡片 */
+.vibecoding-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 22px;
-}
-
-.vibecoding-hero-tags span,
-.vibecoding-stats article {
-  border: 1px solid rgba(123, 210, 255, 0.14);
-  background: rgba(9, 17, 28, 0.52);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-}
-
-.vibecoding-hero-tags span {
-  min-height: 34px;
-  padding: 0 14px;
-  border-radius: 999px;
-  display: inline-flex;
   align-items: center;
-  font-size: 0.8rem;
-  color: rgba(233, 247, 255, 0.9);
+  gap: 26px;
+  margin-top: 44px;
+  padding-top: 30px;
+  border-top: 1px solid var(--vc-hair);
+  animation: cleanFadeUp var(--motion-base) var(--ease-clean) both;
+  animation-delay: 180ms;
 }
-
-.vibecoding-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 26px;
-}
-
 .vibecoding-stats article {
-  min-height: 126px;
-  padding: 18px 18px 16px;
-  border-radius: 22px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
 }
-
 .vibecoding-stats strong {
-  display: block;
-  font-size: clamp(1.08rem, 2vw, 1.64rem);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  color: #f7feff;
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--vc-ink);
+  font-variant-numeric: tabular-nums;
 }
-
 .vibecoding-stats span {
-  color: rgba(210, 229, 242, 0.72);
-  font-size: 0.82rem;
-  line-height: 1.56;
+  color: var(--vc-ink-3);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+.vibe-stat-div {
+  width: 1px;
+  height: 34px;
+  background: var(--vc-hair);
 }
 
+/* ---------- 作品区标题 ---------- */
 .vibecoding-collection-shell {
-  padding-top: 14px;
+  padding-top: 92px;
 }
-
 .vibecoding-section-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
-  gap: 20px;
-  align-items: end;
-  margin-bottom: 20px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 34px;
 }
-
-.vibecoding-section-kicker {
-  display: inline-block;
-  margin-bottom: 8px;
-  color: #8cecd0;
-  font-size: 0.78rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
 .vibecoding-section-head h2 {
   margin: 0;
-  font-family: "Space Grotesk", "IBM Plex Sans", "Segoe UI", sans-serif;
-  font-size: clamp(1.7rem, 3.5vw, 3rem);
-  line-height: 0.98;
-  letter-spacing: -0.04em;
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--vc-ink);
 }
-
 .vibecoding-section-head p {
   margin: 0;
   max-width: 34ch;
-  justify-self: end;
-  color: rgba(203, 225, 241, 0.7);
-  font-size: 0.94rem;
-  line-height: 1.72;
+  text-align: right;
+  color: var(--vc-ink-3);
+  font-size: 0.92rem;
+  line-height: 1.7;
 }
+/* 旧的 section-kicker 不再渲染，兜底隐藏 */
+.vibecoding-section-kicker { display: none; }
 
+/* ---------- 极简等宽网格 ---------- */
 .vibecoding-grid {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 18px;
-  align-items: stretch;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px 24px;
+  align-items: start;
 }
 
 .vibecoding-empty {
   grid-column: 1 / -1;
-  min-height: 240px;
-  border-radius: 30px;
-  border: 1px dashed rgba(123, 210, 255, 0.18);
-  background: rgba(8, 16, 27, 0.56);
+  min-height: 220px;
+  border-radius: 20px;
+  border: 1px dashed var(--vc-hair);
+  background: var(--vc-bg-soft);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: rgba(214, 232, 243, 0.76);
+  color: var(--vc-ink-2);
   text-align: center;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
 }
-
 .vibecoding-empty strong {
-  font-size: 1.14rem;
-  color: #eff7ff;
+  font-size: 1.1rem;
+  color: var(--vc-ink);
 }
-
 .vibecoding-empty span {
-  max-width: 40ch;
-  line-height: 1.74;
+  max-width: 42ch;
+  line-height: 1.7;
+  color: var(--vc-ink-3);
 }
 
+/* ---------- 卡片：大封面 + 极细文字 ---------- */
 .vibecoding-card {
-  grid-column: span 4;
+  grid-column: auto;
   width: 100%;
   max-width: none;
-  justify-self: stretch;
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
-  animation: cleanFadeUp var(--motion-base) var(--ease-clean) both;
-  animation-delay: calc(var(--card-index, 0) * 42ms);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  /* 滚动渐显初始态 */
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 620ms var(--ease-clean),
+    transform 620ms var(--ease-clean);
+  transition-delay: calc(var(--card-index, 0) * 55ms);
+}
+.vibecoding-card.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .vibecoding-card {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
-.vibecoding-card-shell {
+.vibecoding-card-media {
   position: relative;
-  height: 100%;
-  padding: 1px;
-  border-radius: 30px;
-  background: linear-gradient(140deg, rgba(125, 214, 255, 0.18), rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.02));
-  transition: transform 260ms cubic-bezier(0.22, 0.84, 0.18, 1), filter 260ms ease;
-}
-
-.vibecoding-card:hover .vibecoding-card-shell {
-  transform: translateY(-8px) scale(1.01);
-  filter: drop-shadow(0 24px 54px var(--vibe-glow));
-}
-
-.vibecoding-card-chassis {
-  height: 100%;
-  border-radius: 29px;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(10, 18, 29, 0.94), rgba(6, 12, 20, 0.96)),
-    linear-gradient(140deg, rgba(255, 255, 255, 0.04), transparent 40%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 24px 44px rgba(0, 0, 0, 0.2);
+  border-radius: 18px;
+  background: var(--vc-bg-soft);
+  border: 1px solid var(--vc-hair);
+  box-shadow: var(--vc-shadow-soft);
+  transition: transform 460ms var(--ease-clean), box-shadow 460ms var(--ease-clean), border-color 300ms var(--ease-clean);
 }
-
-.vibecoding-card-screen {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  background: linear-gradient(180deg, var(--vibe-panel), rgba(5, 10, 16, 0.98));
+.vibecoding-card:hover .vibecoding-card-media,
+.vibecoding-card:focus-visible .vibecoding-card-media {
+  transform: translateY(-8px);
+  box-shadow: var(--vc-shadow);
+  border-color: var(--vc-hair);
 }
-
-.vibecoding-card-screen img {
+.vibecoding-card-media img {
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
-  transition: transform 360ms cubic-bezier(0.22, 0.84, 0.18, 1), filter 320ms ease;
+  transition: transform 620ms var(--ease-clean), filter 460ms var(--ease-clean);
+}
+.vibecoding-card:hover .vibecoding-card-media img {
+  transform: scale(1.055);
 }
 
-.vibecoding-card:hover .vibecoding-card-screen img {
-  transform: scale(1.05);
-  filter: saturate(1.08);
-}
-
-.vibecoding-card-screen::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, transparent 18%, rgba(4, 10, 17, 0.56) 100%),
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 4px);
-  pointer-events: none;
-}
-
-.vibecoding-card-overlay {
-  position: absolute;
-  right: 14px;
-  bottom: 14px;
-  z-index: 1;
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(4, 10, 17, 0.62);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--vibe-light-ink);
-  font-size: 0.76rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transform: translateY(6px);
-  opacity: 0;
-  transition: opacity 240ms ease, transform 260ms ease;
-}
-
-.vibecoding-card:hover .vibecoding-card-overlay {
-  opacity: 1;
-  transform: translateY(0);
-}
-
+/* 无封面兜底：极简首字母 */
 .vibecoding-card-fallback {
-  position: relative;
-  height: 100%;
-  padding: 20px;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at top right, var(--vibe-glow), transparent 24%),
-    linear-gradient(180deg, rgba(9, 17, 28, 0.96), rgba(5, 10, 16, 0.98));
-}
-
-.vibecoding-card-fallback-grid,
-.vibecoding-card-fallback-ring {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-}
-
-.vibecoding-card-fallback-grid {
-  inset: 18px;
-  border-radius: 22px;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 16px 16px;
-  mask-image: radial-gradient(circle at center, black 34%, transparent 82%);
-  opacity: 0.5;
-}
-
-.vibecoding-card-fallback-ring {
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-}
-
-.vibe-fallback-ring-a {
-  inset: 34px 24px 24px 34px;
-  animation: vibeOrbitSpin 12s linear infinite;
-}
-
-.vibe-fallback-ring-b {
-  inset: 52px 42px 38px 50px;
-  border-style: dashed;
-  opacity: 0.56;
-  animation: vibeOrbitSpinReverse 8s linear infinite;
-}
-
-.vibecoding-card-fallback-copy {
-  position: relative;
-  z-index: 1;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  gap: 8px;
-  max-width: 78%;
-  color: var(--vibe-light-ink);
-}
-
-.vibecoding-card-badge {
-  align-self: flex-start;
-  min-height: 28px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  display: inline-flex;
   align-items: center;
-  font-size: 0.72rem;
+  justify-content: center;
+  gap: 6px;
+  background:
+    radial-gradient(circle at 50% 38%, var(--vc-glow), transparent 60%),
+    var(--vc-bg-soft);
+}
+.vibecoding-card-fallback-mark {
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--vc-accent);
+  letter-spacing: -0.03em;
+}
+.vibecoding-card-fallback-folder {
+  font-size: 0.74rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: var(--vc-ink-3);
 }
 
-.vibecoding-card-fallback-copy strong {
-  font-size: 1.24rem;
-  line-height: 1.14;
+/* 悬浮时右上角出现的打开箭头 */
+.vibecoding-card-open {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  border: 1px solid var(--vc-hair);
+  box-shadow: var(--vc-shadow-soft);
+  opacity: 0;
+  transform: translateY(-6px) scale(0.9);
+  transition: opacity 300ms var(--ease-clean), transform 300ms var(--ease-clean), background 200ms var(--ease-clean), color 200ms var(--ease-clean);
 }
-
-.vibecoding-card-fallback-copy span:last-child {
-  font-size: 0.78rem;
-  color: rgba(233, 247, 255, 0.64);
-  letter-spacing: 0.08em;
+.vibecoding-card:hover .vibecoding-card-open,
+.vibecoding-card:focus-visible .vibecoding-card-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  background: var(--vc-accent);
+  color: #fff;
+  border-color: var(--vc-accent);
 }
 
 .vibecoding-card-body {
-  padding: 16px 18px 18px;
+  padding: 18px 4px 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
-
-.vibecoding-card-topline,
-.vibecoding-card-telemetry {
+.vibecoding-card-meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  color: rgba(190, 214, 231, 0.62);
-  font-size: 0.74rem;
-  letter-spacing: 0.08em;
+  align-items: center;
+  gap: 9px;
+  color: var(--vc-ink-3);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-
+.vibe-meta-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--vc-ink-3);
+}
 .vibecoding-card-title {
-  font-size: 1.12rem;
-  font-weight: 700;
-  line-height: 1.28;
-  color: #f0f8ff;
+  margin: 0;
+  font-size: 1.14rem;
+  font-weight: 600;
+  line-height: 1.32;
+  letter-spacing: -0.01em;
+  color: var(--vc-ink);
+  transition: color 200ms var(--ease-clean);
 }
-
+.vibecoding-card:hover .vibecoding-card-title {
+  color: var(--vc-accent-ink);
+}
 .vibecoding-card-desc {
-  color: rgba(207, 225, 238, 0.74);
-  font-size: 0.88rem;
-  line-height: 1.72;
+  margin: 0;
+  color: var(--vc-ink-2);
+  font-size: 0.9rem;
+  line-height: 1.66;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-
 .vibecoding-card-actions {
   display: flex;
   align-items: center;
@@ -8505,296 +8427,306 @@ body.layout-phone .art-marquee { display: none !important; }
   gap: 10px;
   margin-top: 4px;
 }
-
 .vibecoding-open-pill {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 0 13px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(232, 246, 255, 0.84);
-  font-size: 0.79rem;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--vc-ink);
 }
-
+.vibecoding-open-pill svg {
+  transition: transform 260ms var(--ease-clean);
+}
+.vibecoding-card:hover .vibecoding-open-pill svg {
+  transform: translate(2px, -2px);
+}
 .vibecoding-share-btn {
-  margin-left: auto;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.07) !important;
-  color: #eef7ff !important;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--vc-hair) !important;
+  background: transparent !important;
+  color: var(--vc-ink-2) !important;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: border-color 200ms var(--ease-clean), color 200ms var(--ease-clean);
+}
+.vibecoding-share-btn:hover {
+  border-color: var(--vc-accent) !important;
+  color: var(--vc-accent-ink) !important;
 }
 
+/* ---------- 详情弹窗：放大过渡 ---------- */
 .vibecoding-detail-overlay {
   position: fixed;
   inset: 0;
   z-index: 240;
-  background:
-    radial-gradient(circle at 20% 18%, rgba(101, 221, 193, 0.12), transparent 28%),
-    radial-gradient(circle at 82% 14%, rgba(108, 153, 255, 0.14), transparent 30%),
-    rgba(2, 8, 14, 0.78);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
+  background: color-mix(in srgb, var(--vc-bg) 62%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(16px) saturate(1.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 28px;
+  animation: vibeOverlayIn 220ms var(--ease-clean) both;
 }
-
+.vibecoding-detail-overlay.is-closing {
+  animation: vibeOverlayOut 220ms var(--ease-clean) both;
+}
 .vibecoding-detail-panel {
   position: relative;
-  width: min(1080px, 100%);
-  max-height: min(88vh, 920px);
+  width: min(1000px, 100%);
+  max-height: min(86vh, 880px);
   overflow: auto;
-  border-radius: 32px;
-  border: 1px solid rgba(124, 214, 255, 0.16);
-  background:
-    linear-gradient(180deg, rgba(9, 17, 28, 0.96), rgba(5, 10, 18, 0.98)),
-    linear-gradient(140deg, rgba(255, 255, 255, 0.04), transparent 36%);
-  box-shadow:
-    0 36px 100px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-radius: 26px;
+  border: 1px solid var(--vc-hair);
+  background: var(--vc-surface);
+  box-shadow: var(--vc-shadow);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  animation: vibePanelIn 320ms var(--ease-clean) both;
 }
+.vibecoding-detail-panel.is-closing {
+  animation: vibePanelOut 220ms var(--ease-clean) both;
+}
+.vibecoding-detail-panel::-webkit-scrollbar { width: 0; }
 
 .vibecoding-detail-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 14px;
+  right: 14px;
   z-index: 2;
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  background: rgba(4, 10, 17, 0.72);
-  color: #eef7ff;
-  font-size: 24px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--vc-hair);
+  border-radius: 50%;
+  background: var(--vc-surface);
+  color: var(--vc-ink);
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
+  box-shadow: var(--vc-shadow-soft);
+  transition: transform 180ms var(--ease-clean), border-color 180ms var(--ease-clean);
+}
+.vibecoding-detail-close:hover {
+  transform: rotate(90deg);
+  border-color: var(--vc-accent);
 }
 
 .vibecoding-detail-hero {
   min-height: 420px;
-  background: linear-gradient(180deg, rgba(15, 28, 40, 0.92), rgba(5, 10, 16, 0.98));
+  background: var(--vc-bg-soft);
 }
-
 .vibecoding-detail-hero img {
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
 }
-
 .vibecoding-detail-fallback {
   height: 100%;
+  min-height: 420px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 28px;
-  color: rgba(236, 249, 255, 0.92);
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background:
+    radial-gradient(circle at 50% 42%, var(--vc-glow), transparent 62%),
+    var(--vc-bg-soft);
 }
-
+.vibecoding-detail-fallback-mark {
+  font-size: clamp(3rem, 7vw, 4.6rem);
+  font-weight: 600;
+  color: var(--vc-accent);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
 .vibecoding-detail-fallback span {
-  font-size: 0.82rem;
-  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(201, 227, 241, 0.7);
+  color: var(--vc-ink-3);
 }
 
 .vibecoding-detail-copy {
-  padding: 34px 28px 28px;
+  padding: 40px 36px 34px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 15px;
 }
-
 .vibecoding-detail-kicker {
-  font-size: 0.76rem;
-  letter-spacing: 0.18em;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #8cecd0;
+  color: var(--vc-accent-ink);
 }
-
 .vibecoding-detail-copy h3 {
   margin: 0;
-  font-size: clamp(1.8rem, 3vw, 2.7rem);
-  line-height: 1.02;
-  color: #f1f9ff;
+  font-weight: 600;
+  font-size: clamp(1.7rem, 2.6vw, 2.4rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: var(--vc-ink);
 }
-
 .vibecoding-detail-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
-
 .vibecoding-detail-meta span {
-  min-height: 32px;
+  min-height: 30px;
   padding: 0 12px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--vc-hair);
+  background: var(--vc-bg-soft);
   display: inline-flex;
   align-items: center;
-  color: rgba(206, 226, 240, 0.8);
-  font-size: 0.76rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--vc-ink-2);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
 }
-
 .vibecoding-detail-copy p {
   margin: 0;
-  color: rgba(214, 230, 240, 0.78);
-  font-size: 0.96rem;
+  color: var(--vc-ink-2);
+  font-size: 0.98rem;
   line-height: 1.8;
 }
-
 .vibecoding-detail-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
-
 .vibecoding-detail-enter {
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid rgba(124, 247, 207, 0.18);
+  min-height: 46px;
+  padding: 0 22px;
+  border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(124, 247, 207, 0.18), rgba(89, 174, 255, 0.16));
-  color: #effcff;
+  background: var(--vc-accent);
+  color: #fff;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.86rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   cursor: pointer;
+  box-shadow: 0 10px 26px var(--vc-glow);
+  transition: transform 200ms var(--ease-clean), box-shadow 200ms var(--ease-clean), filter 200ms var(--ease-clean);
 }
-
+.vibecoding-detail-enter:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+  box-shadow: 0 16px 34px var(--vc-glow);
+}
+.vibecoding-detail-enter svg {
+  transition: transform 240ms var(--ease-clean);
+}
+.vibecoding-detail-enter:hover svg {
+  transform: translate(2px, -2px);
+}
 .vibecoding-detail-share {
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid var(--vc-hair);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--vc-ink);
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: border-color 200ms var(--ease-clean), color 200ms var(--ease-clean);
+}
+.vibecoding-detail-share:hover {
+  border-color: var(--vc-accent);
+  color: var(--vc-accent-ink);
 }
 
-@media (max-width: 1200px) {
-  .vibecoding-card {
-    grid-column: span 6;
+/* ---------- 响应式 ---------- */
+@media (max-width: 1080px) {
+  .vibecoding-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-
 @media (max-width: 900px) {
+  .vibecoding-page {
+    padding: 22px 22px 64px;
+  }
   .vibecoding-topbar {
-    align-items: flex-start;
-    flex-direction: column;
+    margin-bottom: 40px;
   }
-
-  .vibecoding-topbar-actions {
-    width: 100%;
-    justify-content: space-between;
+  .vibecoding-collection-shell {
+    padding-top: 64px;
   }
-
-  .vibecoding-hero-copy {
-    padding: 24px 20px 22px;
-  }
-
-  .vibecoding-stats,
   .vibecoding-section-head {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
-
   .vibecoding-section-head p {
-    justify-self: start;
+    text-align: left;
   }
-
-  .vibecoding-card {
-    grid-column: 1 / -1;
-  }
-
   .vibecoding-detail-panel {
     grid-template-columns: 1fr;
   }
-
-  .vibecoding-detail-hero {
-    min-height: 280px;
+  .vibecoding-detail-hero,
+  .vibecoding-detail-fallback {
+    min-height: 260px;
   }
 }
-
-@media (max-width: 640px) {
-  .vibecoding-page {
-    padding: 14px 14px 28px;
+@media (max-width: 620px) {
+  .vibecoding-grid {
+    grid-template-columns: 1fr;
   }
-
-  .vibecoding-topbar-chip {
-    width: 100%;
-    justify-content: center;
-    text-align: center;
+  .vibecoding-stats {
+    gap: 18px;
   }
-
-  .vibecoding-topbar-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .vibecoding-lang-toggle {
-    width: 100%;
-  }
-
-  .vibecoding-hero-copy h1 {
-    max-width: none;
-    font-size: clamp(2rem, 12vw, 3.4rem);
-  }
-
-  .vibecoding-hero-tags {
-    gap: 8px;
-  }
-
-  .vibecoding-hero-tags span {
-    width: 100%;
-    justify-content: center;
-  }
-
   .vibecoding-detail-overlay {
     padding: 12px;
   }
-
   .vibecoding-detail-copy {
-    padding: 22px 16px 18px;
+    padding: 26px 20px 22px;
   }
-
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vibe-aurora-a,
-  .vibe-aurora-b,
-  .vibe-grid-haze,
-  .vibe-fallback-ring-a,
-  .vibe-fallback-ring-b {
+  .vibe-soft-glow,
+  .vibe-chip-dot {
     animation: none !important;
   }
 }
 
-@keyframes vibeAuroraFloat {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(18px, 12px, 0) scale(1.06); }
+/* ---------- 动效关键帧 ---------- */
+@keyframes vibeGlowDrift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.9; }
+  50% { transform: translate3d(-24px, 20px, 0) scale(1.08); opacity: 1; }
 }
-
-@keyframes vibeAuroraFloatReverse {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(-16px, 18px, 0) scale(1.08); }
+@keyframes vibeDotPulse {
+  0%, 100% { box-shadow: 0 0 0 4px var(--vc-glow); opacity: 1; }
+  50% { box-shadow: 0 0 0 7px transparent; opacity: 0.7; }
 }
-
-@keyframes vibeGridSlide {
-  from { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(12px, -10px, 0); }
-  to { transform: translate3d(0, 0, 0); }
+@keyframes vibeOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes vibeOverlayOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes vibePanelIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.965); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes vibePanelOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(12px) scale(0.975); }
 }
 
 .proposal-page {
@@ -9248,15 +9180,16 @@ body.layout-phone .vibecoding-hero h1,
 body.layout-phone .vibecoding-hero h2 { color: #F4F1EC !important; }
 body.layout-phone .vibecoding-hero p,
 body.layout-phone .vibecoding-hero-desc { color: rgba(244,241,236,0.72) !important; }
-body.layout-phone .vibecoding-hero-tags > * {
-  background: rgba(255,255,255,0.05) !important; border: 0.5px solid rgba(255,255,255,0.1) !important;
-  color: rgba(244,241,236,0.82) !important;
-}
 body.layout-phone .vibecoding-kicker { color: var(--st-accent) !important; }
-body.layout-phone .vibecoding-stats > * {
-  background: var(--st-bg-2) !important; border: 0.5px solid var(--st-hair) !important; color: var(--st-ink-2) !important;
+body.layout-phone .vibecoding-stats {
+  border-top: 0.5px solid rgba(255,255,255,0.12) !important;
 }
+body.layout-phone .vibecoding-stats strong { color: #F4F1EC !important; }
+body.layout-phone .vibecoding-stats span { color: rgba(244,241,236,0.6) !important; }
+body.layout-phone .vibe-stat-div { background: rgba(255,255,255,0.12) !important; }
 body.layout-phone .vibecoding-section-kicker { color: var(--st-accent) !important; }
+body.layout-phone .vibecoding-section-head h2 { color: var(--st-ink) !important; }
+body.layout-phone .vibecoding-section-head p { color: var(--st-ink-3) !important; }
 
 body.layout-phone .vibecoding-grid {
   display: flex !important; flex-direction: column !important; gap: 18px !important;
@@ -9264,20 +9197,53 @@ body.layout-phone .vibecoding-grid {
 }
 body.layout-phone .vibecoding-card {
   background: transparent !important;
+  opacity: 1 !important; transform: none !important; /* 手机端不做滚动渐显，牌堆式直出 */
 }
-body.layout-phone .vibecoding-card-shell,
-body.layout-phone .vibecoding-card-chassis {
+/* 新极简卡片：手机端沿用「深底发光大卡」质感 */
+body.layout-phone .vibecoding-card-media {
   background: #0C0B0A !important; border: 0.5px solid var(--st-hair) !important;
   border-radius: 20px !important; overflow: hidden !important;
   box-shadow: 0 16px 38px rgba(0,0,0,0.34) !important;
+  aspect-ratio: 16 / 10 !important;
+  transition: transform 0.2s ease !important;
 }
-body.layout-phone .vibecoding-card:active .vibecoding-card-chassis { transform: scale(0.98); }
-body.layout-phone .vibecoding-card-screen { background: #0C0B0A !important; }
-body.layout-phone .vibecoding-card-body { background: transparent !important; }
+body.layout-phone .vibecoding-card:active .vibecoding-card-media { transform: scale(0.98) !important; }
+body.layout-phone .vibecoding-card-open { display: none !important; }
+body.layout-phone .vibecoding-card-body { background: transparent !important; padding: 14px 4px 0 !important; }
+body.layout-phone .vibecoding-card-meta { color: var(--st-ink-3) !important; }
+body.layout-phone .vibecoding-card-meta .vibe-meta-dot { background: var(--st-ink-3) !important; }
 body.layout-phone .vibecoding-card-title { color: var(--st-ink) !important; font-weight: 700 !important; }
+body.layout-phone .vibecoding-card:hover .vibecoding-card-title { color: var(--st-ink) !important; }
 body.layout-phone .vibecoding-card-desc { color: var(--st-ink-2) !important; }
 body.layout-phone .vibecoding-open-pill {
-  background: var(--st-accent-soft) !important; color: var(--st-accent) !important; border: none !important;
+  background: var(--st-accent-soft) !important; color: var(--st-accent) !important;
+  border: none !important; padding: 6px 12px !important; border-radius: 999px !important;
+}
+body.layout-phone .vibecoding-share-btn {
+  border: 0.5px solid var(--st-hair-strong) !important; color: var(--st-ink-2) !important;
+}
+
+/* 详情弹窗：手机端深底 */
+body.layout-phone .vibecoding-detail-overlay {
+  background: rgba(8,7,6,0.78) !important; backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important;
+}
+body.layout-phone .vibecoding-detail-panel {
+  background: var(--st-bg-2) !important; border: 0.5px solid var(--st-hair-strong) !important;
+  border-radius: 20px !important; grid-template-columns: 1fr !important;
+}
+body.layout-phone .vibecoding-detail-hero,
+body.layout-phone .vibecoding-detail-fallback { min-height: 220px !important; background: #0C0B0A !important; }
+body.layout-phone .vibecoding-detail-copy { padding: 24px 20px 22px !important; }
+body.layout-phone .vibecoding-detail-kicker { color: var(--st-accent) !important; }
+body.layout-phone .vibecoding-detail-copy h3 { color: var(--st-ink) !important; }
+body.layout-phone .vibecoding-detail-copy p { color: var(--st-ink-2) !important; }
+body.layout-phone .vibecoding-detail-meta span {
+  background: var(--st-bg) !important; border: 0.5px solid var(--st-hair) !important; color: var(--st-ink-2) !important;
+}
+body.layout-phone .vibecoding-detail-enter { background: var(--st-accent) !important; color: #1C1A16 !important; }
+body.layout-phone .vibecoding-detail-share { border: 0.5px solid var(--st-hair-strong) !important; color: var(--st-ink) !important; }
+body.layout-phone .vibecoding-detail-close {
+  background: var(--st-bg-2) !important; border: 0.5px solid var(--st-hair-strong) !important; color: var(--st-ink) !important;
 }
 
 /* 浅色模式：Vibecoding 氛围光减淡，避免浅底上过艳 */
