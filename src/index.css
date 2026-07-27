@@ -9298,6 +9298,11 @@ body.layout-phone .vibecoding-detail-close {
   --wood: #c98f4f;
   --wood-dark: #a86f34;
   --ink: #3a4a2f;
+  --light-tint: rgba(255, 255, 255, 0);   /* colour wash over the whole scene per time-of-day */
+  --star-op: 0;
+  --moon-op: 0;
+  --sun-op: 1;
+  --firefly-op: 0;
   position: fixed;
   inset: 0;
   overflow: hidden;
@@ -9306,10 +9311,51 @@ body.layout-phone .vibecoding-detail-close {
   z-index: 40;
   background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 34%, var(--sky-low) 58%);
   animation: pastureFadeIn 0.6s ease both;
+  transition: background 2.4s ease;
+}
+/* colour wash overlay for atmosphere (dusk warm / night cool) */
+.pasture-root::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: var(--light-tint);
+  transition: background 2.4s ease;
 }
 @keyframes pastureFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* ---------- 昼夜 / 天气：整场配色随时间渐变 ---------- */
+.pasture-root.phase-day {
+  --sky-top: #8fd3ff; --sky-mid: #bfeaff; --sky-low: #e9f8ff;
+  --sun-op: 1; --moon-op: 0; --star-op: 0; --firefly-op: 0;
+  --light-tint: rgba(255, 250, 220, 0);
+}
+.pasture-root.phase-dusk {
+  --sky-top: #ff9d6c; --sky-mid: #ffc48a; --sky-low: #ffe6b0;
+  --sun-op: 0.85; --moon-op: 0.2; --star-op: 0.15; --firefly-op: 0.25;
+  --light-tint: linear-gradient(180deg, rgba(255,140,60,0.18) 0%, rgba(255,180,90,0.08) 60%, rgba(255,200,120,0) 100%);
+}
+.pasture-root.phase-night {
+  --sky-top: #16214a; --sky-mid: #24346b; --sky-low: #3a4d86;
+  --grass-a: #4f7a4a; --grass-b: #3e6a3c; --grass-c: #345c33; --grass-d: #2a4d2a;
+  --sun-op: 0; --moon-op: 1; --star-op: 1; --firefly-op: 1;
+  --ink: #d8e6c8;
+  --light-tint: linear-gradient(180deg, rgba(20,30,70,0.42) 0%, rgba(30,45,90,0.28) 60%, rgba(40,60,100,0.14) 100%);
+}
+.pasture-root.phase-dawn {
+  --sky-top: #b7c9f0; --sky-mid: #dcd0f0; --sky-low: #ffe8d6;
+  --sun-op: 0.5; --moon-op: 0.4; --star-op: 0.3; --firefly-op: 0.35;
+  --light-tint: linear-gradient(180deg, rgba(150,140,220,0.14) 0%, rgba(255,200,170,0.08) 100%);
+}
+.pasture-root .pasture-sun,
+.pasture-root .pasture-moon,
+.pasture-root .pasture-stars,
+.pasture-root .pasture-fireflies {
+  transition: opacity 2.4s ease;
 }
 
 /* ---------- 天空层：太阳 / 云 / 山丘 ---------- */
@@ -9319,16 +9365,58 @@ body.layout-phone .vibecoding-detail-close {
   pointer-events: none;
   overflow: hidden;
 }
-.pasture-sun {
+.pasture-celestial {
   position: absolute;
   top: 7%;
   right: 9%;
   width: 128px;
   height: 128px;
   border-radius: 50%;
+}
+.pasture-sun {
+  opacity: var(--sun-op);
   background: radial-gradient(circle at 40% 40%, #fff6c8 0%, #ffe38a 42%, #ffcf5e 70%, rgba(255,207,94,0) 72%);
   box-shadow: 0 0 60px 24px rgba(255, 221, 120, 0.55);
   animation: sunGlow 6s ease-in-out infinite;
+}
+.pasture-moon {
+  opacity: var(--moon-op);
+  width: 96px;
+  height: 96px;
+  top: 8%;
+  background: radial-gradient(circle at 38% 36%, #fdfdf4 0%, #eef0d8 46%, #d7dbb4 74%, rgba(215,219,180,0) 76%);
+  box-shadow: 0 0 44px 16px rgba(230, 236, 200, 0.4);
+}
+.pasture-moon::before {
+  content: '';
+  position: absolute;
+  top: 22%; left: 26%;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: rgba(180, 186, 150, 0.35);
+  box-shadow: 26px 14px 0 -3px rgba(180, 186, 150, 0.3), 8px 40px 0 -5px rgba(180, 186, 150, 0.28);
+}
+.pasture-stars {
+  position: absolute;
+  inset: 0;
+  opacity: var(--star-op);
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.4px 1.4px at 12% 14%, #fff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 28% 8%, #fff 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 40% 20%, #fff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 55% 6%, #fff 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 66% 16%, #fff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 78% 10%, #fff 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 88% 22%, #fff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 20% 26%, #fff 50%, transparent 51%),
+    radial-gradient(1.3px 1.3px at 48% 30%, #fff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 72% 28%, #fff 50%, transparent 51%);
+  animation: starTwinkle 4s ease-in-out infinite;
+}
+@keyframes starTwinkle {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(0.6); }
 }
 @keyframes sunGlow {
   0%, 100% { transform: scale(1); filter: brightness(1); }
@@ -9474,6 +9562,8 @@ body.layout-phone .vibecoding-detail-close {
     linear-gradient(180deg, var(--grass-a) 0%, var(--grass-b) 34%, var(--grass-c) 66%, var(--grass-d) 100%);
   border-radius: 46% 46% 0 0 / 12% 12% 0 0;
   box-shadow: inset 0 6px 20px rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: background 2.4s ease;
 }
 /* 草地纹理：横向明暗带模拟起伏 */
 .pasture-lawn::before {
@@ -9536,46 +9626,90 @@ body.layout-phone .vibecoding-detail-close {
 .band-1 { z-index: 5; }
 .band-2 { z-index: 6; }
 
-/* 单只牛 */
+/* 单只牛 —— 位置/缩放由 JS 每帧写 inline transform（translate(-50%,-100%) scale() translateY()），
+   CSS 不再设 transform/animation，避免冲突。left/top 由 JS 写百分比。 */
 .pasture-cow {
   position: absolute;
-  width: 128px;
-  height: 128px;
+  left: 50%;
+  top: 50%;
+  width: 120px;
+  height: 120px;
   padding: 0;
   border: none;
   background: transparent;
   cursor: pointer;
-  transform: scale(var(--cow-scale, 1));
+  transform: translate(-50%, -100%) scale(1);
   transform-origin: bottom center;
-  animation: cowStroll var(--cow-dur, 12s) ease-in-out infinite alternate;
-  animation-delay: var(--cow-delay, 0s);
+  will-change: left, top, transform;
   transition: filter 0.18s ease;
 }
-.pasture-cow.flip .pasture-cow-svg { transform: scaleX(-1); }
-.pasture-cow:hover { filter: drop-shadow(0 6px 10px rgba(60, 90, 30, 0.4)) brightness(1.04); z-index: 20; }
+.pasture-cow:hover { filter: drop-shadow(0 6px 10px rgba(60, 90, 30, 0.4)) brightness(1.06); }
 .pasture-cow:hover .pasture-nametag { opacity: 1; transform: translate(-50%, 0); }
-@keyframes cowStroll {
-  0%   { transform: scale(var(--cow-scale, 1)) translateX(0); }
-  50%  { transform: scale(var(--cow-scale, 1)) translateX(38px); }
-  100% { transform: scale(var(--cow-scale, 1)) translateX(0); }
-}
+
+/* 朝向：向左走时水平翻转牛身 */
+.pasture-cow[data-facing="left"] .pasture-cow-svg { transform: scaleX(-1); }
+
+/* SVG 本体：走路时腿部上下颠、吃草/发呆时低头晃动 */
 .pasture-cow-svg {
   display: block;
   width: 100%;
   height: 100%;
   filter: drop-shadow(0 3px 4px rgba(50, 80, 30, 0.22));
-  animation: cowGraze 3.4s ease-in-out infinite;
   transform-origin: bottom center;
 }
+/* 吃草 / 发呆：低头晃动 */
+.pasture-cow[data-state="graze"] .pasture-cow-svg,
+.pasture-cow[data-state="idle"] .pasture-cow-svg {
+  animation: cowGraze 3.2s ease-in-out infinite;
+}
+.pasture-cow[data-state="graze"][data-facing="left"] .pasture-cow-svg,
+.pasture-cow[data-state="idle"][data-facing="left"] .pasture-cow-svg {
+  animation: cowGrazeFlip 3.2s ease-in-out infinite;
+}
 @keyframes cowGraze {
-  0%, 62%, 100% { transform: rotate(0deg); }
-  72%, 86% { transform: rotate(6deg) translateY(2px); }
+  0%, 60%, 100% { transform: rotate(0deg); }
+  72%, 88% { transform: rotate(7deg) translateY(2px); }
 }
-.pasture-cow.flip .pasture-cow-svg { animation: cowGrazeFlip 3.4s ease-in-out infinite; }
 @keyframes cowGrazeFlip {
-  0%, 62%, 100% { transform: scaleX(-1) rotate(0deg); }
-  72%, 86% { transform: scaleX(-1) rotate(6deg) translateY(2px); }
+  0%, 60%, 100% { transform: scaleX(-1) rotate(0deg); }
+  72%, 88% { transform: scaleX(-1) rotate(7deg) translateY(2px); }
 }
+/* 走路：轻快的身体起伏（配合 JS 的 translateY bob） */
+.pasture-cow[data-state="wander"] .pasture-cow-svg,
+.pasture-cow[data-state="seekFood"] .pasture-cow-svg {
+  animation: cowWalk 0.42s ease-in-out infinite;
+}
+.pasture-cow[data-state="wander"][data-facing="left"] .pasture-cow-svg,
+.pasture-cow[data-state="seekFood"][data-facing="left"] .pasture-cow-svg {
+  animation: cowWalkFlip 0.42s ease-in-out infinite;
+}
+@keyframes cowWalk {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+@keyframes cowWalkFlip {
+  0%, 100% { transform: scaleX(-1) rotate(2deg); }
+  50% { transform: scaleX(-1) rotate(-2deg); }
+}
+/* 吃食：小口啄食 */
+.pasture-cow[data-state="eat"] .pasture-cow-svg {
+  animation: cowEat 0.4s ease-in-out infinite;
+}
+.pasture-cow[data-state="eat"][data-facing="left"] .pasture-cow-svg {
+  animation: cowEatFlip 0.4s ease-in-out infinite;
+}
+@keyframes cowEat {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(12deg) translateY(3px); }
+}
+@keyframes cowEatFlip {
+  0%, 100% { transform: scaleX(-1) rotate(0deg); }
+  50% { transform: scaleX(-1) rotate(12deg) translateY(3px); }
+}
+/* 心情：开心时轻微上下小跳（作用在整只牛的 emote 之外，用 SVG filter 强调） */
+.pasture-cow[data-mood="happy"] .pasture-cow-svg { filter: drop-shadow(0 3px 4px rgba(50,80,30,0.22)) saturate(1.12) brightness(1.04); }
+.pasture-cow[data-mood="bored"] .pasture-cow-svg { filter: drop-shadow(0 3px 4px rgba(50,80,30,0.22)) saturate(0.82) brightness(0.96); }
+
 .pasture-cow-shadow {
   position: absolute;
   bottom: 2px;
@@ -9587,29 +9721,41 @@ body.layout-phone .vibecoding-detail-close {
   z-index: -1;
 }
 
-/* 吃的草丛 */
-.pasture-graze {
+/* 头顶表情气泡（喂食爱心 / 满足 / 无聊等，由 JS 控制显隐） */
+.pasture-emote {
   position: absolute;
-  bottom: 4px;
-  right: 8px;
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
+  left: 50%;
+  top: -6px;
+  transform: translateX(-50%) translateY(0) scale(0.6);
+  font-size: 22px;
+  line-height: 1;
   pointer-events: none;
+  opacity: 0;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.18));
+  transition: opacity 0.2s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 3;
 }
-.graze-tuft {
-  width: 4px;
-  height: 12px;
-  background: linear-gradient(180deg, #7fc949 0%, #4f9c2c 100%);
-  border-radius: 3px 3px 0 0;
-  transform-origin: bottom center;
-  animation: tuftSway 2.6s ease-in-out infinite;
+
+/* ---------- 撒下的草料 ---------- */
+.pasture-food {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 4px rgba(80, 60, 20, 0.3));
+  animation: foodDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both, foodSway 2.4s ease-in-out 0.5s infinite;
 }
-.graze-tuft:nth-child(2) { height: 16px; animation-delay: 0.3s; }
-.graze-tuft:nth-child(3) { height: 10px; animation-delay: 0.6s; }
-@keyframes tuftSway {
-  0%, 100% { transform: rotate(-6deg); }
-  50% { transform: rotate(6deg); }
+.pasture-food.amount-2 { font-size: 21px; opacity: 0.92; }
+.pasture-food.amount-1 { font-size: 18px; opacity: 0.82; }
+@keyframes foodDrop {
+  0% { transform: translate(-50%, -220%) scale(0.4) rotate(-30deg); opacity: 0; }
+  70% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes foodSway {
+  0%, 100% { rotate: -6deg; }
+  50% { rotate: 6deg; }
 }
 
 /* 名牌 */
@@ -9645,6 +9791,158 @@ body.layout-phone .vibecoding-detail-close {
   0%, 100% { transform: rotate(-4deg); }
   50% { transform: rotate(4deg); }
 }
+
+/* ---------- 萤火虫（夜里可见） ---------- */
+.pasture-fireflies {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  opacity: var(--firefly-op);
+  transition: opacity 2.4s ease;
+}
+.firefly {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6a0 0%, #ffe25a 55%, rgba(255,226,90,0) 72%);
+  box-shadow: 0 0 8px 3px rgba(255, 230, 120, 0.7);
+  animation: fireflyFloat 5s ease-in-out infinite, fireflyBlink 2.2s ease-in-out infinite;
+}
+@keyframes fireflyFloat {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(18px, -14px); }
+  50% { transform: translate(-10px, -26px); }
+  75% { transform: translate(-22px, -10px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes fireflyBlink {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+/* ---------- 环境小动物 ---------- */
+.pasture-critter {
+  position: absolute;
+  z-index: 9;
+  font-size: 24px;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,0.15));
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+.pasture-critter.from-left { left: -8%; }
+.pasture-critter.from-right { right: -8%; }
+.critter-bird.from-left { animation-name: birdFlyRight; }
+.critter-bird.from-right { animation-name: birdFlyLeft; }
+.critter-butterfly.from-left { animation-name: flyRightWavy; font-size: 20px; }
+.critter-butterfly.from-right { animation-name: flyLeftWavy; font-size: 20px; }
+.critter-rabbit.from-left { animation-name: rabbitHopRight; font-size: 22px; }
+.critter-rabbit.from-right { animation-name: rabbitHopLeft; font-size: 22px; transform: scaleX(-1); }
+@keyframes birdFlyRight {
+  0% { transform: translateX(0) translateY(0); }
+  100% { transform: translateX(118vw) translateY(-4vh); }
+}
+@keyframes birdFlyLeft {
+  0% { transform: translateX(0) scaleX(-1) translateY(0); }
+  100% { transform: translateX(-118vw) scaleX(-1) translateY(-4vh); }
+}
+@keyframes flyRightWavy {
+  0% { transform: translate(0, 0) rotate(-6deg); }
+  25% { transform: translate(30vw, -6vh) rotate(6deg); }
+  50% { transform: translate(60vw, 2vh) rotate(-6deg); }
+  75% { transform: translate(90vw, -5vh) rotate(6deg); }
+  100% { transform: translate(120vw, 0) rotate(-6deg); }
+}
+@keyframes flyLeftWavy {
+  0% { transform: translate(0, 0) scaleX(-1) rotate(6deg); }
+  25% { transform: translate(-30vw, -6vh) scaleX(-1) rotate(-6deg); }
+  50% { transform: translate(-60vw, 2vh) scaleX(-1) rotate(6deg); }
+  75% { transform: translate(-90vw, -5vh) scaleX(-1) rotate(-6deg); }
+  100% { transform: translate(-120vw, 0) scaleX(-1) rotate(6deg); }
+}
+@keyframes rabbitHopRight {
+  0% { transform: translate(0, 0); }
+  10% { transform: translate(6vw, -3vh); }
+  20% { transform: translate(12vw, 0); }
+  30% { transform: translate(18vw, -3vh); }
+  40% { transform: translate(24vw, 0); }
+  50% { transform: translate(30vw, -3vh); }
+  60% { transform: translate(36vw, 0); }
+  70% { transform: translate(42vw, -3vh); }
+  80% { transform: translate(48vw, 0); }
+  90% { transform: translate(54vw, -3vh); }
+  100% { transform: translate(60vw, 0); }
+}
+@keyframes rabbitHopLeft {
+  0% { transform: translate(0, 0) scaleX(-1); }
+  10% { transform: translate(-6vw, -3vh) scaleX(-1); }
+  20% { transform: translate(-12vw, 0) scaleX(-1); }
+  30% { transform: translate(-18vw, -3vh) scaleX(-1); }
+  40% { transform: translate(-24vw, 0) scaleX(-1); }
+  50% { transform: translate(-30vw, -3vh) scaleX(-1); }
+  60% { transform: translate(-36vw, 0) scaleX(-1); }
+  70% { transform: translate(-42vw, -3vh) scaleX(-1); }
+  80% { transform: translate(-48vw, 0) scaleX(-1); }
+  90% { transform: translate(-54vw, -3vh) scaleX(-1); }
+  100% { transform: translate(-60vw, 0) scaleX(-1); }
+}
+
+/* ---------- HUD：投喂计数 + 昼夜徽章 ---------- */
+.pasture-hud {
+  position: absolute;
+  z-index: 5;
+  left: 26px;
+  top: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.pasture-hud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #3a4a2f;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(90, 140, 60, 0.18);
+  backdrop-filter: blur(8px);
+}
+.pasture-hud-pill b { font-size: 15px; color: #4f9c2c; }
+.pasture-hud-emoji { font-size: 15px; }
+.phase-night .pasture-hud-pill { background: rgba(30, 42, 78, 0.7); color: #e6efd8; }
+.phase-night .pasture-hud-pill b { color: #ffe25a; }
+
+/* 撒草提示 */
+.pasture-feed-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 5%;
+  transform: translateX(-50%);
+  z-index: 7;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #3a4a2f;
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 8px 22px rgba(90, 140, 60, 0.22);
+  pointer-events: none;
+  animation: feedHintPulse 2.4s ease-in-out infinite;
+}
+@keyframes feedHintPulse {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.92; }
+  50% { transform: translateX(-50%) translateY(-4px); opacity: 1; }
+}
+.phase-night .pasture-feed-hint { background: rgba(30, 42, 78, 0.82); color: #e6efd8; }
 
 .pasture-empty {
   width: 100%;
@@ -9701,7 +9999,7 @@ body.layout-phone .vibecoding-detail-close {
 .pasture-dialog-name {
   font-size: 19px;
   font-weight: 800;
-  color: var(--ink);
+  color: #3a4a2f;
   margin-bottom: 6px;
 }
 .pasture-dialog-message {
@@ -9729,8 +10027,18 @@ body.layout-phone .vibecoding-detail-close {
 /* 窄屏 / 手机端兜底（本页仅桌面入口，但仍保证可用） */
 @media (max-width: 640px) {
   .pasture-sign-text { font-size: 16px; }
-  .pasture-sun { width: 92px; height: 92px; }
-  .pasture-cow { width: 78px; height: 78px; }
+  .pasture-celestial { width: 92px; height: 92px; }
+  .pasture-moon { width: 72px; height: 72px; }
+  .pasture-cow { width: 82px; height: 82px; }
+  .pasture-hud { top: 64px; left: 14px; }
+  .pasture-feed-hint { font-size: 12px; padding: 7px 14px; }
   .pasture-dialog { flex-direction: column; text-align: center; }
   .pasture-dialog-body { text-align: center; }
+}
+
+/* 尊重"减少动态效果"系统偏好：关闭持续动画，保留可用性 */
+@media (prefers-reduced-motion: reduce) {
+  .pasture-cloud, .pasture-sun, .pasture-stars, .firefly,
+  .pasture-critter, .decor-item, .graze-tuft, .pasture-food,
+  .pasture-feed-hint { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; }
 }

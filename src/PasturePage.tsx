@@ -1,5 +1,5 @@
-import {useEffect, useMemo, useState, useCallback} from 'react';
-import type {CSSProperties} from 'react';
+import {useEffect, useMemo, useRef, useState, useCallback} from 'react';
+import type {CSSProperties, PointerEvent as ReactPointerEvent, MouseEvent as ReactMouseEvent} from 'react';
 
 type Lang = 'zh' | 'en';
 
@@ -92,8 +92,7 @@ function cowSVGFor(c: CowData): string {
   );
 }
 
-// Deterministic pseudo-random from a string seed so each cow keeps a stable
-// slot / animation offset across re-renders (no jumping on state updates).
+// Deterministic pseudo-random from a string seed.
 function hashSeed(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) {
@@ -103,62 +102,97 @@ function hashSeed(s: string): number {
   return (h >>> 0) / 4294967295;
 }
 
-type PastureCow = CowData & {
-  _key: string;
-  _left: number;   // % across the field (left edge, self-width aware)
-  _top: number;    // % down the lawn (depth)
-  _flip: boolean;  // face left/right
-  _delay: number;  // animation offset
-  _dur: number;    // wander duration
-  _scale: number;  // near = big, far = small
+// ---- Simulation types ----
+// The lawn is a virtual field in percentage coordinates (0..100 on both axes).
+// x/y are the cow's foot position on that field. Depth (y) drives scale + z.
+type CowState = 'wander' | 'graze' | 'idle' | 'seekFood' | 'eat';
+
+type Mood = 'content' | 'happy' | 'bored';
+
+type CowAgent = {
+  data: CowData;
+  key: string;
+  x: number; // 0..100 field %
+  y: number; // 0..100 field % (bigger = nearer/bottom)
+  tx: number; // target x
+  ty: number; // target y
+  facing: 1 | -1; // 1 = right, -1 = left
+  speed: number; // % per second
+  state: CowState;
+  stateT: number; // seconds remaining in current state
+  scaleBase: number; // per-cow size variety
+  fed: number; // times fed
+  mood: Mood;
+  moodT: number; // seconds since last fed (for boredom)
+  bobPhase: number; // walking bob offset
+  el?: HTMLButtonElement | null;
+  emoteT: number; // emote bubble timer
+  emote: string; // current emote glyph
 };
 
-const ROWS = 3;
+type FoodSprite = {
+  id: number;
+  x: number;
+  y: number;
+  amount: number; // bites left
+  born: number; // timestamp
+};
 
-// Distribute cows evenly across the lawn: split into ROWS depth bands, and
-// within each band spread them horizontally into columns with jitter, so they
-// never pile up in a corner. Farther (higher) = smaller; nearer = larger.
-function layoutCows(cows: CowData[]): PastureCow[] {
-  const n = cows.length;
-  // rows get more cows toward the front (visual balance)
-  return cows.map((c, i) => {
-    const key = c.id || `${c.name || 'cow'}-${i}`;
-    const r1 = hashSeed(key + 'x');
-    const r3 = hashSeed(key + 'f');
-    const r4 = hashSeed(key + 'd');
-    // assign band by index so bands stay balanced regardless of hash
-    const row = i % ROWS;
-    // column slot within the band
-    const perRow = Math.max(1, Math.ceil(n / ROWS));
-    const col = Math.floor(i / ROWS);
-    const slotW = 80 / perRow;                    // usable width 6%..86%
-    const jitter = (r1 - 0.5) * slotW * 0.4;
-    // stagger each depth band horizontally so cross-band columns don't overlap
-    const bandShift = [0, slotW * 0.45, slotW * 0.9][row];
-    const left = Math.min(82, Math.max(4, 6 + col * slotW + bandShift + jitter));
-    // depth: band 0 = far/top, band 2 = near/bottom
-    const bandTop = [24, 44, 64][row];
-    const top = bandTop + (r4 - 0.5) * 8;
-    const scale = [0.78, 0.95, 1.12][row];
-    return {
-      ...c,
-      _key: key,
-      _left: left,
-      _top: top,
-      _flip: r3 > 0.5,
-      _delay: -(r4 * 14),
-      _dur: 9 + r1 * 8,
-      _scale: scale,
-    };
-  });
+type Critter = {
+  id: number;
+  kind: 'bird' | 'butterfly' | 'rabbit';
+  born: number;
+  dur: number;
+  fromLeft: boolean;
+  y: number; // vertical band %
+};
+
+// Field bounds (in %). Keep cows off the very edges & fence.
+const FX_MIN = 6;
+const FX_MAX = 92;
+const FY_MIN = 20; // top of grazable lawn (below fence)
+const FY_MAX = 86; // bottom
+
+function clamp(v: number, lo: number, hi: number) {
+  return v < lo ? lo : v > hi ? hi : v;
 }
+
+// scale from depth: far (small y) -> small, near (big y) -> big
+function depthScale(y: number, base: number) {
+  const tNorm = (y - FY_MIN) / (FY_MAX - FY_MIN); // 0..1
+  return (0.72 + tNorm * 0.5) * base;
+}
+
+const TIME_PHASES = ['day', 'dusk', 'night', 'dawn'] as const;
+type TimePhase = (typeof TIME_PHASES)[number];
 
 export default function PasturePage({lang, onBack, onToggleLang}: PasturePageProps) {
   const t = useCallback((zh: string, en: string) => (lang === 'en' ? en : zh), [lang]);
   const [cows, setCows] = useState<CowData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [active, setActive] = useState<PastureCow | null>(null);
+  const [active, setActive] = useState<CowData | null>(null);
+  const [feedTotal, setFeedTotal] = useState(0);
+  const [phase, setPhase] = useState<TimePhase>('day');
+  const [foods, setFoods] = useState<FoodSprite[]>([]);
+  const [critters, setCritters] = useState<Critter[]>([]);
+  const [hint, setHint] = useState(true);
 
+  const lawnRef = useRef<HTMLDivElement | null>(null);
+  const agentsRef = useRef<CowAgent[]>([]);
+  const foodsRef = useRef<FoodSprite[]>([]);
+  const rafRef = useRef<number>(0);
+  const lastTsRef = useRef<number>(0);
+  const pointerRef = useRef<{x: number; y: number; active: boolean}>({x: 50, y: 50, active: false});
+  const foodIdRef = useRef(1);
+  const critterIdRef = useRef(1);
+  const feedCountRef = useRef(0);
+
+  // keep foods ref in sync with state (state used for render, ref for sim loop)
+  useEffect(() => {
+    foodsRef.current = foods;
+  }, [foods]);
+
+  // ---- fetch cows ----
   useEffect(() => {
     let alive = true;
     fetch('/api/data')
@@ -177,7 +211,289 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
     };
   }, []);
 
-  const laid = useMemo(() => layoutCows(cows), [cows]);
+  // ---- build agents from cows ----
+  useEffect(() => {
+    agentsRef.current = cows.map((c, i) => {
+      const key = c.id || `${c.name || 'cow'}-${i}`;
+      const rx = hashSeed(key + 'x');
+      const ry = hashSeed(key + 'y');
+      const rs = hashSeed(key + 's');
+      const x = FX_MIN + rx * (FX_MAX - FX_MIN);
+      const y = FY_MIN + ry * (FY_MAX - FY_MIN);
+      return {
+        data: c,
+        key,
+        x,
+        y,
+        tx: x,
+        ty: y,
+        facing: rx > 0.5 ? 1 : -1,
+        speed: 3.2 + rs * 2.6,
+        state: 'graze' as CowState,
+        stateT: 1 + rs * 3,
+        scaleBase: 0.92 + rs * 0.26,
+        fed: 0,
+        mood: 'content' as Mood,
+        moodT: 0,
+        bobPhase: rx * Math.PI * 2,
+        emoteT: 0,
+        emote: '',
+      };
+    });
+  }, [cows]);
+
+  // ---- day/night cycle (advances every ~30s of real time) ----
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setPhase((p) => {
+        const idx = TIME_PHASES.indexOf(p);
+        return TIME_PHASES[(idx + 1) % TIME_PHASES.length];
+      });
+    }, 30000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // ---- ambient critters spawn occasionally ----
+  useEffect(() => {
+    let alive = true;
+    const spawn = () => {
+      if (!alive) return;
+      const kinds: Critter['kind'][] = ['bird', 'butterfly', 'butterfly', 'rabbit'];
+      const kind = kinds[Math.floor(Math.random() * kinds.length)];
+      const c: Critter = {
+        id: critterIdRef.current++,
+        kind,
+        born: performance.now(),
+        dur: kind === 'bird' ? 7000 : kind === 'rabbit' ? 5200 : 9000,
+        fromLeft: Math.random() > 0.5,
+        y: kind === 'bird' ? 8 + Math.random() * 14 : kind === 'rabbit' ? 78 + Math.random() * 8 : 34 + Math.random() * 34,
+      };
+      setCritters((list) => [...list.filter((it) => performance.now() - it.born < it.dur), c]);
+      const next = 6000 + Math.random() * 9000;
+      window.setTimeout(spawn, next);
+    };
+    const first = window.setTimeout(spawn, 3500);
+    return () => {
+      alive = false;
+      window.clearTimeout(first);
+    };
+  }, []);
+
+  // ---- pick a new wander target ----
+  const pickTarget = (a: CowAgent) => {
+    a.tx = FX_MIN + Math.random() * (FX_MAX - FX_MIN);
+    a.ty = FY_MIN + Math.random() * (FY_MAX - FY_MIN);
+    a.state = 'wander';
+    a.stateT = 0;
+  };
+
+  // ---- the simulation loop ----
+  useEffect(() => {
+    if (loading || cows.length === 0) return;
+
+    const step = (ts: number) => {
+      const last = lastTsRef.current || ts;
+      let dt = (ts - last) / 1000;
+      lastTsRef.current = ts;
+      if (dt > 0.1) dt = 0.1; // clamp big gaps (tab switch)
+
+      const agents = agentsRef.current;
+      const foodList = foodsRef.current;
+      const pointer = pointerRef.current;
+      let foodChanged = false;
+
+      for (const a of agents) {
+        a.moodT += dt;
+        if (a.emoteT > 0) a.emoteT -= dt;
+
+        // hungry mood over time
+        if (a.moodT > 22) a.mood = 'bored';
+        else if (a.moodT < 6 && a.fed > 0) a.mood = 'happy';
+        else a.mood = 'content';
+
+        // --- food seeking has priority ---
+        let nearestFood: FoodSprite | null = null;
+        let nearestD = 999;
+        for (const f of foodList) {
+          if (f.amount <= 0) continue;
+          const d = Math.hypot(f.x - a.x, f.y - a.y);
+          if (d < nearestD) {
+            nearestD = d;
+            nearestFood = f;
+          }
+        }
+        // only chase food within reasonable range (28% of field)
+        if (nearestFood && nearestD < 30 && a.state !== 'eat') {
+          a.tx = nearestFood.x;
+          a.ty = clamp(nearestFood.y, FY_MIN, FY_MAX);
+          a.state = 'seekFood';
+        }
+
+        if (a.state === 'seekFood' && nearestFood) {
+          const dx = a.tx - a.x;
+          const dy = a.ty - a.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 2.2) {
+            // arrived → eat
+            a.state = 'eat';
+            a.stateT = 1.6;
+            a.emote = '❤️';
+            a.emoteT = 1.6;
+          } else {
+            const sp = a.speed * 1.7 * dt; // rush to food
+            a.x += (dx / dist) * sp;
+            a.y += (dy / dist) * sp;
+            a.facing = dx >= 0 ? 1 : -1;
+            a.bobPhase += dt * 11;
+          }
+        } else if (a.state === 'eat') {
+          a.stateT -= dt;
+          if (a.stateT <= 0) {
+            // consume one bite from nearest food
+            if (nearestFood) {
+              nearestFood.amount -= 1;
+              foodChanged = true;
+            }
+            a.fed += 1;
+            a.moodT = 0;
+            a.mood = 'happy';
+            a.emote = '😋';
+            a.emoteT = 1.4;
+            // more food nearby? keep eating : resume wander
+            if (nearestFood && nearestFood.amount > 0 && nearestD < 30) {
+              a.state = 'seekFood';
+            } else {
+              a.state = 'idle';
+              a.stateT = 0.8 + Math.random() * 1.2;
+            }
+          }
+        } else if (a.state === 'wander') {
+          const dx = a.tx - a.x;
+          const dy = a.ty - a.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 1.5) {
+            // reached → graze or idle
+            a.state = Math.random() > 0.4 ? 'graze' : 'idle';
+            a.stateT = 2 + Math.random() * 4;
+          } else {
+            const sp = a.speed * dt;
+            a.x += (dx / dist) * sp;
+            a.y += (dy / dist) * sp;
+            a.facing = dx >= 0 ? 1 : -1;
+            a.bobPhase += dt * 7;
+          }
+        } else {
+          // graze / idle → count down then pick new target
+          a.stateT -= dt;
+          if (a.stateT <= 0) {
+            pickTarget(a);
+          }
+        }
+
+        a.x = clamp(a.x, FX_MIN, FX_MAX);
+        a.y = clamp(a.y, FY_MIN, FY_MAX);
+
+        // --- write to DOM ---
+        const el = a.el;
+        if (el) {
+          const sc = depthScale(a.y, a.scaleBase);
+          const walking = a.state === 'wander' || a.state === 'seekFood';
+          const bob = walking ? Math.sin(a.bobPhase) * 3 : 0;
+          el.style.left = `${a.x}%`;
+          el.style.top = `${a.y}%`;
+          el.style.transform = `translate(-50%, -100%) scale(${sc}) translateY(${bob}px)`;
+          el.style.zIndex = String(6 + Math.round(a.y));
+          el.dataset.state = a.state;
+          el.dataset.facing = a.facing === -1 ? 'left' : 'right';
+          el.dataset.mood = a.mood;
+          // pointer-look on hover proximity (subtle head tilt handled via CSS data-mood)
+          // emote bubble
+          const em = el.querySelector('.pasture-emote') as HTMLElement | null;
+          if (em) {
+            if (a.emoteT > 0 && a.emote) {
+              em.textContent = a.emote;
+              em.style.opacity = '1';
+              em.style.transform = 'translateX(-50%) translateY(-6px) scale(1)';
+            } else {
+              em.style.opacity = '0';
+              em.style.transform = 'translateX(-50%) translateY(0) scale(0.6)';
+            }
+          }
+        }
+      }
+
+      // hover / pointer curiosity: nearest cow to pointer looks toward it (light effect via facing)
+      if (pointer.active) {
+        for (const a of agents) {
+          if (a.state === 'graze' || a.state === 'idle') {
+            const d = Math.hypot(pointer.x - a.x, pointer.y - a.y);
+            if (d < 18) a.facing = pointer.x >= a.x ? 1 : -1;
+          }
+        }
+      }
+
+      if (foodChanged) {
+        // prune eaten food
+        const remaining = foodsRef.current.filter((f) => f.amount > 0);
+        if (remaining.length !== foodsRef.current.length) {
+          setFoods(remaining);
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(step);
+    };
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [loading, cows.length]);
+
+  // ---- pointer tracking over lawn ----
+  const onLawnMove = (e: ReactPointerEvent) => {
+    const el = lawnRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    pointerRef.current = {
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+      active: true,
+    };
+  };
+  const onLawnLeave = () => {
+    pointerRef.current.active = false;
+  };
+
+  // ---- scatter food where the user clicks the lawn ----
+  const onLawnClick = (e: ReactMouseEvent) => {
+    const el = lawnRef.current;
+    if (!el) return;
+    // ignore clicks that originated on a cow button (handled separately)
+    const target = e.target as HTMLElement;
+    if (target.closest('.pasture-cow')) return;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    if (y < FY_MIN - 2) return; // don't drop in the sky/fence zone
+    const cx = clamp(x, FX_MIN, FX_MAX);
+    const cy = clamp(y, FY_MIN, FY_MAX);
+    const f: FoodSprite = {
+      id: foodIdRef.current++,
+      x: cx,
+      y: cy,
+      amount: 3,
+      born: performance.now(),
+    };
+    setFoods((list) => [...list, f]);
+    feedCountRef.current += 1;
+    setFeedTotal(feedCountRef.current);
+    if (hint) setHint(false);
+  };
+
+  const laid = useMemo(() => {
+    return cows.map((c, i) => {
+      const key = c.id || `${c.name || 'cow'}-${i}`;
+      return {c, key};
+    });
+  }, [cows]);
 
   // Close dialog on Escape
   useEffect(() => {
@@ -189,11 +505,18 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
     return () => window.removeEventListener('keydown', onKey);
   }, [active]);
 
+  const registerCowEl = useCallback((key: string, el: HTMLButtonElement | null) => {
+    const a = agentsRef.current.find((x) => x.key === key);
+    if (a) a.el = el;
+  }, []);
+
   return (
-    <div className="pasture-root" lang={lang}>
-      {/* Sky layer: sun, drifting clouds, gradient */}
+    <div className={`pasture-root phase-${phase}`} lang={lang}>
+      {/* Sky layer */}
       <div className="pasture-sky" aria-hidden="true">
-        <div className="pasture-sun" />
+        <div className="pasture-celestial pasture-sun" />
+        <div className="pasture-celestial pasture-moon" />
+        <div className="pasture-stars" />
         <div className="pasture-cloud pc-1" />
         <div className="pasture-cloud pc-2" />
         <div className="pasture-cloud pc-3" />
@@ -202,7 +525,7 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
         <div className="pasture-hill pasture-hill-front" />
       </div>
 
-      {/* Top bar: back + title board + language */}
+      {/* Top bar */}
       <header className="pasture-topbar">
         <button
           type="button"
@@ -211,14 +534,7 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
           aria-label={t('返回首页', 'Back to home')}
         >
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-            <path
-              d="M15 5l-7 7 7 7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <span>{t('回家', 'Home')}</span>
         </button>
@@ -229,7 +545,7 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
           <span className="pasture-sign-count">
             {loading
               ? t('清点中…', 'Counting…')
-              : t(`现居 ${cows.length} 只牛牛`, `${cows.length} cows live here`)}
+              : t(`现居 ${cows.length} 只牛牛`, `${cows.length} cows`)}
           </span>
         </div>
 
@@ -243,6 +559,31 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
         </button>
       </header>
 
+      {/* HUD: feed counter + time badge */}
+      {!loading && cows.length > 0 ? (
+        <div className="pasture-hud" aria-hidden="false">
+          <div className="pasture-hud-pill">
+            <span className="pasture-hud-emoji">🌾</span>
+            <span>{t('已投喂', 'Fed')}</span>
+            <b>{feedTotal}</b>
+          </div>
+          <div className="pasture-hud-pill pasture-hud-time" title={t('昼夜循环', 'Day/night cycle')}>
+            <span className="pasture-hud-emoji">
+              {phase === 'day' ? '☀️' : phase === 'dusk' ? '🌅' : phase === 'night' ? '🌙' : '🌄'}
+            </span>
+            <span>
+              {phase === 'day'
+                ? t('白天', 'Day')
+                : phase === 'dusk'
+                ? t('黄昏', 'Dusk')
+                : phase === 'night'
+                ? t('夜晚', 'Night')
+                : t('清晨', 'Dawn')}
+            </span>
+          </div>
+        </div>
+      ) : null}
+
       {/* The field */}
       <main className="pasture-field">
         {loading ? (
@@ -252,8 +593,14 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
             {t('牧场空空的，还没有牛牛入住～', 'The pasture is empty — no cows yet.')}
           </div>
         ) : (
-          <div className="pasture-lawn">
-            {/* wooden fence across the top edge of the lawn */}
+          <div
+            className="pasture-lawn"
+            ref={lawnRef}
+            onClick={onLawnClick}
+            onPointerMove={onLawnMove}
+            onPointerLeave={onLawnLeave}
+          >
+            {/* fence */}
             <div className="pasture-fence" aria-hidden="true">
               {Array.from({length: 16}).map((_, i) => (
                 <span className="fence-post" key={i} />
@@ -262,39 +609,78 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
               <span className="fence-rail fence-rail-bottom" />
             </div>
 
-            {laid.map((c) => (
+            {/* fireflies (only visible at night via CSS) */}
+            <div className="pasture-fireflies" aria-hidden="true">
+              {Array.from({length: 14}).map((_, i) => {
+                const s = hashSeed('ff' + i);
+                const s2 = hashSeed('ff2' + i);
+                return (
+                  <span
+                    className="firefly"
+                    key={i}
+                    style={{
+                      left: `${6 + s * 88}%`,
+                      top: `${24 + s2 * 60}%`,
+                      animationDelay: `${s * 6}s`,
+                      animationDuration: `${4 + s2 * 4}s`,
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* scattered food */}
+            {foods.map((f) => (
+              <span
+                key={f.id}
+                className={`pasture-food amount-${f.amount}`}
+                style={{left: `${f.x}%`, top: `${f.y}%`, zIndex: 5 + Math.round(f.y)} as CSSProperties}
+                aria-hidden="true"
+              >
+                🌾
+              </span>
+            ))}
+
+            {/* cows */}
+            {laid.map(({c, key}) => (
               <button
                 type="button"
-                key={c._key}
-                className={`pasture-cow${c._flip ? ' flip' : ''}`}
-                style={{
-                  left: `${c._left}%`,
-                  top: `${c._top}%`,
-                  zIndex: 4 + Math.round(c._top),
-                  '--cow-delay': `${c._delay}s`,
-                  '--cow-dur': `${c._dur}s`,
-                  '--cow-scale': c._scale,
-                } as CSSProperties}
-                onClick={() => setActive(c)}
+                key={key}
+                ref={(el) => registerCowEl(key, el)}
+                className="pasture-cow"
+                data-state="graze"
+                data-facing="right"
+                data-mood="content"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActive(c);
+                }}
                 aria-label={t(`查看 ${c.name || '牛牛'} 的留言`, `See ${c.name || 'cow'}'s message`)}
               >
+                <span className="pasture-emote" aria-hidden="true" />
                 <span className="pasture-cow-shadow" aria-hidden="true" />
                 <span
                   className="pasture-cow-svg"
                   aria-hidden="true"
                   dangerouslySetInnerHTML={{__html: cowSVGFor(c)}}
                 />
-                {/* grass tufts the cow nibbles at */}
-                <span className="pasture-graze" aria-hidden="true">
-                  <span className="graze-tuft" />
-                  <span className="graze-tuft" />
-                  <span className="graze-tuft" />
-                </span>
                 {c.name ? <span className="pasture-nametag">{c.name}</span> : null}
               </button>
             ))}
 
-            {/* scattered flowers + grass tufts for a lush field */}
+            {/* ambient critters */}
+            {critters.map((cr) => (
+              <span
+                key={cr.id}
+                className={`pasture-critter critter-${cr.kind} ${cr.fromLeft ? 'from-left' : 'from-right'}`}
+                style={{top: `${cr.y}%`, animationDuration: `${cr.dur}ms`} as CSSProperties}
+                aria-hidden="true"
+              >
+                {cr.kind === 'bird' ? '🐦' : cr.kind === 'rabbit' ? '🐇' : '🦋'}
+              </span>
+            ))}
+
+            {/* flowers decor */}
             <div className="pasture-decor" aria-hidden="true">
               {Array.from({length: 22}).map((_, i) => {
                 const seed = hashSeed('decor' + i);
@@ -306,7 +692,7 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
                     key={i}
                     style={{
                       left: `${4 + seed * 92}%`,
-                      top: `${18 + seed2 * 74}%`,
+                      top: `${20 + seed2 * 68}%`,
                       fontSize: `${14 + seed * 12}px`,
                       opacity: 0.55 + seed2 * 0.35,
                     }}
@@ -316,28 +702,23 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
                 );
               })}
             </div>
+
+            {/* feed hint */}
+            {hint ? (
+              <div className="pasture-feed-hint" aria-hidden="true">
+                {t('点击草地任意处撒草料喂牛 🌾', 'Click the grass to scatter feed 🌾')}
+              </div>
+            ) : null}
           </div>
         )}
       </main>
 
-      {/* Message dialog when a cow is tapped */}
+      {/* Message dialog */}
       {active ? (
-        <div
-          className="pasture-dialog-overlay"
-          onClick={() => setActive(null)}
-          role="presentation"
-        >
-          <div
-            className="pasture-dialog"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
+        <div className="pasture-dialog-overlay" onClick={() => setActive(null)} role="presentation">
+          <div className="pasture-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
             <div className="pasture-dialog-portrait" aria-hidden="true">
-              <div
-                className="pasture-dialog-svg"
-                dangerouslySetInnerHTML={{__html: cowSVGFor(active)}}
-              />
+              <div className="pasture-dialog-svg" dangerouslySetInnerHTML={{__html: cowSVGFor(active)}} />
             </div>
             <div className="pasture-dialog-body">
               <div className="pasture-dialog-name">{active.name || t('无名牛牛', 'A shy cow')}</div>
@@ -346,11 +727,7 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
                   ? `“${active.message}”`
                   : t('这只牛牛还没有留言，正忙着吃草～', 'This cow left no message — busy grazing.')}
               </div>
-              <button
-                type="button"
-                className="pasture-dialog-close"
-                onClick={() => setActive(null)}
-              >
+              <button type="button" className="pasture-dialog-close" onClick={() => setActive(null)}>
                 {t('哞，再见！', 'Moo, bye!')}
               </button>
             </div>
