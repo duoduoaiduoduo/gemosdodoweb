@@ -1783,31 +1783,54 @@ export function initApp() {
     let cows = []; let grassList = [];
 
     function getCowSVG(bodyColor, spotColor, hornColor, noseColor, legColor, hoofColor, tailColor, eyeColor, eyeStyle, spotType, bodyShape, hornStyle, tailStyle) {
-        let bodySVG = '';
-        if (bodyShape === 'chubby') bodySVG = `<rect x="15" y="38" width="70" height="42" rx="21" fill="${bodyColor}" stroke="#333" stroke-width="2"/>`;
-        else if (bodyShape === 'boxy') bodySVG = `<rect x="20" y="40" width="60" height="35" rx="4" fill="${bodyColor}" stroke="#333" stroke-width="2"/>`;
-        else bodySVG = `<rect x="20" y="40" width="60" height="35" rx="12" fill="${bodyColor}" stroke="#333" stroke-width="2"/>`;
+        const outline = '#2f2a26';
+        const bodyX = bodyShape === 'chubby' ? 13 : 17;
+        const bodyY = bodyShape === 'chubby' ? 39 : 41;
+        const bodyW = bodyShape === 'chubby' ? 72 : 62;
+        const bodyH = bodyShape === 'chubby' ? 43 : 37;
+        const bodyRx = bodyShape === 'boxy' ? 9 : bodyShape === 'chubby' ? 23 : 18;
+        const bodySVG = `<rect x="${bodyX}" y="${bodyY}" width="${bodyW}" height="${bodyH}" rx="${bodyRx}" fill="${bodyColor}" stroke="${outline}" stroke-width="2.4"/>`;
 
         let hornSVG = '';
-        if (hornStyle === 'long') hornSVG = `<path d="M 68 25 Q 55 5 75 5" stroke="${hornColor}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 82 25 Q 95 5 75 5" stroke="${hornColor}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
-        else if (hornStyle === 'devil') hornSVG = `<path d="M 68 25 L 62 10 L 71 18 Z" fill="${hornColor}" stroke="#333" stroke-width="1.5"/><path d="M 82 25 L 88 10 L 79 18 Z" fill="${hornColor}" stroke="#333" stroke-width="1.5"/>`;
-        else hornSVG = `<path d="M 68 25 Q 65 15 70 15" stroke="${hornColor}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 82 25 Q 85 15 80 15" stroke="${hornColor}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+        if (hornStyle === 'long') {
+            hornSVG = `<path d="M 70 30 Q 55 8 76 10" stroke="${hornColor}" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 89 30 Q 104 8 83 10" stroke="${hornColor}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+        } else if (hornStyle === 'devil') {
+            hornSVG = `<path d="M 71 31 L 65 15 L 76 24 Z" fill="${hornColor}" stroke="${outline}" stroke-width="1.6" stroke-linejoin="round"/><path d="M 88 31 L 94 15 L 83 24 Z" fill="${hornColor}" stroke="${outline}" stroke-width="1.6" stroke-linejoin="round"/>`;
+        } else {
+            hornSVG = `<path d="M 71 30 Q 68 20 74 20" stroke="${hornColor}" stroke-width="3.6" fill="none" stroke-linecap="round"/><path d="M 88 30 Q 91 20 85 20" stroke="${hornColor}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
+        }
 
         let tailSVG = ''; let tailTipColor = (spotColor === 'none' ? tailColor : spotColor);
-        if (tailStyle === 'curly') tailSVG = `<path d="M 22 45 C 5 45 5 55 15 55 C 22 55 22 65 10 65" stroke="${tailColor}" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="10" cy="65" r="4" fill="${tailTipColor}"/>`;
-        else if (tailStyle === 'lightning') tailSVG = `<polyline points="22,45 15,50 20,55 10,65" stroke="${tailColor}" stroke-width="3" fill="none" stroke-linejoin="round"/><polygon points="10,65 6,70 14,70" fill="${tailTipColor}"/>`;
-        else tailSVG = `<path d="M 22 45 Q 10 45 10 60" stroke="${tailColor}" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="10" cy="60" r="4" fill="${tailTipColor}"/>`;
+        if (tailStyle === 'curly') {
+            tailSVG = `<path d="M 19 48 C 5 47 4 58 14 59 C 22 60 22 70 10 70" stroke="${tailColor}" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="10" cy="70" r="4.6" fill="${tailTipColor}" stroke="${outline}" stroke-width="1.4"/>`;
+        } else if (tailStyle === 'lightning') {
+            tailSVG = `<polyline points="19,48 12,54 17,60 8,70" stroke="${tailColor}" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><polygon points="8,70 4,76 13,76" fill="${tailTipColor}" stroke="${outline}" stroke-width="1.4" stroke-linejoin="round"/>`;
+        } else {
+            tailSVG = `<path d="M 19 48 Q 8 49 9 64" stroke="${tailColor}" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="9" cy="64" r="4.6" fill="${tailTipColor}" stroke="${outline}" stroke-width="1.4"/>`;
+        }
 
         let eyeSVG = '';
-        if (eyeStyle === 'happy') eyeSVG = `<path d="M 70 32 Q 72 29 74 32 M 80 32 Q 82 29 84 32" stroke="${eyeColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
-        else if (eyeStyle === 'sleepy') eyeSVG = `<path d="M 70 33 Q 72 35 74 33 M 80 33 Q 82 35 84 33" stroke="${eyeColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
-        else eyeSVG = `<circle cx="72" cy="32" r="2.5" fill="${eyeColor}"/><circle cx="82" cy="32" r="2.5" fill="${eyeColor}"/>`;
+        if (eyeStyle === 'happy') {
+            eyeSVG = `<path d="M 73 39 Q 75.5 36 78 39 M 84 39 Q 86.5 36 89 39" stroke="${eyeColor}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+        } else if (eyeStyle === 'sleepy') {
+            eyeSVG = `<path d="M 73 40 Q 75.5 42 78 40 M 84 40 Q 86.5 42 89 40" stroke="${eyeColor}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+        } else {
+            eyeSVG = `<circle cx="76" cy="39" r="2.8" fill="${eyeColor}"/><circle cx="87" cy="39" r="2.8" fill="${eyeColor}"/><circle cx="77" cy="38" r="0.8" fill="#fff" opacity="0.85"/><circle cx="88" cy="38" r="0.8" fill="#fff" opacity="0.85"/>`;
+        }
 
         let spotSVG = '';
-        if (spotType === 'classic') spotSVG = `<circle cx="35" cy="55" r="8" fill="${spotColor}"/><path d="M 60 40 Q 70 40 70 50 Q 60 55 55 45 Z" fill="${spotColor}"/>`;
-        else if (spotType === 'heart') spotSVG = `<path d="M 46 50 A 5 5 0 0 1 54 50 A 5 5 0 0 1 62 50 Q 62 58 54 66 Q 46 58 46 50 Z" fill="${spotColor}"/>`;
+        if (spotType === 'classic') {
+            spotSVG = `<circle cx="35" cy="56" r="8.5" fill="${spotColor}"/><path d="M 58 44 Q 69 44 68 55 Q 58 61 53 50 Z" fill="${spotColor}"/>`;
+        } else if (spotType === 'heart') {
+            spotSVG = `<path d="M 45 53 A 5.5 5.5 0 0 1 54 53 A 5.5 5.5 0 0 1 63 53 Q 63 62 54 70 Q 45 62 45 53 Z" fill="${spotColor}"/>`;
+        }
 
-        return `<svg viewBox="0 0 100 100" width="100%" height="100%">${tailSVG}<rect x="25" y="70" width="8" height="15" rx="3" fill="${legColor}"/><rect x="40" y="70" width="8" height="15" rx="3" fill="${legColor}"/><rect x="65" y="70" width="8" height="15" rx="3" fill="${legColor}"/><rect x="25" y="80" width="8" height="5" rx="2" fill="${hoofColor}"/><rect x="40" y="80" width="8" height="5" rx="2" fill="${hoofColor}"/><rect x="65" y="80" width="8" height="5" rx="2" fill="${hoofColor}"/>${bodySVG}${spotSVG}<rect x="65" y="25" width="25" height="30" rx="8" fill="${bodyColor}" stroke="#333" stroke-width="2"/><rect x="70" y="40" width="20" height="15" rx="4" fill="${noseColor}" stroke="#333" stroke-width="1.5"/><circle cx="75" cy="45" r="2" fill="rgba(0,0,0,0.3)"/><circle cx="85" cy="45" r="2" fill="rgba(0,0,0,0.3)"/>${eyeSVG}${hornSVG}</svg>`;
+        const earSVG = `<path d="M 69 35 Q 58 30 60 42 Q 66 46 72 41 Z" fill="${bodyColor}" stroke="${outline}" stroke-width="2" stroke-linejoin="round"/><path d="M 90 35 Q 101 30 99 42 Q 93 46 87 41 Z" fill="${bodyColor}" stroke="${outline}" stroke-width="2" stroke-linejoin="round"/>`;
+        const legSVG = `<rect x="28" y="72" width="8" height="16" rx="4" fill="${legColor}"/><rect x="47" y="72" width="8" height="16" rx="4" fill="${legColor}"/><rect x="67" y="72" width="8" height="16" rx="4" fill="${legColor}"/><rect x="28" y="84" width="8" height="6" rx="3" fill="${hoofColor}"/><rect x="47" y="84" width="8" height="6" rx="3" fill="${hoofColor}"/><rect x="67" y="84" width="8" height="6" rx="3" fill="${hoofColor}"/>`;
+        const headSVG = `<rect x="66" y="29" width="31" height="31" rx="14" fill="${bodyColor}" stroke="${outline}" stroke-width="2.4"/>`;
+        const muzzleSVG = `<rect x="72" y="43" width="25" height="17" rx="8.5" fill="${noseColor}" stroke="${outline}" stroke-width="1.8"/><circle cx="79" cy="50" r="1.8" fill="rgba(0,0,0,0.34)"/><circle cx="89" cy="50" r="1.8" fill="rgba(0,0,0,0.34)"/>`;
+
+        return `<svg viewBox="0 0 110 100" width="100%" height="100%" stroke-linejoin="round">${tailSVG}${legSVG}${bodySVG}${spotSVG}${earSVG}${headSVG}${muzzleSVG}${eyeSVG}${hornSVG}</svg>`;
     }
 
     function getCowSpawnPoint() {
