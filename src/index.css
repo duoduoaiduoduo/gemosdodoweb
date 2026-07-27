@@ -919,6 +919,31 @@ body.site-entered .filter-sidebar { transform: translateY(-50%); }
 .btn-solid:hover { background: var(--btn-hover); } .btn-solid:active { transform: scale(0.98); }
 
 .diy-panel { width: 320px; }
+/* 牛牛实验室遮罩层：点击可关闭；平时隐藏，随弹窗 .active 淡入 */
+.diy-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    background: rgba(12, 14, 20, 0.42);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.diy-panel-backdrop.active { opacity: 1; pointer-events: auto; }
+/* 加大 × 的点击热区，避免只有 15px 很难点中 */
+.diy-panel .modal-header .close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin: -6px -6px -6px 0;
+    border-radius: 50%;
+    font-size: 1.6rem;
+}
+.diy-panel .modal-header .close-btn:hover { background: var(--bg-overlay-light, rgba(0,0,0,0.06)); }
 .shape-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
 .color-pickers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
 .color-picker { display: flex; flex-direction: column; align-items: center; gap: 5px; background: var(--bg-overlay-light); padding: 8px 4px; border-radius: 8px;}
@@ -6757,6 +6782,12 @@ body.layout-desktop .pdf-card:hover {
     body.layout-desktop .desktop-quick-journal {
         top: 92px;
         right: 28px;
+    }
+
+    /* 牛牛牧场入口：补齐缺失的定位，排进右上角快捷入口那一行（原本无 top/right，被浏览器丢到页面最底部约 1800px 处，从主页根本找不到） */
+    body.layout-desktop .desktop-quick-pasture {
+        top: 92px;
+        right: 226px;
     }
 
     body.layout-desktop .vibecoding-portal {

@@ -1526,6 +1526,9 @@ export function initApp() {
         }
 
         modal.classList.add('active');
+        if (id === 'diyPanel') {
+            document.getElementById('diyPanelBackdrop')?.classList.add('active');
+        }
     }
 
     function closeModal(id) {
@@ -1547,6 +1550,9 @@ export function initApp() {
         }
 
         modal.classList.remove('active');
+        if (id === 'diyPanel') {
+            document.getElementById('diyPanelBackdrop')?.classList.remove('active');
+        }
     }
 
     function doLogin() {

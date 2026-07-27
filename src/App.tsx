@@ -158,8 +158,28 @@ function CommonModals({
   bridge: ReturnType<typeof getAppBridge>;
   onCopyCurrentLink: () => void;
 }) {
+  // 牛牛实验室弹窗：支持 Esc 关闭 + 点击遮罩关闭（原本只有一个很小的 × 且无遮罩，用户常常关不掉）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      const panel = document.getElementById('diyPanel');
+      if (panel && panel.classList.contains('active')) {
+        bridge.closeModal?.('diyPanel');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [bridge]);
+
   return (
     <>
+      {/* 点击遮罩关闭牛牛实验室；由 script.ts 的 openModal/closeModal 同步 .active */}
+      <div
+        className="diy-panel-backdrop"
+        id="diyPanelBackdrop"
+        onClick={() => bridge.closeModal?.('diyPanel')}
+        aria-hidden="true"
+      />
       <div className="modal-overlay diy-panel no-grass" id="diyPanel">
         <div className="modal-header">
           <h3>{t('牛牛实验室 MAX', 'Cow Lab MAX')}</h3>
