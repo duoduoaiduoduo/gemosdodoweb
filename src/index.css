@@ -10171,9 +10171,9 @@ body.layout-phone .vibecoding-detail-close {
   border: 1px solid rgba(255, 255, 255, 0.28);
   background: rgba(255, 248, 236, 0.24);
 }
-.pasture-field { align-items: stretch; }
+.pasture-field { align-items: flex-end; }
 .pasture-lawn {
-  height: 68vh;
+  height: 72vh;
   border-radius: 44% 56% 0 0 / 16% 20% 0 0;
   background:
     radial-gradient(120% 70% at 50% 112%, rgba(48, 104, 35, 0.38) 0%, rgba(48, 104, 35, 0) 60%),
