@@ -9588,6 +9588,10 @@ body.layout-phone .vibecoding-detail-close {
   align-items: flex-end;
   z-index: 2;
   pointer-events: none;
+  /* 提升到独立合成层：牛每帧重绘时不再连带重栅格化静态栅栏，消除闪烁 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
 }
 .fence-post {
   width: 9px;
