@@ -202,6 +202,9 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
 
   const lawnRef = useRef<HTMLDivElement | null>(null);
   const agentsRef = useRef<CowAgent[]>([]);
+  // DOM node per cow, keyed by cow key — decoupled from agent object identity so
+  // rebuilding agents (when cows change) never loses the element references.
+  const elsRef = useRef<Record<string, HTMLButtonElement | null>>({});
   const foodsRef = useRef<FoodSprite[]>([]);
   const rafRef = useRef<number>(0);
   const lastTsRef = useRef<number>(0);
@@ -236,8 +239,16 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
 
   // ---- build agents from cows ----
   useEffect(() => {
+    const prev = new Map<string, CowAgent>(agentsRef.current.map((a) => [a.key, a]));
     agentsRef.current = cows.map((c, i) => {
       const key = c.id || `${c.name || 'cow'}-${i}`;
+      // if this cow already existed, keep its live position/state so nothing snaps
+      const existing = prev.get(key);
+      if (existing) {
+        existing.data = c;
+        existing.el = elsRef.current[key] ?? existing.el ?? null;
+        return existing;
+      }
       const rx = hashSeed(key + 'x');
       const ry = hashSeed(key + 'y');
       const rs = hashSeed(key + 's');
@@ -259,6 +270,7 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
         mood: 'content' as Mood,
         moodT: 0,
         bobPhase: rx * Math.PI * 2,
+        el: elsRef.current[key] ?? null,
         emoteT: 0,
         emote: '',
       };
@@ -417,7 +429,7 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
         a.y = clamp(a.y, FY_MIN, FY_MAX);
 
         // --- write to DOM ---
-        const el = a.el;
+        const el = elsRef.current[a.key] || a.el;
         if (el) {
           const sc = depthScale(a.y, a.scaleBase);
           const walking = a.state === 'wander' || a.state === 'seekFood';
@@ -529,6 +541,10 @@ export default function PasturePage({lang, onBack, onToggleLang}: PasturePagePro
   }, [active]);
 
   const registerCowEl = useCallback((key: string, el: HTMLButtonElement | null) => {
+    // store in the key→node map first (survives agent rebuilds), then link to the
+    // agent if it already exists. Ref callbacks can fire before the build-agents
+    // effect runs, so relying only on agentsRef.find() would silently drop the node.
+    elsRef.current[key] = el;
     const a = agentsRef.current.find((x) => x.key === key);
     if (a) a.el = el;
   }, []);
