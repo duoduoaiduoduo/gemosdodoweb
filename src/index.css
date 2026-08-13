@@ -1836,6 +1836,10 @@ body.pasture-mode .cow-entity,
 body.pasture-mode .grass {
     display: none !important;
 }
+body.pingpong-mode .cow-entity,
+body.pingpong-mode .grass {
+    display: none !important;
+}
 
 .awards-page {
     min-height: 100vh;

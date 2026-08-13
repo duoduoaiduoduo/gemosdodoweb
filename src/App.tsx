@@ -10,6 +10,7 @@ import JournalPage from './JournalPage';
 import VibecodingPage from './VibecodingPage';
 import VibecodingLaunchPage from './VibecodingLaunchPage';
 import PasturePage from './PasturePage';
+import PingPongPage from './PingPongPage';
 import { getAppBridge } from './appBridge';
 import { runLanguageErosionTransition } from './langErosion';
 import { detectLayoutMode, type LayoutMode } from './layoutMode';
@@ -679,6 +680,8 @@ export default function App() {
   const isVibecodingRoute = pathname === '/vibecoding';
   const isProposalRoute = pathname === '/proposal';
   const isPastureRoute = pathname === '/pasture';
+  /** 隐藏页：主页不放任何入口，只能靠网址进来 */
+  const isPingPongRoute = pathname === '/pingpong';
   const vibecodingSlug =
     pathname.startsWith('/vibecoding/') && pathname.length > '/vibecoding/'.length
       ? decodeURIComponent(pathname.slice('/vibecoding/'.length))
@@ -692,7 +695,8 @@ export default function App() {
     !isProposalRoute &&
     !isVibecodingRoute &&
     !isVibecodingLaunchRoute &&
-    !isPastureRoute;
+    !isPastureRoute &&
+    !isPingPongRoute;
 
   const onAvatarTap = () => {
     const now = Date.now();
@@ -825,13 +829,15 @@ export default function App() {
     document.body.classList.toggle('pdfs-mode', isPdfsRoute);
     document.body.classList.toggle('journals-mode', isJournalRoute);
     document.body.classList.toggle('pasture-mode', isPastureRoute);
+    document.body.classList.toggle('pingpong-mode', isPingPongRoute);
     return () => {
       document.body.classList.remove('awards-mode');
       document.body.classList.remove('pdfs-mode');
       document.body.classList.remove('journals-mode');
       document.body.classList.remove('pasture-mode');
+      document.body.classList.remove('pingpong-mode');
     };
-  }, [isAwardsRoute, isPdfsRoute, isJournalRoute, isPastureRoute]);
+  }, [isAwardsRoute, isPdfsRoute, isJournalRoute, isPastureRoute, isPingPongRoute]);
 
   useEffect(() => {
     if (!showAdminEntry) return;
@@ -965,6 +971,7 @@ export default function App() {
       {isVibecodingLaunchRoute ? <VibecodingLaunchPage lang={lang} slug={vibecodingSlug} onBackToList={() => navigateToPath('/vibecoding')} /> : null}
       {isJournalRoute ? <JournalPage lang={lang} focusJournalId={journalFocusId} onBack={goHome} /> : null}
       {isPastureRoute ? <PasturePage lang={lang} onBack={goHome} onToggleLang={handleToggleLang} /> : null}
+      {isPingPongRoute ? <PingPongPage lang={lang} onBack={goHome} /> : null}
       {isProposalRoute ? (
         <Suspense fallback={<div className="proposal-loading">正在加载 PDF...</div>}>
           <ProposalPdfPage />

@@ -3203,14 +3203,17 @@ app.put('/api/proposal/annotations', (req, res) => {
 
 if (fs.existsSync(distRoot)) {
   app.use(express.static(distRoot));
-  app.get(['/', /^\/(?:awards|pdfs|journal|admin|proposal|vibecoding(?:\/[^/]+)?)$/], (req, res) => {
+  app.get(['/', /^\/(?:awards|pdfs|journal|admin|proposal|pasture|pingpong|vibecoding(?:\/[^/]+)?)$/], (req, res) => {
     res.sendFile(path.join(distRoot, 'index.html'));
   });
 }
 
 const PORT = 3001;
 const server = http.createServer(app);
-const proposalWss = new WebSocketServer({server, path: '/api/proposal/live'});
+// 注意：多个 WebSocketServer 共享同一个 http server 时，不能各自传 {server, path} ——
+// ws 会给每个实例都挂一个 upgrade 监听，路径不匹配的那个会先抢答 400 并销毁 socket。
+// 正确做法：全部用 noServer，由下面统一的 upgrade 路由按 pathname 分发。
+const proposalWss = new WebSocketServer({noServer: true});
 
 const broadcastProposalAnnotations = (payload) => {
   const message = JSON.stringify({type: 'snapshot', payload});
@@ -3223,6 +3226,171 @@ const broadcastProposalAnnotations = (payload) => {
 
 proposalWss.on('connection', (socket) => {
   socket.send(JSON.stringify({type: 'snapshot', payload: readProposalAnnotations()}));
+});
+
+/* ==========================================================================
+   电子乒乓球 · 联机房间（/api/pingpong/live）
+   服务器只做「配对 + 转发」，不跑物理：房主(host)是权威模拟端，
+   客机(guest)只上报拍子位置。内存态，不落盘，进程重启即清空。
+   ========================================================================== */
+const pingpongWss = new WebSocketServer({noServer: true});
+
+/** code -> {host, guest, createdAt} */
+const pingpongRooms = new Map();
+const PINGPONG_ROOM_TTL_MS = 3 * 60 * 60 * 1000; // 3 小时无人自动回收
+const PINGPONG_MAX_ROOMS = 200;
+
+const makeRoomCode = () => {
+  // 去掉易混字符 0/O/1/I，4 位好口述
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (let attempt = 0; attempt < 40; attempt++) {
+    let code = '';
+    for (let i = 0; i < 4; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)];
+    if (!pingpongRooms.has(code)) return code;
+  }
+  return null;
+};
+
+const pingpongSend = (socket, payload) => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(payload));
+  }
+};
+
+const sweepPingpongRooms = () => {
+  const now = Date.now();
+  for (const [code, room] of pingpongRooms) {
+    const hostDead = !room.host || room.host.readyState === WebSocket.CLOSED;
+    const guestDead = !room.guest || room.guest.readyState === WebSocket.CLOSED;
+    if ((hostDead && guestDead) || now - room.createdAt > PINGPONG_ROOM_TTL_MS) {
+      pingpongRooms.delete(code);
+    }
+  }
+};
+
+setInterval(sweepPingpongRooms, 5 * 60 * 1000).unref?.();
+
+pingpongWss.on('connection', (socket) => {
+  socket.ppRoom = null;
+  socket.ppRole = null;
+  socket.isAlive = true;
+  socket.on('pong', () => {
+    socket.isAlive = true;
+  });
+
+  const peerOf = () => {
+    const room = socket.ppRoom ? pingpongRooms.get(socket.ppRoom) : null;
+    if (!room) return null;
+    return socket.ppRole === 'host' ? room.guest : room.host;
+  };
+
+  socket.on('message', (raw) => {
+    let msg;
+    try {
+      msg = JSON.parse(raw.toString());
+    } catch {
+      return;
+    }
+    if (!msg || typeof msg !== 'object') return;
+
+    /* ---- 建房 ---- */
+    if (msg.action === 'create') {
+      sweepPingpongRooms();
+      if (pingpongRooms.size >= PINGPONG_MAX_ROOMS) {
+        pingpongSend(socket, {type: 'error', reason: 'busy'});
+        return;
+      }
+      const code = makeRoomCode();
+      if (!code) {
+        pingpongSend(socket, {type: 'error', reason: 'busy'});
+        return;
+      }
+      pingpongRooms.set(code, {host: socket, guest: null, createdAt: Date.now()});
+      socket.ppRoom = code;
+      socket.ppRole = 'host';
+      pingpongSend(socket, {type: 'created', code});
+      return;
+    }
+
+    /* ---- 加入 ---- */
+    if (msg.action === 'join') {
+      const code = String(msg.code || '').toUpperCase().trim();
+      const room = pingpongRooms.get(code);
+      if (!room || !room.host || room.host.readyState !== WebSocket.OPEN) {
+        pingpongSend(socket, {type: 'error', reason: 'not-found'});
+        return;
+      }
+      if (room.guest && room.guest.readyState === WebSocket.OPEN) {
+        pingpongSend(socket, {type: 'error', reason: 'full'});
+        return;
+      }
+      room.guest = socket;
+      socket.ppRoom = code;
+      socket.ppRole = 'guest';
+      pingpongSend(socket, {type: 'joined', code});
+      pingpongSend(room.host, {type: 'peer-join'});
+      return;
+    }
+
+    /* ---- 对局消息：原样转发给房间里的另一位 ---- */
+    if (msg.type === 'state' || msg.type === 'paddle' || msg.type === 'serve') {
+      const peer = peerOf();
+      if (peer) pingpongSend(peer, msg);
+    }
+  });
+
+  socket.on('close', () => {
+    const code = socket.ppRoom;
+    if (!code) return;
+    const room = pingpongRooms.get(code);
+    if (!room) return;
+    const peer = socket.ppRole === 'host' ? room.guest : room.host;
+    pingpongSend(peer, {type: 'peer-left'});
+    if (socket.ppRole === 'host') {
+      // 房主走了就解散房间
+      pingpongRooms.delete(code);
+    } else {
+      room.guest = null;
+    }
+  });
+});
+
+/** 心跳：清掉半死连接，避免房间被占住 */
+setInterval(() => {
+  for (const socket of pingpongWss.clients) {
+    if (socket.isAlive === false) {
+      socket.terminate();
+      continue;
+    }
+    socket.isAlive = false;
+    try {
+      socket.ping();
+    } catch {
+      /* noop */
+    }
+  }
+}, 30000).unref?.();
+
+/* ---- 统一的 WebSocket upgrade 路由：按 pathname 分发到各 wss ---- */
+server.on('upgrade', (request, socket, head) => {
+  let pathname = '';
+  try {
+    pathname = new URL(request.url, 'http://localhost').pathname;
+  } catch {
+    pathname = '';
+  }
+
+  if (pathname === '/api/proposal/live') {
+    proposalWss.handleUpgrade(request, socket, head, (ws) => {
+      proposalWss.emit('connection', ws, request);
+    });
+  } else if (pathname === '/api/pingpong/live') {
+    pingpongWss.handleUpgrade(request, socket, head, (ws) => {
+      pingpongWss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
 });
 
 server.listen(PORT, () => {

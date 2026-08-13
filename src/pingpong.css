@@ -1,0 +1,674 @@
+/* ==========================================================================
+   电子乒乓球 · /pingpong
+   设计规范：暖白/暖黑双模式（随系统）· 坠橘强调 · SF Pro · 平面扁平 · 零渐变
+   —— 全文件不使用任何 linear-gradient / radial-gradient。
+   ========================================================================== */
+
+.pp-root {
+  /* 暖白（浅色，默认） */
+  --pp-paper: #f4f2ed;
+  --pp-surface: #ffffff;
+  --pp-surface-2: #ebe8e1;
+  --pp-line: #ded9cf;
+  --pp-line-strong: #c8c1b4;
+  --pp-ink: #1c1a17;
+  --pp-ink-2: #57524a;
+  --pp-ink-3: #8d867a;
+  --pp-accent: #e07b00;
+  --pp-accent-ink: #ffffff;
+  --pp-table: #e8e5de;
+  --pp-table-line: #cfc9bc;
+
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: var(--pp-paper);
+  color: var(--pp-ink);
+  font-family: -apple-system, 'SF Pro Text', 'SF Pro Display', BlinkMacSystemFont,
+    'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pp-root {
+    /* 暖黑 */
+    --pp-paper: #161412;
+    --pp-surface: #211e1b;
+    --pp-surface-2: #2b2723;
+    --pp-line: #332e29;
+    --pp-line-strong: #4a433c;
+    --pp-ink: #f2efe9;
+    --pp-ink-2: #b5ada1;
+    --pp-ink-3: #7d766c;
+    --pp-accent: #ff9500;
+    --pp-accent-ink: #1a1512;
+    --pp-table: #221f1c;
+    --pp-table-line: #3a342e;
+  }
+}
+
+.pp-root *,
+.pp-root *::before,
+.pp-root *::after {
+  box-sizing: border-box;
+}
+
+/* ---------------- 顶栏 ---------------- */
+.pp-bar {
+  flex: 0 0 auto;
+  height: 56px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--pp-line);
+  background: var(--pp-surface);
+}
+
+.pp-bar-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+.pp-bar-title b {
+  font-weight: 600;
+}
+.pp-bar-title span {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--pp-ink-3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pp-bar-spacer {
+  flex: 1 1 auto;
+}
+
+.pp-btn {
+  appearance: none;
+  border: 1px solid var(--pp-line-strong);
+  background: var(--pp-surface);
+  color: var(--pp-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+.pp-btn:hover {
+  background: var(--pp-surface-2);
+  border-color: var(--pp-ink-3);
+}
+.pp-btn:active {
+  background: var(--pp-line);
+}
+.pp-btn:focus-visible {
+  outline: 2px solid var(--pp-accent);
+  outline-offset: 2px;
+}
+
+.pp-btn-accent {
+  background: var(--pp-accent);
+  border-color: var(--pp-accent);
+  color: var(--pp-accent-ink);
+}
+.pp-btn-accent:hover {
+  background: var(--pp-accent);
+  border-color: var(--pp-accent);
+  color: var(--pp-accent-ink);
+  filter: brightness(1.08);
+}
+.pp-btn-accent:active {
+  filter: brightness(0.94);
+}
+
+.pp-btn-lg {
+  height: 44px;
+  padding: 0 20px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+.pp-btn-icon {
+  width: 34px;
+  padding: 0;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.pp-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------------- 舞台 ---------------- */
+.pp-stage {
+  flex: 1 1 auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  min-height: 0;
+}
+
+.pp-canvas-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 1040px;
+  aspect-ratio: 16 / 10;
+  max-height: 100%;
+  border: 1px solid var(--pp-line-strong);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--pp-table);
+}
+
+.pp-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* ---------------- 比分板（浮在球台上方） ---------------- */
+.pp-score {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--pp-line-strong);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--pp-surface);
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.pp-score-cell {
+  padding: 7px 15px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 82px;
+}
+.pp-score-cell + .pp-score-cell {
+  border-left: 1px solid var(--pp-line);
+}
+.pp-score-name {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pp-ink-3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.pp-score-num {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.pp-serve-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pp-accent);
+  flex: 0 0 auto;
+}
+.pp-serve-dot.pp-off {
+  background: transparent;
+  border: 1px solid var(--pp-line-strong);
+}
+
+/* ---------------- 覆盖层（菜单 / 提示 / 结算） ---------------- */
+.pp-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  /* 纯色半透明，不用渐变 */
+  background: color-mix(in srgb, var(--pp-paper) 88%, transparent);
+  backdrop-filter: blur(3px);
+  z-index: 5;
+}
+
+.pp-panel {
+  width: 100%;
+  max-width: 452px;
+  background: var(--pp-surface);
+  border: 1px solid var(--pp-line-strong);
+  border-radius: 14px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 100%;
+  overflow-y: auto;
+  /* 细滚动条，避免默认那条粗白杠破坏质感 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--pp-line-strong) transparent;
+}
+.pp-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.pp-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pp-panel::-webkit-scrollbar-thumb {
+  background: var(--pp-line-strong);
+  border-radius: 999px;
+}
+.pp-panel-wide {
+  max-width: 560px;
+}
+
+.pp-panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pp-panel-eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pp-accent);
+}
+.pp-panel-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0;
+  line-height: 1.2;
+}
+.pp-panel-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--pp-ink-2);
+  margin: 0;
+}
+
+/* 玩法选择 */
+.pp-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.pp-mode {
+  appearance: none;
+  text-align: left;
+  border: 1px solid var(--pp-line-strong);
+  background: var(--pp-surface);
+  color: var(--pp-ink);
+  font: inherit;
+  padding: 13px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+.pp-mode:hover {
+  background: var(--pp-surface-2);
+  border-color: var(--pp-accent);
+}
+.pp-mode:focus-visible {
+  outline: 2px solid var(--pp-accent);
+  outline-offset: 2px;
+}
+.pp-mode-icon {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--pp-line-strong);
+  background: var(--pp-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pp-accent);
+}
+.pp-mode-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pp-mode-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.pp-mode-sub {
+  font-size: 12px;
+  color: var(--pp-ink-3);
+  line-height: 1.45;
+}
+.pp-mode-arrow {
+  margin-left: auto;
+  color: var(--pp-ink-3);
+  flex: 0 0 auto;
+}
+
+/* 分段控件（难度 / 局分） */
+.pp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+/* 两个设置并排，省一行高度 */
+.pp-field-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 420px) {
+  .pp-field-pair {
+    grid-template-columns: 1fr;
+  }
+}
+.pp-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pp-ink-3);
+}
+.pp-seg {
+  display: flex;
+  border: 1px solid var(--pp-line-strong);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.pp-seg button {
+  appearance: none;
+  flex: 1 1 0;
+  border: 0;
+  background: var(--pp-surface);
+  color: var(--pp-ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 6px;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+.pp-seg button + button {
+  border-left: 1px solid var(--pp-line);
+}
+.pp-seg button:hover {
+  background: var(--pp-surface-2);
+}
+.pp-seg button[aria-pressed='true'] {
+  background: var(--pp-accent);
+  color: var(--pp-accent-ink);
+  font-weight: 600;
+}
+.pp-seg button:focus-visible {
+  outline: 2px solid var(--pp-accent);
+  outline-offset: -2px;
+}
+
+/* 房间码 */
+.pp-code-row {
+  display: flex;
+  gap: 9px;
+}
+.pp-input {
+  flex: 1 1 auto;
+  height: 44px;
+  border: 1px solid var(--pp-line-strong);
+  border-radius: 10px;
+  background: var(--pp-surface);
+  color: var(--pp-ink);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 0 10px;
+  min-width: 0;
+}
+.pp-input::placeholder {
+  color: var(--pp-ink-3);
+  letter-spacing: 0.24em;
+  font-weight: 500;
+}
+.pp-input:focus {
+  outline: 2px solid var(--pp-accent);
+  outline-offset: -1px;
+  border-color: var(--pp-accent);
+}
+
+.pp-code-show {
+  border: 1px dashed var(--pp-line-strong);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--pp-surface-2);
+}
+.pp-code-big {
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  line-height: 1;
+  color: var(--pp-accent);
+  font-variant-numeric: tabular-nums;
+  padding-left: 0.22em;
+}
+.pp-code-hint {
+  font-size: 12px;
+  color: var(--pp-ink-2);
+  text-align: center;
+  line-height: 1.55;
+}
+
+.pp-row {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.pp-row-end {
+  justify-content: flex-end;
+}
+
+.pp-note {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--pp-ink-3);
+  margin: 0;
+}
+.pp-note b {
+  color: var(--pp-ink-2);
+  font-weight: 600;
+}
+
+.pp-error {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--pp-accent);
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--pp-accent);
+  border-radius: 8px;
+  background: transparent;
+}
+
+/* 键位说明 */
+.pp-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.pp-key-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  color: var(--pp-ink-2);
+}
+.pp-key-line b {
+  color: var(--pp-ink);
+  font-weight: 600;
+  min-width: 62px;
+}
+kbd.pp-kbd {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--pp-line-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--pp-surface-2);
+  color: var(--pp-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 结算 */
+.pp-result-score {
+  font-size: 46px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.pp-result-score i {
+  font-style: normal;
+  font-size: 24px;
+  color: var(--pp-ink-3);
+}
+
+/* 中央提示条（发球提示 / 等待对手） */
+.pp-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  border: 1px solid var(--pp-line-strong);
+  background: var(--pp-surface);
+  color: var(--pp-ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 8px 15px;
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 4;
+  white-space: nowrap;
+  max-width: calc(100% - 36px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-toast b {
+  color: var(--pp-accent);
+  font-weight: 600;
+}
+
+/* 连接状态 */
+.pp-conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--pp-ink-3);
+  white-space: nowrap;
+}
+.pp-conn-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pp-ink-3);
+  flex: 0 0 auto;
+}
+.pp-conn-dot.pp-on {
+  background: var(--pp-accent);
+}
+
+/* ---------------- 移动端 ---------------- */
+@media (max-width: 760px) {
+  .pp-bar {
+    height: 50px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .pp-bar-title span {
+    display: none;
+  }
+  .pp-stage {
+    padding: 10px;
+  }
+  .pp-canvas-wrap {
+    /* 竖屏球台是 620:1000，容器贴近这个比例才不会上下留太多黑边 */
+    aspect-ratio: 62 / 100;
+    border-radius: 12px;
+    max-height: 100%;
+  }
+  /* 比分板缩小上移、提示条下移，别压住上下两块拍子 */
+  .pp-score {
+    top: 8px;
+  }
+  .pp-toast {
+    bottom: 8px;
+  }
+  .pp-panel {
+    padding: 18px;
+    gap: 15px;
+  }
+  .pp-panel-title {
+    font-size: 19px;
+  }
+  .pp-score-cell {
+    min-width: 68px;
+    padding: 6px 11px 7px;
+  }
+  .pp-score-num {
+    font-size: 22px;
+  }
+  .pp-code-big {
+    font-size: 32px;
+  }
+  .pp-toast {
+    font-size: 11.5px;
+    bottom: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-root * {
+    transition: none !important;
+  }
+}
