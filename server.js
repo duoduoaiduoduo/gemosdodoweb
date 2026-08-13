@@ -537,6 +537,7 @@ const backfillVisitorRegionStats = () => {
 const dataFile = path.join(__dirname, 'data.json');
 const vibecodingProjectsFile = path.join(__dirname, 'vibecoding-projects.json');
 const proposalAnnotationsFile = path.join(__dirname, 'proposal-annotations.json');
+const tucaoRoomFile = path.join(__dirname, 'tucao-room.json');
 const uploadsRoot = path.join(__dirname, 'uploads');
 const pdfTempRoot = path.join(__dirname, '.upload-tmp', 'pdfs');
 const timelineVideoTempRoot = path.join(__dirname, '.upload-tmp', 'timeline-videos');
@@ -3201,9 +3202,223 @@ app.put('/api/proposal/annotations', (req, res) => {
   res.json(saved);
 });
 
+/* ==========================================================================
+   吐槽间 · 后端状态机（/api/tucao/*  +  /api/tucao/live）
+   —— 七个座位的共享房间：吐槽产怨气，怨气买家具，家具持续产怨气（挂机），
+      家具可自由摆位。服务端是唯一权威（定价/产出/结算都在这里算，
+      前端只发意图），避免改前端刷怨气。状态落盘 tucao-room.json。
+   ========================================================================== */
+const TUCAO_SEATS = 7;
+const TUCAO_MAX_POSTS = 200; // 吐槽墙只留最近 200 条
+const TUCAO_TEXT_MAX = 140;
+const TUCAO_NAME_MAX = 12;
+const TUCAO_OFFLINE_CAP_H = 12; // 离线最多累计 12 小时收益，防止放一年回来暴富
+
+/** 吐槽情绪：不同情绪产出略有差异，鼓励换着骂 */
+const TUCAO_MOODS = {
+  rage: {label: '愤怒', emoji: '😡', gain: 14},
+  tired: {label: '疲惫', emoji: '😮‍💨', gain: 10},
+  speechless: {label: '无语', emoji: '🙃', gain: 11},
+  broken: {label: '崩溃', emoji: '🫠', gain: 15},
+  funny: {label: '好笑', emoji: '😂', gain: 12},
+  melt: {label: '融化', emoji: '🥹', gain: 9},
+};
+
+/** 座位配色（暖色系，和站点调性一致） */
+const TUCAO_SEAT_COLORS = ['#e07b00', '#c2410c', '#a16207', '#4d7c0f', '#0f766e', '#7c3aed', '#be185d'];
+
+/**
+ * 家具目录 —— 服务端权威。
+ * cost: 怨气售价；rate: 每分钟产怨气；w/h: 逻辑尺寸；需要前置解锁数量 req。
+ */
+const TUCAO_FURNITURE = [
+  {id: 'desk', name: '工位', emoji: '🪑', cost: 0, rate: 0.6, w: 96, h: 96, desc: '一切怨气的起点'},
+  {id: 'plant', name: '半死绿萝', emoji: '🪴', cost: 60, rate: 1.2, w: 84, h: 96, desc: '你忘了浇水，它记得'},
+  {id: 'sofa', name: '塌陷沙发', emoji: '🛋️', cost: 180, rate: 2.6, w: 132, h: 96, desc: '坐下就不想站起来'},
+  {id: 'coffee', name: '咖啡机', emoji: '☕', cost: 420, rate: 5, w: 88, h: 104, desc: '续命，也续班'},
+  {id: 'whiteboard', name: '需求白板', emoji: '📋', cost: 900, rate: 9, w: 120, h: 116, desc: '写满了改了八版的需求'},
+  {id: 'printer', name: '卡纸打印机', emoji: '🖨️', cost: 1800, rate: 16, w: 104, h: 100, desc: '它只在你着急时卡纸'},
+  {id: 'cat', name: '摸鱼猫', emoji: '🐈', cost: 3200, rate: 27, w: 92, h: 92, desc: '公司唯一不加班的员工'},
+  {id: 'lamp', name: '加班长明灯', emoji: '💡', cost: 5600, rate: 44, w: 80, h: 120, desc: '这层楼最后灭的那盏'},
+  {id: 'window', name: '落地窗', emoji: '🪟', cost: 9500, rate: 70, w: 148, h: 132, desc: '看得见外面，出不去'},
+  {id: 'fishtank', name: '办公室鱼缸', emoji: '🐠', cost: 16000, rate: 112, w: 136, h: 108, desc: '鱼在游，你在忙'},
+  {id: 'bosspic', name: '老板画像', emoji: '🖼️', cost: 27000, rate: 180, w: 108, h: 116, desc: '它的眼睛会跟着你'},
+  {id: 'server', name: '嗡嗡服务器', emoji: '🖥️', cost: 45000, rate: 285, w: 112, h: 128, desc: '半夜告警的罪魁祸首'},
+  {id: 'wishpool', name: '离职许愿池', emoji: '⛲', cost: 76000, rate: 450, w: 152, h: 120, desc: '许过的愿一个没实现'},
+  {id: 'mountain', name: '甲方需求山', emoji: '⛰️', cost: 128000, rate: 720, w: 168, h: 144, desc: '永远推不完'},
+  {id: 'rocket', name: '上线火箭', emoji: '🚀', cost: 210000, rate: 1150, w: 128, h: 156, desc: '发射前一秒还在改需求'},
+  {id: 'shrine', name: '赛博许愿神龛', emoji: '⛩️', cost: 360000, rate: 1850, w: 156, h: 152, desc: '拜一拜，需求别再改了'},
+];
+
+const tucaoFurnitureById = new Map(TUCAO_FURNITURE.map((f) => [f.id, f]));
+
+const tucaoEmptyRoom = () => ({
+  version: 1,
+  updatedAt: new Date().toISOString(),
+  /** 全屋共享怨气池 */
+  grudge: 0,
+  /** 累计产生过的怨气（只增，用于成就/展示） */
+  grudgeTotal: 0,
+  /** 上一次结算挂机收益的时刻 */
+  tickAt: Date.now(),
+  seats: Array.from({length: TUCAO_SEATS}, (_, i) => ({
+    index: i,
+    name: '',
+    color: TUCAO_SEAT_COLORS[i],
+    taken: false,
+    posts: 0,
+    grudgeMade: 0,
+    lastSeen: 0,
+  })),
+  /** 已摆放的家具：{uid, id, x, y}  x/y 为房间百分比 */
+  placed: [],
+  /** 吐槽墙 */
+  posts: [],
+});
+
+const normalizeTucaoRoom = (raw) => {
+  const base = tucaoEmptyRoom();
+  if (!raw || typeof raw !== 'object') return base;
+
+  const seats = base.seats.map((seat, i) => {
+    const s = Array.isArray(raw.seats) ? raw.seats[i] : null;
+    if (!s || typeof s !== 'object') return seat;
+    return {
+      index: i,
+      color: TUCAO_SEAT_COLORS[i],
+      name: typeof s.name === 'string' ? s.name.slice(0, TUCAO_NAME_MAX) : '',
+      taken: !!s.taken && typeof s.name === 'string' && s.name.trim().length > 0,
+      posts: Number.isFinite(s.posts) ? Math.max(0, Math.floor(s.posts)) : 0,
+      grudgeMade: Number.isFinite(s.grudgeMade) ? Math.max(0, Math.floor(s.grudgeMade)) : 0,
+      lastSeen: Number.isFinite(s.lastSeen) ? s.lastSeen : 0,
+    };
+  });
+
+  const placed = (Array.isArray(raw.placed) ? raw.placed : [])
+    .filter((p) => p && tucaoFurnitureById.has(p.id))
+    .slice(0, 120)
+    .map((p, i) => ({
+      uid: typeof p.uid === 'string' && p.uid ? p.uid.slice(0, 40) : `f${i}-${Math.random().toString(36).slice(2, 8)}`,
+      id: p.id,
+      x: Number.isFinite(p.x) ? Math.min(96, Math.max(4, p.x)) : 50,
+      y: Number.isFinite(p.y) ? Math.min(94, Math.max(44, p.y)) : 60,
+      by: Number.isFinite(p.by) ? p.by : -1,
+    }));
+
+  const posts = (Array.isArray(raw.posts) ? raw.posts : [])
+    .filter((p) => p && typeof p.text === 'string')
+    .slice(-TUCAO_MAX_POSTS)
+    .map((p) => ({
+      id: typeof p.id === 'string' && p.id ? p.id.slice(0, 40) : `p-${Math.random().toString(36).slice(2, 10)}`,
+      seat: Number.isFinite(p.seat) ? Math.min(TUCAO_SEATS - 1, Math.max(0, Math.floor(p.seat))) : 0,
+      name: typeof p.name === 'string' ? p.name.slice(0, TUCAO_NAME_MAX) : '',
+      text: p.text.slice(0, TUCAO_TEXT_MAX),
+      mood: TUCAO_MOODS[p.mood] ? p.mood : 'tired',
+      at: Number.isFinite(p.at) ? p.at : Date.now(),
+      cheers: Number.isFinite(p.cheers) ? Math.max(0, Math.floor(p.cheers)) : 0,
+    }));
+
+  return {
+    version: Number.isFinite(raw.version) ? raw.version : 1,
+    updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : base.updatedAt,
+    grudge: Number.isFinite(raw.grudge) ? Math.max(0, raw.grudge) : 0,
+    grudgeTotal: Number.isFinite(raw.grudgeTotal) ? Math.max(0, raw.grudgeTotal) : 0,
+    tickAt: Number.isFinite(raw.tickAt) ? raw.tickAt : Date.now(),
+    seats,
+    placed,
+    posts,
+  };
+};
+
+let tucaoRoom = null;
+
+const readTucaoRoom = () => {
+  if (tucaoRoom) return tucaoRoom;
+  if (!fs.existsSync(tucaoRoomFile)) {
+    tucaoRoom = tucaoEmptyRoom();
+    fs.writeFileSync(tucaoRoomFile, JSON.stringify(tucaoRoom, null, 2), 'utf8');
+    return tucaoRoom;
+  }
+  try {
+    tucaoRoom = normalizeTucaoRoom(JSON.parse(fs.readFileSync(tucaoRoomFile, 'utf8')));
+  } catch {
+    tucaoRoom = tucaoEmptyRoom();
+  }
+  return tucaoRoom;
+};
+
+/** 写盘做节流：状态变化频繁（拖家具），没必要每次都落盘 */
+let tucaoSaveTimer = null;
+const saveTucaoRoom = () => {
+  if (tucaoSaveTimer) return;
+  tucaoSaveTimer = setTimeout(() => {
+    tucaoSaveTimer = null;
+    const room = readTucaoRoom();
+    room.updatedAt = new Date().toISOString();
+    try {
+      fs.writeFileSync(tucaoRoomFile, JSON.stringify(room, null, 2), 'utf8');
+    } catch (err) {
+      console.error('[tucao] save failed:', err.message);
+    }
+  }, 1500);
+  tucaoSaveTimer.unref?.();
+};
+
+/** 每分钟总产出 */
+const tucaoRatePerMin = (room) =>
+  room.placed.reduce((sum, p) => sum + (tucaoFurnitureById.get(p.id)?.rate || 0), 0);
+
+/**
+ * 结算挂机收益 —— 关键：按「上次结算时刻 → 现在」补算，
+ * 所以没人开着页面时怨气照样在涨（上限 TUCAO_OFFLINE_CAP_H 小时）。
+ */
+const tucaoSettle = (room) => {
+  const now = Date.now();
+  const elapsedMs = Math.max(0, now - (room.tickAt || now));
+  const capped = Math.min(elapsedMs, TUCAO_OFFLINE_CAP_H * 3600 * 1000);
+  room.tickAt = now;
+  if (capped <= 0) return 0;
+  const gained = (tucaoRatePerMin(room) * capped) / 60000;
+  if (gained > 0) {
+    room.grudge += gained;
+    room.grudgeTotal += gained;
+  }
+  return gained;
+};
+
+/** 发给前端的快照（含家具目录，前端不用硬编码价格） */
+const tucaoSnapshot = () => {
+  const room = readTucaoRoom();
+  tucaoSettle(room);
+  return {
+    grudge: Math.floor(room.grudge),
+    grudgeTotal: Math.floor(room.grudgeTotal),
+    ratePerMin: Number(tucaoRatePerMin(room).toFixed(2)),
+    seats: room.seats.map((s) => ({
+      index: s.index,
+      name: s.name,
+      color: s.color,
+      taken: s.taken,
+      posts: s.posts,
+      grudgeMade: Math.floor(s.grudgeMade),
+      online: Date.now() - (s.lastSeen || 0) < 45000,
+    })),
+    placed: room.placed,
+    posts: room.posts.slice(-80),
+    catalog: TUCAO_FURNITURE,
+    moods: TUCAO_MOODS,
+    seatCount: TUCAO_SEATS,
+  };
+};
+
+app.get('/api/tucao/room', (req, res) => {
+  res.json(tucaoSnapshot());
+});
+
 if (fs.existsSync(distRoot)) {
+
   app.use(express.static(distRoot));
-  app.get(['/', /^\/(?:awards|pdfs|journal|admin|proposal|pasture|pingpong|vibecoding(?:\/[^/]+)?)$/], (req, res) => {
+  app.get(['/', /^\/(?:awards|pdfs|journal|admin|proposal|pasture|pingpong|tucao|vibecoding(?:\/[^/]+)?)$/], (req, res) => {
     res.sendFile(path.join(distRoot, 'index.html'));
   });
 }
@@ -3234,6 +3449,7 @@ proposalWss.on('connection', (socket) => {
    客机(guest)只上报拍子位置。内存态，不落盘，进程重启即清空。
    ========================================================================== */
 const pingpongWss = new WebSocketServer({noServer: true});
+const tucaoWss = new WebSocketServer({noServer: true});
 
 /** code -> {host, guest, createdAt} */
 const pingpongRooms = new Map();
@@ -3371,8 +3587,236 @@ setInterval(() => {
   }
 }, 30000).unref?.();
 
-/* ---- 统一的 WebSocket upgrade 路由：按 pathname 分发到各 wss ---- */
-server.on('upgrade', (request, socket, head) => {
+/* ==========================================================================
+   吐槽间 · 实时同步（/api/tucao/live）
+   客户端发意图 → 服务端校验+改状态 → 广播新快照给所有人。
+   ========================================================================== */
+const tucaoBroadcast = (extra) => {
+  const payload = JSON.stringify({type: 'room', room: tucaoSnapshot(), ...(extra || {})});
+  for (const client of tucaoWss.clients) {
+    if (client.readyState === WebSocket.OPEN) client.send(payload);
+  }
+};
+
+/** 广播一条"事件"给别人做动效（比如别人吐槽时飘个气泡） */
+const tucaoBroadcastEvent = (event, exclude) => {
+  const payload = JSON.stringify({type: 'event', event});
+  for (const client of tucaoWss.clients) {
+    if (client !== exclude && client.readyState === WebSocket.OPEN) client.send(payload);
+  }
+};
+
+tucaoWss.on('connection', (socket) => {
+  socket.tucaoSeat = -1;
+  socket.isAlive = true;
+  socket.on('pong', () => {
+    socket.isAlive = true;
+  });
+
+  socket.send(JSON.stringify({type: 'room', room: tucaoSnapshot()}));
+
+  socket.on('message', (raw) => {
+    let msg;
+    try {
+      msg = JSON.parse(raw.toString());
+    } catch {
+      return;
+    }
+    if (!msg || typeof msg !== 'object') return;
+
+    const room = readTucaoRoom();
+    tucaoSettle(room);
+
+    /* ---- 认领座位 ---- */
+    if (msg.action === 'claim') {
+      const idx = Math.floor(Number(msg.seat));
+      const name = String(msg.name || '').trim().slice(0, TUCAO_NAME_MAX);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= TUCAO_SEATS) {
+        socket.send(JSON.stringify({type: 'error', reason: 'bad-seat'}));
+        return;
+      }
+      if (!name) {
+        socket.send(JSON.stringify({type: 'error', reason: 'need-name'}));
+        return;
+      }
+      const seat = room.seats[idx];
+      const occupiedLive = [...tucaoWss.clients].some(
+        (c) => c !== socket && c.tucaoSeat === idx && c.readyState === WebSocket.OPEN,
+      );
+      if (occupiedLive) {
+        socket.send(JSON.stringify({type: 'error', reason: 'seat-busy'}));
+        return;
+      }
+      // 允许顶掉离线的同名占位（换设备继续用）
+      if (socket.tucaoSeat >= 0 && socket.tucaoSeat !== idx) {
+        room.seats[socket.tucaoSeat].lastSeen = 0;
+      }
+      seat.name = name;
+      seat.taken = true;
+      seat.lastSeen = Date.now();
+      socket.tucaoSeat = idx;
+      socket.send(JSON.stringify({type: 'seated', seat: idx}));
+      saveTucaoRoom();
+      tucaoBroadcast();
+      return;
+    }
+
+    /* 后面的操作都要求已入座 */
+    const mySeat = socket.tucaoSeat;
+    if (mySeat < 0 || mySeat >= TUCAO_SEATS) {
+      if (msg.action && msg.action !== 'heartbeat') {
+        socket.send(JSON.stringify({type: 'error', reason: 'not-seated'}));
+      }
+      return;
+    }
+    room.seats[mySeat].lastSeen = Date.now();
+
+    /* ---- 心跳（维持在线状态） ---- */
+    if (msg.action === 'heartbeat') {
+      socket.send(JSON.stringify({type: 'room', room: tucaoSnapshot()}));
+      return;
+    }
+
+    /* ---- 吐槽 ---- */
+    if (msg.action === 'post') {
+      const text = String(msg.text || '').trim().slice(0, TUCAO_TEXT_MAX);
+      const mood = TUCAO_MOODS[msg.mood] ? msg.mood : 'tired';
+      if (!text) return;
+      // 简单限流：同座位 1.2 秒一条
+      const now = Date.now();
+      if (now - (socket.tucaoLastPost || 0) < 1200) {
+        socket.send(JSON.stringify({type: 'error', reason: 'too-fast'}));
+        return;
+      }
+      socket.tucaoLastPost = now;
+
+      const gain = TUCAO_MOODS[mood].gain;
+      const post = {
+        id: `p-${now.toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+        seat: mySeat,
+        name: room.seats[mySeat].name,
+        text,
+        mood,
+        at: now,
+        cheers: 0,
+      };
+      room.posts.push(post);
+      if (room.posts.length > TUCAO_MAX_POSTS) room.posts.splice(0, room.posts.length - TUCAO_MAX_POSTS);
+      room.grudge += gain;
+      room.grudgeTotal += gain;
+      room.seats[mySeat].posts += 1;
+      room.seats[mySeat].grudgeMade += gain;
+      saveTucaoRoom();
+      tucaoBroadcast({flash: {kind: 'post', post, gain}});
+      return;
+    }
+
+    /* ---- 帮别人的吐槽点"我也是"（互动，给双方加怨气） ---- */
+    if (msg.action === 'cheer') {
+      const post = room.posts.find((p) => p.id === msg.id);
+      if (!post) return;
+      const now = Date.now();
+      if (now - (socket.tucaoLastCheer || 0) < 400) return;
+      socket.tucaoLastCheer = now;
+      post.cheers += 1;
+      room.grudge += 4;
+      room.grudgeTotal += 4;
+      room.seats[mySeat].grudgeMade += 2;
+      if (room.seats[post.seat]) room.seats[post.seat].grudgeMade += 2;
+      saveTucaoRoom();
+      tucaoBroadcast({flash: {kind: 'cheer', id: post.id}});
+      return;
+    }
+
+    /* ---- 买家具并摆进房间 ---- */
+    if (msg.action === 'buy') {
+      const item = tucaoFurnitureById.get(String(msg.id));
+      if (!item) {
+        socket.send(JSON.stringify({type: 'error', reason: 'no-such-item'}));
+        return;
+      }
+      if (room.placed.length >= 120) {
+        socket.send(JSON.stringify({type: 'error', reason: 'room-full'}));
+        return;
+      }
+      if (room.grudge < item.cost) {
+        socket.send(JSON.stringify({type: 'error', reason: 'not-enough'}));
+        return;
+      }
+      room.grudge -= item.cost;
+      const placed = {
+        uid: `f-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+        id: item.id,
+        x: Number.isFinite(msg.x) ? Math.min(96, Math.max(4, msg.x)) : 20 + Math.random() * 60,
+        y: Number.isFinite(msg.y) ? Math.min(94, Math.max(44, msg.y)) : 45 + Math.random() * 40,
+        by: mySeat,
+      };
+      room.placed.push(placed);
+      saveTucaoRoom();
+      tucaoBroadcast({flash: {kind: 'buy', uid: placed.uid, by: mySeat}});
+      return;
+    }
+
+    /* ---- 拖动家具 ---- */
+    if (msg.action === 'move') {
+      const target = room.placed.find((p) => p.uid === String(msg.uid));
+      if (!target) return;
+      target.x = Number.isFinite(msg.x) ? Math.min(96, Math.max(4, msg.x)) : target.x;
+      target.y = Number.isFinite(msg.y) ? Math.min(94, Math.max(44, msg.y)) : target.y;
+      saveTucaoRoom();
+      // 拖动高频，只广播增量给别人，不重发整个 room
+      tucaoBroadcastEvent({kind: 'move', uid: target.uid, x: target.x, y: target.y}, socket);
+      return;
+    }
+
+    /* ---- 卖掉家具（退一半） ---- */
+    if (msg.action === 'sell') {
+      const i = room.placed.findIndex((p) => p.uid === String(msg.uid));
+      if (i < 0) return;
+      const item = tucaoFurnitureById.get(room.placed[i].id);
+      room.placed.splice(i, 1);
+      if (item) room.grudge += Math.floor(item.cost / 2);
+      saveTucaoRoom();
+      tucaoBroadcast();
+      return;
+    }
+  });
+
+  socket.on('close', () => {
+    const idx = socket.tucaoSeat;
+    if (idx >= 0) {
+      const room = readTucaoRoom();
+      if (room.seats[idx]) room.seats[idx].lastSeen = Date.now() - 60000; // 立刻标记离线
+      saveTucaoRoom();
+      tucaoBroadcast();
+    }
+  });
+});
+
+/** 吐槽间心跳 + 定期结算广播（让在线的人看到怨气在涨） */
+setInterval(() => {
+  for (const socket of tucaoWss.clients) {
+    if (socket.isAlive === false) {
+      socket.terminate();
+      continue;
+    }
+    socket.isAlive = false;
+    try {
+      socket.ping();
+    } catch {
+      /* noop */
+    }
+  }
+  if (tucaoWss.clients.size > 0) {
+    tucaoBroadcast();
+  } else {
+    // 没人在线也要推进时间戳，保证离线收益按真实时长补算
+    tucaoSettle(readTucaoRoom());
+    saveTucaoRoom();
+  }
+}, 15000).unref?.();
+
+/* ---- 统一的 WebSocket upgrade 路由：按 pathname 分发到各 wss ---- */server.on('upgrade', (request, socket, head) => {
   let pathname = '';
   try {
     pathname = new URL(request.url, 'http://localhost').pathname;
@@ -3387,6 +3831,10 @@ server.on('upgrade', (request, socket, head) => {
   } else if (pathname === '/api/pingpong/live') {
     pingpongWss.handleUpgrade(request, socket, head, (ws) => {
       pingpongWss.emit('connection', ws, request);
+    });
+  } else if (pathname === '/api/tucao/live') {
+    tucaoWss.handleUpgrade(request, socket, head, (ws) => {
+      tucaoWss.emit('connection', ws, request);
     });
   } else {
     socket.destroy();

@@ -11,6 +11,7 @@ import VibecodingPage from './VibecodingPage';
 import VibecodingLaunchPage from './VibecodingLaunchPage';
 import PasturePage from './PasturePage';
 import PingPongPage from './PingPongPage';
+import TucaoPage from './TucaoPage';
 import { getAppBridge } from './appBridge';
 import { runLanguageErosionTransition } from './langErosion';
 import { detectLayoutMode, type LayoutMode } from './layoutMode';
@@ -682,6 +683,7 @@ export default function App() {
   const isPastureRoute = pathname === '/pasture';
   /** 隐藏页：主页不放任何入口，只能靠网址进来 */
   const isPingPongRoute = pathname === '/pingpong';
+  const isTucaoRoute = pathname === '/tucao';
   const vibecodingSlug =
     pathname.startsWith('/vibecoding/') && pathname.length > '/vibecoding/'.length
       ? decodeURIComponent(pathname.slice('/vibecoding/'.length))
@@ -696,7 +698,8 @@ export default function App() {
     !isVibecodingRoute &&
     !isVibecodingLaunchRoute &&
     !isPastureRoute &&
-    !isPingPongRoute;
+    !isPingPongRoute &&
+    !isTucaoRoute;
 
   const onAvatarTap = () => {
     const now = Date.now();
@@ -830,14 +833,16 @@ export default function App() {
     document.body.classList.toggle('journals-mode', isJournalRoute);
     document.body.classList.toggle('pasture-mode', isPastureRoute);
     document.body.classList.toggle('pingpong-mode', isPingPongRoute);
+    document.body.classList.toggle('tucao-mode', isTucaoRoute);
     return () => {
       document.body.classList.remove('awards-mode');
       document.body.classList.remove('pdfs-mode');
       document.body.classList.remove('journals-mode');
       document.body.classList.remove('pasture-mode');
       document.body.classList.remove('pingpong-mode');
+      document.body.classList.remove('tucao-mode');
     };
-  }, [isAwardsRoute, isPdfsRoute, isJournalRoute, isPastureRoute, isPingPongRoute]);
+  }, [isAwardsRoute, isPdfsRoute, isJournalRoute, isPastureRoute, isPingPongRoute, isTucaoRoute]);
 
   useEffect(() => {
     if (!showAdminEntry) return;
@@ -972,6 +977,7 @@ export default function App() {
       {isJournalRoute ? <JournalPage lang={lang} focusJournalId={journalFocusId} onBack={goHome} /> : null}
       {isPastureRoute ? <PasturePage lang={lang} onBack={goHome} onToggleLang={handleToggleLang} /> : null}
       {isPingPongRoute ? <PingPongPage lang={lang} onBack={goHome} /> : null}
+      {isTucaoRoute ? <TucaoPage lang={lang} onBack={goHome} /> : null}
       {isProposalRoute ? (
         <Suspense fallback={<div className="proposal-loading">正在加载 PDF...</div>}>
           <ProposalPdfPage />
