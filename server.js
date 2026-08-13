@@ -3486,9 +3486,271 @@ const sweepPingpongRooms = () => {
 
 setInterval(sweepPingpongRooms, 5 * 60 * 1000).unref?.();
 
+/* ==========================================================================
+   乒乓擂台赛 · 单败淘汰赛事引擎（/api/pingpong/live 上的 arena.* 消息）
+   —— 4~7 人报名，两两单挑，输者淘汰；奇数人轮空(bye)直接晋级。
+      每场先到 2 分胜，总决赛先到 3 分胜。服务端是唯一裁判：
+      对战表、轮空、晋级、比分判定、掉线判负都在这里算。
+   ========================================================================== */
+const ARENA_MIN = 4;
+const ARENA_MAX = 7;
+const ARENA_POINTS_NORMAL = 2; // 常规场先到 2 分
+const ARENA_POINTS_FINAL = 3; // 总决赛先到 3 分
+const ARENA_NAME_MAX = 10;
+const ARENA_TTL_MS = 3 * 60 * 60 * 1000;
+
+/** code -> arena */
+const arenas = new Map();
+
+const makeTicket = () => {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 4; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return s;
+};
+
+const makeArenaCode = () => {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (let attempt = 0; attempt < 40; attempt++) {
+    let code = '';
+    for (let i = 0; i < 4; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)];
+    if (!arenas.has(code)) return code;
+  }
+  return null;
+};
+
+const shuffle = (arr) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+const arenaEmpty = (code, hostSocket) => ({
+  code,
+  createdAt: Date.now(),
+  /** 'lobby' | 'running' | 'done' */
+  phase: 'lobby',
+  hostId: null,
+  /** players: {id, name, ticket, socket, alive(未被淘汰), online, wins, losses, byes, pointsFor, pointsAgainst} */
+  players: [],
+  /** 轮次数组：每轮是 matches 数组 {id, round, aId, bId, scoreA, scoreB, winnerId, status:'pending'|'live'|'done', isFinal, byeId} */
+  rounds: [],
+  roundIndex: 0,
+  /** 当前进行中的比赛 id */
+  liveMatchId: null,
+  championId: null,
+  /** 供观战/回放的简要战报 */
+  log: [],
+  _seq: 1,
+  _hostSocket: hostSocket || null,
+});
+
+const arenaPlayerPublic = (p) => ({
+  id: p.id,
+  name: p.name,
+  ticket: p.ticket,
+  alive: p.alive,
+  online: p.online,
+  wins: p.wins,
+  losses: p.losses,
+  byes: p.byes,
+  pointsFor: p.pointsFor,
+  pointsAgainst: p.pointsAgainst,
+});
+
+const arenaSnapshot = (arena) => ({
+  code: arena.code,
+  phase: arena.phase,
+  hostId: arena.hostId,
+  players: arena.players.map(arenaPlayerPublic),
+  rounds: arena.rounds.map((r) =>
+    r.map((m) => ({
+      id: m.id,
+      round: m.round,
+      aId: m.aId,
+      bId: m.bId,
+      scoreA: m.scoreA,
+      scoreB: m.scoreB,
+      winnerId: m.winnerId,
+      status: m.status,
+      isFinal: m.isFinal,
+      byeId: m.byeId,
+      target: m.target,
+    })),
+  ),
+  roundIndex: arena.roundIndex,
+  liveMatchId: arena.liveMatchId,
+  championId: arena.championId,
+  log: arena.log.slice(-40),
+  min: ARENA_MIN,
+  max: ARENA_MAX,
+});
+
+const arenaBroadcast = (arena, extra) => {
+  const payload = JSON.stringify({type: 'arena', arena: arenaSnapshot(arena), ...(extra || {})});
+  for (const p of arena.players) {
+    if (p.socket && p.socket.readyState === WebSocket.OPEN) p.socket.send(payload);
+  }
+};
+
+const arenaFindPlayer = (arena, id) => arena.players.find((p) => p.id === id) || null;
+
+/** 用存活选手生成下一轮对战表；奇数时优先让「轮空次数少」的人轮空 */
+const arenaBuildRound = (arena) => {
+  const alive = arena.players.filter((p) => p.alive);
+  if (alive.length <= 1) return null;
+
+  let pool = shuffle(alive);
+  let byeId = null;
+
+  if (pool.length % 2 === 1) {
+    // 轮空优先给 byes 最少的人（公平）
+    const minByes = Math.min(...pool.map((p) => p.byes));
+    const candidates = pool.filter((p) => p.byes === minByes);
+    const lucky = candidates[Math.floor(Math.random() * candidates.length)];
+    byeId = lucky.id;
+    lucky.byes += 1;
+    pool = pool.filter((p) => p.id !== lucky.id);
+  }
+
+  const isFinalRound = pool.length === 2 && !byeId;
+  const matches = [];
+  for (let i = 0; i < pool.length; i += 2) {
+    matches.push({
+      id: `m${arena._seq++}`,
+      round: arena.rounds.length,
+      aId: pool[i].id,
+      bId: pool[i + 1].id,
+      scoreA: 0,
+      scoreB: 0,
+      winnerId: null,
+      status: 'pending',
+      isFinal: isFinalRound,
+      byeId: null,
+      target: isFinalRound ? ARENA_POINTS_FINAL : ARENA_POINTS_NORMAL,
+    });
+  }
+  if (byeId) {
+    matches.push({
+      id: `m${arena._seq++}`,
+      round: arena.rounds.length,
+      aId: byeId,
+      bId: null,
+      scoreA: 0,
+      scoreB: 0,
+      winnerId: byeId,
+      status: 'done',
+      isFinal: false,
+      byeId,
+      target: 0,
+    });
+    const bp = arenaFindPlayer(arena, byeId);
+    arena.log.push({kind: 'bye', name: bp ? bp.name : '?', round: arena.rounds.length + 1});
+  }
+  return matches;
+};
+
+/** 找本轮下一场待打的比赛 */
+const arenaNextPending = (arena) => {
+  const round = arena.rounds[arena.roundIndex];
+  if (!round) return null;
+  return round.find((m) => m.status === 'pending') || null;
+};
+
+/** 推进赛事：开下一场；本轮打完则淘汰输者并生成下一轮；只剩一人则产生冠军 */
+const arenaAdvance = (arena) => {
+  const round = arena.rounds[arena.roundIndex];
+  if (!round) return;
+
+  // 本轮还有没打的
+  const next = arenaNextPending(arena);
+  if (next) {
+    next.status = 'live';
+    arena.liveMatchId = next.id;
+    return;
+  }
+
+  // 本轮打完：淘汰所有输者
+  for (const m of round) {
+    if (m.byeId) continue;
+    const loserId = m.winnerId === m.aId ? m.bId : m.aId;
+    const lp = arenaFindPlayer(arena, loserId);
+    if (lp) lp.alive = false;
+  }
+
+  const alive = arena.players.filter((p) => p.alive);
+  if (alive.length <= 1) {
+    arena.phase = 'done';
+    arena.championId = alive[0] ? alive[0].id : null;
+    arena.liveMatchId = null;
+    const champ = alive[0];
+    arena.log.push({kind: 'champion', name: champ ? champ.name : '?'});
+    return;
+  }
+
+  // 生成下一轮
+  const nr = arenaBuildRound(arena);
+  if (!nr) {
+    arena.phase = 'done';
+    arena.championId = alive[0] ? alive[0].id : null;
+    arena.liveMatchId = null;
+    return;
+  }
+  arena.rounds.push(nr);
+  arena.roundIndex = arena.rounds.length - 1;
+  // 轮空场已是 done，递归继续推进到第一场真实比赛
+  arenaAdvance(arena);
+};
+
+/** 判一场比赛结束 */
+const arenaFinishMatch = (arena, match, winnerId, reason) => {
+  if (match.status === 'done') return;
+  match.status = 'done';
+  match.winnerId = winnerId;
+  const a = arenaFindPlayer(arena, match.aId);
+  const b = arenaFindPlayer(arena, match.bId);
+  if (a && b) {
+    a.pointsFor += match.scoreA;
+    a.pointsAgainst += match.scoreB;
+    b.pointsFor += match.scoreB;
+    b.pointsAgainst += match.scoreA;
+    const w = winnerId === a.id ? a : b;
+    const l = winnerId === a.id ? b : a;
+    w.wins += 1;
+    l.losses += 1;
+    arena.log.push({
+      kind: reason === 'quit' ? 'walkover' : reason === 'forfeit' ? 'forfeit' : 'match',
+      round: match.round + 1,
+      winner: w.name,
+      loser: l.name,
+      scoreA: match.scoreA,
+      scoreB: match.scoreB,
+      aName: a.name,
+      bName: b.name,
+      isFinal: match.isFinal,
+    });
+  }
+  arena.liveMatchId = null;
+  arenaAdvance(arena);
+};
+
+const sweepArenas = () => {
+  const now = Date.now();
+  for (const [code, arena] of arenas) {
+    const anyOnline = arena.players.some((p) => p.socket && p.socket.readyState === WebSocket.OPEN);
+    if (!anyOnline || now - arena.createdAt > ARENA_TTL_MS) arenas.delete(code);
+  }
+};
+setInterval(sweepArenas, 5 * 60 * 1000).unref?.();
+
 pingpongWss.on('connection', (socket) => {
   socket.ppRoom = null;
   socket.ppRole = null;
+  socket.arenaCode = null;
+  socket.arenaId = null;
   socket.isAlive = true;
   socket.on('pong', () => {
     socket.isAlive = true;
@@ -3508,6 +3770,213 @@ pingpongWss.on('connection', (socket) => {
       return;
     }
     if (!msg || typeof msg !== 'object') return;
+
+    /* ======================= 擂台赛消息 ======================= */
+    if (typeof msg.action === 'string' && msg.action.startsWith('arena.')) {
+      const act = msg.action.slice('arena.'.length);
+      const myArena = socket.arenaCode ? arenas.get(socket.arenaCode) : null;
+      const me = myArena ? arenaFindPlayer(myArena, socket.arenaId) : null;
+
+      /* --- 开擂台（拿门票 + 建房） --- */
+      if (act === 'create') {
+        const name = String(msg.name || '').trim().slice(0, ARENA_NAME_MAX);
+        if (!name) {
+          pingpongSend(socket, {type: 'arena-error', reason: 'need-name'});
+          return;
+        }
+        sweepArenas();
+        const code = makeArenaCode();
+        if (!code) {
+          pingpongSend(socket, {type: 'arena-error', reason: 'busy'});
+          return;
+        }
+        const arena = arenaEmpty(code, socket);
+        const id = `p${arena._seq++}`;
+        arena.players.push({
+          id,
+          name,
+          ticket: makeTicket(),
+          socket,
+          alive: true,
+          online: true,
+          wins: 0,
+          losses: 0,
+          byes: 0,
+          pointsFor: 0,
+          pointsAgainst: 0,
+        });
+        arena.hostId = id;
+        arenas.set(code, arena);
+        socket.arenaCode = code;
+        socket.arenaId = id;
+        pingpongSend(socket, {type: 'arena-joined', code, playerId: id, ticket: arena.players[0].ticket});
+        arenaBroadcast(arena);
+        return;
+      }
+
+      /* --- 报名加入 --- */
+      if (act === 'join') {
+        const code = String(msg.code || '').toUpperCase().trim();
+        const name = String(msg.name || '').trim().slice(0, ARENA_NAME_MAX);
+        const arena = arenas.get(code);
+        if (!name) {
+          pingpongSend(socket, {type: 'arena-error', reason: 'need-name'});
+          return;
+        }
+        if (!arena) {
+          pingpongSend(socket, {type: 'arena-error', reason: 'not-found'});
+          return;
+        }
+        if (arena.phase !== 'lobby') {
+          pingpongSend(socket, {type: 'arena-error', reason: 'already-started'});
+          return;
+        }
+        if (arena.players.length >= ARENA_MAX) {
+          pingpongSend(socket, {type: 'arena-error', reason: 'full'});
+          return;
+        }
+        if (arena.players.some((p) => p.name === name)) {
+          pingpongSend(socket, {type: 'arena-error', reason: 'name-taken'});
+          return;
+        }
+        const id = `p${arena._seq++}`;
+        const ticket = makeTicket();
+        arena.players.push({
+          id,
+          name,
+          ticket,
+          socket,
+          alive: true,
+          online: true,
+          wins: 0,
+          losses: 0,
+          byes: 0,
+          pointsFor: 0,
+          pointsAgainst: 0,
+        });
+        socket.arenaCode = code;
+        socket.arenaId = id;
+        pingpongSend(socket, {type: 'arena-joined', code, playerId: id, ticket});
+        arenaBroadcast(arena);
+        return;
+      }
+
+      if (!myArena || !me) {
+        pingpongSend(socket, {type: 'arena-error', reason: 'not-in-arena'});
+        return;
+      }
+
+      /* --- 房主开赛 --- */
+      if (act === 'start') {
+        if (myArena.hostId !== me.id) {
+          pingpongSend(socket, {type: 'arena-error', reason: 'not-host'});
+          return;
+        }
+        if (myArena.phase !== 'lobby') return;
+        const n = myArena.players.filter((p) => p.online).length;
+        if (n < ARENA_MIN) {
+          pingpongSend(socket, {type: 'arena-error', reason: 'need-more'});
+          return;
+        }
+        // 只让在线的人参赛
+        myArena.players = myArena.players.filter((p) => p.online);
+        myArena.players.forEach((p) => {
+          p.alive = true;
+          p.wins = 0;
+          p.losses = 0;
+          p.byes = 0;
+          p.pointsFor = 0;
+          p.pointsAgainst = 0;
+        });
+        myArena.phase = 'running';
+        myArena.rounds = [];
+        myArena.log = [];
+        const first = arenaBuildRound(myArena);
+        if (!first) return;
+        myArena.rounds.push(first);
+        myArena.roundIndex = 0;
+        arenaAdvance(myArena);
+        arenaBroadcast(myArena, {flash: 'started'});
+        return;
+      }
+
+      /* --- 比赛中：把一分记给某人（由该场的 A 方作为权威模拟端上报） --- */
+      if (act === 'point') {
+        const match = (myArena.rounds[myArena.roundIndex] || []).find((m) => m.id === myArena.liveMatchId);
+        if (!match || match.status !== 'live') return;
+        // 只有该场的 A 方（权威端）能记分
+        if (me.id !== match.aId) return;
+        const side = msg.side === 'b' ? 'b' : 'a';
+        if (side === 'a') match.scoreA += 1;
+        else match.scoreB += 1;
+
+        const tg = match.target || ARENA_POINTS_NORMAL;
+        if (match.scoreA >= tg || match.scoreB >= tg) {
+          const winnerId = match.scoreA >= tg ? match.aId : match.bId;
+          arenaFinishMatch(myArena, match, winnerId, 'points');
+        }
+        arenaBroadcast(myArena);
+        return;
+      }
+
+      /* --- 比赛中：拍子/球状态转发给对手和观众 --- */
+      if (act === 'sync') {
+        const match = (myArena.rounds[myArena.roundIndex] || []).find((m) => m.id === myArena.liveMatchId);
+        if (!match || match.status !== 'live') return;
+        if (me.id !== match.aId && me.id !== match.bId) return;
+        const payload = JSON.stringify({type: 'arena-sync', from: me.id, data: msg.data});
+        for (const p of myArena.players) {
+          if (p.id !== me.id && p.socket && p.socket.readyState === WebSocket.OPEN) p.socket.send(payload);
+        }
+        return;
+      }
+
+      /* --- 认输/退赛 --- */
+      if (act === 'forfeit') {
+        const match = (myArena.rounds[myArena.roundIndex] || []).find((m) => m.id === myArena.liveMatchId);
+        if (match && match.status === 'live' && (me.id === match.aId || me.id === match.bId)) {
+          const winnerId = me.id === match.aId ? match.bId : match.aId;
+          arenaFinishMatch(myArena, match, winnerId, 'forfeit');
+          arenaBroadcast(myArena);
+        }
+        return;
+      }
+
+      /* --- 再来一届（回候场厅） --- */
+      if (act === 'reset') {
+        if (myArena.hostId !== me.id) return;
+        myArena.phase = 'lobby';
+        myArena.rounds = [];
+        myArena.roundIndex = 0;
+        myArena.liveMatchId = null;
+        myArena.championId = null;
+        myArena.log = [];
+        myArena.players.forEach((p) => {
+          p.alive = true;
+          p.wins = 0;
+          p.losses = 0;
+          p.byes = 0;
+          p.pointsFor = 0;
+          p.pointsAgainst = 0;
+        });
+        arenaBroadcast(myArena);
+        return;
+      }
+
+      /* --- 离开擂台 --- */
+      if (act === 'leave') {
+        myArena.players = myArena.players.filter((p) => p.id !== me.id);
+        socket.arenaCode = null;
+        socket.arenaId = null;
+        if (myArena.hostId === me.id && myArena.players.length > 0) {
+          myArena.hostId = myArena.players[0].id;
+        }
+        if (myArena.players.length === 0) arenas.delete(myArena.code);
+        else arenaBroadcast(myArena);
+        return;
+      }
+      return;
+    }
 
     /* ---- 建房 ---- */
     if (msg.action === 'create') {
@@ -3556,6 +4025,45 @@ pingpongWss.on('connection', (socket) => {
   });
 
   socket.on('close', () => {
+    /* ---- 擂台赛掉线处理：进行中的比赛判负，候场厅则移除 ---- */
+    if (socket.arenaCode) {
+      const arena = arenas.get(socket.arenaCode);
+      if (arena) {
+        const me = arenaFindPlayer(arena, socket.arenaId);
+        if (me) {
+          me.online = false;
+          me.socket = null;
+          if (arena.phase === 'lobby') {
+            // 还没开赛：直接退出报名
+            arena.players = arena.players.filter((p) => p.id !== me.id);
+            if (arena.hostId === me.id && arena.players.length > 0) arena.hostId = arena.players[0].id;
+          } else if (arena.phase === 'running') {
+            // 正在比赛中掉线 → 该场判负；否则只标离线（还没轮到他）
+            const live = (arena.rounds[arena.roundIndex] || []).find((m) => m.id === arena.liveMatchId);
+            if (live && live.status === 'live' && (live.aId === me.id || live.bId === me.id)) {
+              const winnerId = live.aId === me.id ? live.bId : live.aId;
+              arenaFinishMatch(arena, live, winnerId, 'quit');
+            } else {
+              // 未上场就掉线：直接淘汰，避免赛事卡住
+              me.alive = false;
+              arena.log.push({kind: 'dropout', name: me.name});
+              // 如果因此只剩一人，直接出冠军
+              const stillAlive = arena.players.filter((p) => p.alive);
+              if (stillAlive.length <= 1) {
+                arena.phase = 'done';
+                arena.championId = stillAlive[0] ? stillAlive[0].id : null;
+                arena.liveMatchId = null;
+              }
+            }
+          }
+        }
+        if (arena.players.length === 0) arenas.delete(arena.code);
+        else arenaBroadcast(arena);
+      }
+      socket.arenaCode = null;
+      socket.arenaId = null;
+    }
+
     const code = socket.ppRoom;
     if (!code) return;
     const room = pingpongRooms.get(code);

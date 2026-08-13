@@ -672,3 +672,423 @@ kbd.pp-kbd {
     transition: none !important;
   }
 }
+
+/* ==========================================================================
+   擂台赛（候场厅 / 对战表 / 冠军展示）—— 同样零渐变
+   ========================================================================== */
+
+/* 赛事全屏视图 */
+.pp-arena {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  background: var(--pp-paper);
+  overflow: hidden;
+}
+.pp-arena-head {
+  flex: 0 0 auto;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--pp-line);
+  background: var(--pp-surface);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pp-arena-head-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.pp-arena-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 16px 20px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--pp-line-strong) transparent;
+}
+.pp-arena-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.pp-arena-scroll::-webkit-scrollbar-thumb {
+  background: var(--pp-line-strong);
+  border-radius: 999px;
+}
+
+/* 门票 */
+.pp-ticket {
+  border: 1px dashed var(--pp-line-strong);
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: var(--pp-surface-2);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pp-ticket-stub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 14px;
+  border-right: 1px dashed var(--pp-line-strong);
+}
+.pp-ticket-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pp-ink-3);
+}
+.pp-ticket-no {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--pp-accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.pp-ticket-who {
+  font-size: 15px;
+  font-weight: 600;
+}
+.pp-ticket-note {
+  font-size: 11.5px;
+  color: var(--pp-ink-3);
+  line-height: 1.5;
+}
+
+/* 选手列表 */
+.pp-roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 9px;
+  margin-top: 14px;
+}
+.pp-roster-item {
+  border: 1px solid var(--pp-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--pp-surface);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.pp-roster-item.pp-me {
+  border-color: var(--pp-accent);
+}
+.pp-roster-item.pp-out {
+  opacity: 0.48;
+}
+.pp-roster-seed {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  border: 1px solid var(--pp-line-strong);
+  background: var(--pp-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pp-roster-item.pp-me .pp-roster-seed {
+  background: var(--pp-accent);
+  border-color: var(--pp-accent);
+  color: var(--pp-accent-ink);
+}
+.pp-roster-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.pp-roster-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-roster-meta {
+  font-size: 11px;
+  color: var(--pp-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.pp-roster-x {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pp-ink-3);
+  flex: 0 0 auto;
+}
+
+/* 对战表 */
+.pp-bracket {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-top: 14px;
+}
+.pp-round {
+  flex: 0 0 auto;
+  min-width: 232px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.pp-round-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pp-ink-3);
+  padding-bottom: 2px;
+}
+.pp-match {
+  border: 1px solid var(--pp-line);
+  border-radius: 10px;
+  background: var(--pp-surface);
+  overflow: hidden;
+}
+.pp-match.pp-live {
+  border-color: var(--pp-accent);
+  border-width: 2px;
+}
+.pp-match.pp-bye {
+  border-style: dashed;
+  background: transparent;
+}
+.pp-match-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  font-size: 13px;
+}
+.pp-match-row + .pp-match-row {
+  border-top: 1px solid var(--pp-line);
+}
+.pp-match-row.pp-won {
+  font-weight: 600;
+}
+.pp-match-row.pp-lost {
+  color: var(--pp-ink-3);
+}
+.pp-match-nm {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-match-sc {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  min-width: 16px;
+  text-align: right;
+}
+.pp-match-tag {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-bottom: 1px solid var(--pp-line);
+  color: var(--pp-ink-3);
+  background: var(--pp-surface-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pp-match-tag.pp-tag-live {
+  background: var(--pp-accent);
+  color: var(--pp-accent-ink);
+  border-bottom-color: var(--pp-accent);
+}
+.pp-match-tag.pp-tag-final {
+  color: var(--pp-accent);
+}
+
+/* 冠军展示 */
+.pp-champ {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 16px 8px;
+  text-align: center;
+}
+.pp-champ-cup {
+  font-size: 74px;
+  line-height: 1;
+  animation: ppCup 2.6s ease-in-out infinite;
+}
+@keyframes ppCup {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(3deg);
+  }
+}
+.pp-champ-eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--pp-accent);
+}
+.pp-champ-name {
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+  word-break: break-word;
+  max-width: 100%;
+}
+.pp-champ-sub {
+  font-size: 13.5px;
+  color: var(--pp-ink-2);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.pp-champ-medals {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pp-medal {
+  border: 1px solid var(--pp-line-strong);
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--pp-surface);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.pp-medal b {
+  font-weight: 600;
+}
+
+/* 战报 */
+.pp-log {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.pp-log-item {
+  border: 1px solid var(--pp-line);
+  border-radius: 8px;
+  padding: 7px 11px;
+  background: var(--pp-surface);
+  font-size: 12.5px;
+  color: var(--pp-ink-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.pp-log-item b {
+  color: var(--pp-ink);
+  font-weight: 600;
+}
+.pp-log-r {
+  flex: 0 0 auto;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--pp-ink-3);
+  border: 1px solid var(--pp-line-strong);
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+
+.pp-sec {
+  margin-top: 20px;
+}
+.pp-sec-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pp-ink-3);
+  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 观战角标 */
+.pp-spect {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 6;
+  border: 1px solid var(--pp-line-strong);
+  background: var(--pp-surface);
+  color: var(--pp-ink-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pp-spect i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pp-accent);
+}
+
+@media (max-width: 760px) {
+  .pp-arena-head {
+    padding: 12px 14px 10px;
+  }
+  .pp-arena-scroll {
+    padding: 12px 14px 16px;
+  }
+  .pp-champ-name {
+    font-size: 30px;
+  }
+  .pp-champ-cup {
+    font-size: 58px;
+  }
+  .pp-roster {
+    grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
+  }
+  .pp-round {
+    min-width: 200px;
+  }
+  .pp-ticket {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 9px;
+  }
+  .pp-ticket-stub {
+    border-right: 0;
+    border-bottom: 1px dashed var(--pp-line-strong);
+    padding-right: 0;
+    padding-bottom: 8px;
+    width: 100%;
+  }
+}

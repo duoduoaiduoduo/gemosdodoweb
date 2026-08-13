@@ -9,12 +9,67 @@ type PingPongPageProps = {
 };
 
 /** 玩法 */
-type Mode = 'online' | 'local' | 'ai';
+type Mode = 'online' | 'local' | 'ai' | 'arena';
 /** 界面阶段 */
-type Screen = 'menu' | 'lobby' | 'play' | 'result';
+type Screen = 'menu' | 'lobby' | 'play' | 'result' | 'arena';
 type Difficulty = 'easy' | 'normal' | 'hard';
 /** 联机中本机扮演的角色：host 跑权威物理，guest 只上报拍子 */
 type Role = 'host' | 'guest';
+
+/* ---------------------------- 擂台赛类型 -------------------------------- */
+type ArenaPlayer = {
+  id: string;
+  name: string;
+  ticket: string;
+  alive: boolean;
+  online: boolean;
+  wins: number;
+  losses: number;
+  byes: number;
+  pointsFor: number;
+  pointsAgainst: number;
+};
+
+type ArenaMatch = {
+  id: string;
+  round: number;
+  aId: string;
+  bId: string | null;
+  scoreA: number;
+  scoreB: number;
+  winnerId: string | null;
+  status: 'pending' | 'live' | 'done';
+  isFinal: boolean;
+  byeId: string | null;
+  target: number;
+};
+
+type ArenaLogEntry = {
+  kind: string;
+  name?: string;
+  round?: number;
+  winner?: string;
+  loser?: string;
+  aName?: string;
+  bName?: string;
+  scoreA?: number;
+  scoreB?: number;
+  isFinal?: boolean;
+};
+
+type ArenaState = {
+  code: string;
+  phase: 'lobby' | 'running' | 'done';
+  hostId: string;
+  players: ArenaPlayer[];
+  rounds: ArenaMatch[][];
+  roundIndex: number;
+  liveMatchId: string | null;
+  championId: string | null;
+  log: ArenaLogEntry[];
+  min: number;
+  max: number;
+};
 
 /* ============================================================================
    逻辑坐标系：固定 1000 x 620，渲染时等比缩放到 canvas。
@@ -108,7 +163,9 @@ function serverFor(scoreA: number, scoreB: number, first: Side, target: number):
   return flip ? (first === 'a' ? 'b' : 'a') : first;
 }
 
-function isMatchOver(scoreA: number, scoreB: number, target: number) {
+function isMatchOver(scoreA: number, scoreB: number, target: number, needWinBy = true) {
+  // 擂台赛是"先到 N 分"，不要求净胜 2 分（2 分制下净胜规则会永远打不完）
+  if (!needWinBy) return scoreA >= target || scoreB >= target;
   if (scoreA >= target && scoreA - scoreB >= WIN_BY) return true;
   if (scoreB >= target && scoreB - scoreA >= WIN_BY) return true;
   return false;
@@ -200,6 +257,15 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
   const [ui, setUi] = useState({scoreA: 0, scoreB: 0, server: 'a' as Side, serving: true});
   const [result, setResult] = useState<{a: number; b: number; youWin: boolean} | null>(null);
 
+  // 擂台赛
+  const [arena, setArena] = useState<ArenaState | null>(null);
+  const [myId, setMyId] = useState('');
+  const [myTicket, setMyTicket] = useState('');
+  const [arenaName, setArenaName] = useState('');
+  const [arenaJoinCode, setArenaJoinCode] = useState('');
+  /** 报名弹窗：'create' 开擂台 / 'join' 加入 / null 不显示 */
+  const [signup, setSignup] = useState<'create' | 'join' | null>(null);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stateRef = useRef<GameState>(initialState('a'));
   const keysRef = useRef<Record<string, boolean>>({});
@@ -221,6 +287,12 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
   const screenRef = useRef<Screen>('menu');
   const peerHereRef = useRef(false);
   const prevPaddleRef = useRef({a: H / 2, b: H / 2});
+  /** 擂台赛：本机在当前这场里是 A 方(权威端)还是 B 方；null=观战 */
+  const arenaSideRef = useRef<Side | null>(null);
+  const arenaMatchIdRef = useRef<string>('');
+  const myIdRef = useRef('');
+  /** 擂台赛比分由服务端裁定，本地只负责上报得分 */
+  const arenaReportedRef = useRef(0);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -278,6 +350,11 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
   /* ------------------------------ 得分 --------------------------------- */
   const awardPoint = useCallback(
     (s: GameState, to: Side) => {
+      const isArena = modeRef.current === 'arena';
+      // 擂台赛里只有本场 A 方是权威端，其它端（B 方/观众）的比分完全跟快照走，
+      // 绝不能自己加分，否则两端会各算一套分。
+      if (isArena && arenaSideRef.current !== 'a') return;
+
       if (to === 'a') s.scoreA += 1;
       else s.scoreB += 1;
       trailRef.current = [];
@@ -285,7 +362,16 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
       sfxRef.current.score();
 
       const tg = targetRef.current;
-      if (isMatchOver(s.scoreA, s.scoreB, tg)) {
+
+      // 擂台赛：把这一分上报给服务端裁定
+      if (isArena) {
+        const ws = wsRef.current;
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({action: 'arena.point', side: to}));
+        }
+      }
+
+      if (isMatchOver(s.scoreA, s.scoreB, tg, !isArena)) {
         s.over = true;
         s.winner = s.scoreA > s.scoreB ? 'a' : 'b';
         sfxRef.current.win();
@@ -361,6 +447,19 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
         }
         const dy = aim - s.by;
         s.by += clamp(dy, -tune.speed * dt, tune.speed * dt);
+      } else if (m === 'arena') {
+        // 擂台赛：本场 A 方是权威端(等价 host)，B 方只上报拍子(等价 guest)，观战者不控制
+        const side = arenaSideRef.current;
+        if (side === 'a') {
+          if (upA) s.ay -= step;
+          if (downA) s.ay += step;
+          const snap = netSnapRef.current;
+          if (snap) s.by += (snap.by - s.by) * Math.min(1, 0.32 * dt);
+        } else if (side === 'b') {
+          if (upA) s.by -= step;
+          if (downA) s.by += step;
+          myPaddleRef.current = s.by;
+        }
       } else {
         // online
         if (r === 'host') {
@@ -379,8 +478,10 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
       s.ay = clamp(s.ay, PADDLE_H / 2, H - PADDLE_H / 2);
       s.by = clamp(s.by, PADDLE_H / 2, H - PADDLE_H / 2);
 
-      /* --- guest 不跑权威物理：插值跟随 host 快照 --- */
-      if (m === 'online' && r === 'guest') {
+      /* --- 非权威端不跑物理：插值跟随权威端快照 --- */
+      const passive =
+        (m === 'online' && r === 'guest') || (m === 'arena' && arenaSideRef.current !== 'a');
+      if (passive) {
         const snap = netSnapRef.current;
         if (snap) {
           const lerp = Math.min(1, 0.34 * dt);
@@ -389,6 +490,10 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
           s.ball.vx = snap.ball.vx;
           s.ball.vy = snap.ball.vy;
           s.ay += (snap.ay - s.ay) * lerp;
+          // 观战者两块拍子都跟快照走
+          if (arenaSideRef.current === null && m === 'arena') {
+            s.by += (snap.by - s.by) * lerp;
+          }
           s.scoreA = snap.scoreA;
           s.scoreB = snap.scoreB;
           s.server = snap.server;
@@ -673,6 +778,37 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
         }
       }
 
+      // 擂台赛：A 方广播权威状态给对手+观众；B 方只上报拍子
+      if (modeRef.current === 'arena' && wsRef.current?.readyState === WebSocket.OPEN) {
+        const side = arenaSideRef.current;
+        if (now - lastSendRef.current >= 33) {
+          lastSendRef.current = now;
+          if (side === 'a') {
+            wsRef.current.send(
+              JSON.stringify({
+                action: 'arena.sync',
+                data: {
+                  kind: 'state',
+                  // 带上本场 id：接收端只认当前这一场的快照，避免上一场的残留包污染新场
+                  mid: arenaMatchIdRef.current,
+                  ball: {x: s.ball.x, y: s.ball.y, vx: s.ball.vx, vy: s.ball.vy, spin: s.ball.spin, speed: s.ball.speed},
+                  ay: s.ay,
+                  by: s.by,
+                  scoreA: s.scoreA,
+                  scoreB: s.scoreB,
+                  server: s.server,
+                  serving: s.serving,
+                },
+              }),
+            );
+          } else if (side === 'b') {
+            wsRef.current.send(
+              JSON.stringify({action: 'arena.sync', data: {kind: 'paddle', mid: arenaMatchIdRef.current, y: myPaddleRef.current}}),
+            );
+          }
+        }
+      }
+
       // 同步 UI 比分
       setUi((p) =>
         p.scoreA === s.scoreA && p.scoreB === s.scoreB && p.server === s.server && p.serving === s.serving
@@ -681,15 +817,53 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
       );
 
       if (s.over && screenRef.current === 'play') {
-        const iAmA = !(modeRef.current === 'online' && roleRef.current === 'guest');
-        const youWin = iAmA ? s.winner === 'a' : s.winner === 'b';
-        setResult({a: s.scoreA, b: s.scoreB, youWin});
-        setScreen('result');
+        if (modeRef.current === 'arena') {
+          // 擂台赛：本场打完就交给服务端裁定，这里只停手等下一场的快照。
+          // 不切屏（切走会打断下一场的自动开打），把球台冻在结束画面即可。
+          arenaSideRef.current = null;
+        } else {
+          const iAmA = !(modeRef.current === 'online' && roleRef.current === 'guest');
+          const youWin = iAmA ? s.winner === 'a' : s.winner === 'b';
+          setResult({a: s.scoreA, b: s.scoreB, youWin});
+          setScreen('result');
+        }
       }
     };
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
   }, [screen, stepPhysics, draw]);
+
+  /** 尝试发球（键盘空格 / 点击球台共用），按玩法判断本机有没有发球权 */
+  const tryServe = useCallback(() => {
+    const s = stateRef.current;
+    if (!s.serving || s.over) return;
+    const m = modeRef.current;
+    if (m === 'local') {
+      launchServe(s);
+      return;
+    }
+    if (m === 'ai') {
+      if (s.server === 'a') launchServe(s);
+      return;
+    }
+    if (m === 'arena') {
+      const side = arenaSideRef.current;
+      if (side === 'a' && s.server === 'a') launchServe(s);
+      else if (side === 'b' && s.server === 'b') {
+        // B 方是被动端，发球权由 A 方的快照决定；没收到快照前不许发，
+        // 否则两端会各自以为自己该发球，导致比分错乱。
+        if (netSnapRef.current) {
+          wsRef.current?.send(JSON.stringify({action: 'arena.sync', data: {kind: 'serve', mid: arenaMatchIdRef.current}}));
+        }
+      }
+      return;
+    }
+    // online
+    if (roleRef.current === 'host' && s.server === 'a') launchServe(s);
+    else if (roleRef.current === 'guest' && s.server === 'b') {
+      wsRef.current?.send(JSON.stringify({type: 'serve'}));
+    }
+  }, [launchServe]);
 
   /* --------------------------- 键盘 ------------------------------------ */
   useEffect(() => {
@@ -697,24 +871,10 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
       const key = e.key.toLowerCase();
       if (['arrowup', 'arrowdown', ' ', 'w', 's'].includes(key)) e.preventDefault();
       keysRef.current[key] = true;
-      if (key === ' ' || key === 'enter') {
-        const s = stateRef.current;
-        // 只有己方发球权才能发
-        const m = modeRef.current;
-        const mine: Side = m === 'online' && roleRef.current === 'guest' ? 'b' : 'a';
-        if (s.serving && !s.over) {
-          if (m === 'local') launchServe(s);
-          else if (m === 'ai' && s.server === 'a') launchServe(s);
-          else if (m === 'online') {
-            if (roleRef.current === 'host' && s.server === 'a') launchServe(s);
-            else if (roleRef.current === 'guest' && s.server === 'b') {
-              wsRef.current?.send(JSON.stringify({type: 'serve'}));
-            }
-          }
-          void mine;
-        }
+      if (key === ' ' || key === 'enter') tryServe();
+      if (key === 'escape' && screenRef.current === 'play') {
+        setScreen(modeRef.current === 'arena' ? 'arena' : 'menu');
       }
-      if (key === 'escape' && screenRef.current === 'play') setScreen('menu');
     };
     const up = (e: KeyboardEvent) => {
       keysRef.current[e.key.toLowerCase()] = false;
@@ -730,7 +890,7 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
       window.removeEventListener('keyup', up);
       window.removeEventListener('blur', blur);
     };
-  }, [launchServe]);
+  }, [tryServe]);
 
   /* ------------------- 指针/触摸控制（移动端 + 鼠标） ------------------- */
   useEffect(() => {
@@ -746,7 +906,16 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
         : (clientY - rect.top - view.offY) / view.scale;
       const s = stateRef.current;
       const y = clamp(logical, PADDLE_H / 2, H - PADDLE_H / 2);
-      if (modeRef.current === 'online' && roleRef.current === 'guest') {
+      const m = modeRef.current;
+      if (m === 'arena') {
+        // 擂台赛：控自己那块；观战者不控制
+        const side = arenaSideRef.current;
+        if (side === 'a') s.ay = y;
+        else if (side === 'b') {
+          s.by = y;
+          myPaddleRef.current = y;
+        }
+      } else if (m === 'online' && roleRef.current === 'guest') {
         s.by = y;
         myPaddleRef.current = y;
       } else {
@@ -759,16 +928,7 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
       dragging = true;
       canvas.setPointerCapture?.(e.pointerId);
       applyPointer(e.clientX, e.clientY);
-      // 点一下也能发球
-      const s = stateRef.current;
-      const m = modeRef.current;
-      if (s.serving && !s.over) {
-        if (m === 'local' || (m === 'ai' && s.server === 'a')) launchServe(s);
-        else if (m === 'online') {
-          if (roleRef.current === 'host' && s.server === 'a') launchServe(s);
-          else if (roleRef.current === 'guest' && s.server === 'b') wsRef.current?.send(JSON.stringify({type: 'serve'}));
-        }
-      }
+      tryServe(); // 点一下也能发球
     };
     const onMove = (e: PointerEvent) => {
       if (!dragging && e.pointerType === 'touch') return;
@@ -788,7 +948,7 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
       canvas.removeEventListener('pointerup', onUp);
       canvas.removeEventListener('pointercancel', onUp);
     };
-  }, [screen, launchServe]);
+  }, [screen, tryServe]);
 
   /* --------------------------- 联机 ------------------------------------ */
   const wsUrl = useCallback(() => {
@@ -814,7 +974,7 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
   }, []);
 
   const openWs = useCallback(
-    (payload: {action: 'create' | 'join'; code?: string}) => {
+    (payload: Record<string, unknown>) => {
       setNetError('');
       closeWs();
       let ws: WebSocket;
@@ -839,6 +999,123 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
           return;
         }
         const type = msg.type as string;
+
+        /* ====================== 擂台赛消息 ====================== */
+        if (type === 'arena-joined') {
+          const id = String(msg.playerId || '');
+          setMyId(id);
+          myIdRef.current = id;
+          setMyTicket(String(msg.ticket || ''));
+          setMode('arena');
+          modeRef.current = 'arena';
+          setSignup(null);
+          setNetError('');
+          setScreen('arena');
+          return;
+        }
+        if (type === 'arena') {
+          const a = msg.arena as ArenaState;
+          setArena(a);
+
+          // 判断本机在当前 live 比赛里的角色
+          const live = a.liveMatchId
+            ? (a.rounds[a.roundIndex] || []).find((m) => m.id === a.liveMatchId)
+            : null;
+          const me = myIdRef.current;
+          const nextSide: Side | null = !live ? null : live.aId === me ? 'a' : live.bId === me ? 'b' : null;
+
+          // 新的一场开打 → 重置球台并进入对局（观战者也进，只是不能控制）
+          if (live && live.id !== arenaMatchIdRef.current) {
+            arenaMatchIdRef.current = live.id;
+            arenaSideRef.current = nextSide;
+            setTarget(live.target);
+            targetRef.current = live.target;
+            const s = initialState('a');
+            stateRef.current = s;
+            placeForServe(s);
+            trailRef.current = [];
+            netSnapRef.current = null;
+            setUi({scoreA: 0, scoreB: 0, server: 'a', serving: true});
+            setScreen('play');
+          } else if (live) {
+            arenaSideRef.current = nextSide;
+          }
+
+          // 我被淘汰了 → 回赛事视图看对战表，别卡在球台上
+          const meP = a.players.find((p) => p.id === me);
+          if (a.phase === 'running' && meP && !meP.alive) {
+            arenaSideRef.current = null;
+            setScreen('arena');
+          }
+
+          // 赛事结束 → 冠军展示
+          if (a.phase === 'done') {
+            arenaMatchIdRef.current = '';
+            arenaSideRef.current = null;
+            setScreen('arena');
+          }
+          // 回到候场厅
+          if (a.phase === 'lobby') {
+            arenaMatchIdRef.current = '';
+            arenaSideRef.current = null;
+            setScreen('arena');
+          }
+          return;
+        }
+        if (type === 'arena-sync') {
+          const d = msg.data as Record<string, unknown>;
+          if (!d) return;
+          // 丢掉不属于当前这一场的包（上一场的残留会造成发球权/比分错乱）
+          if (typeof d.mid === 'string' && d.mid && d.mid !== arenaMatchIdRef.current) return;
+          if (d.kind === 'state') {
+            netSnapRef.current = {
+              ball: d.ball as Ball,
+              ay: Number(d.ay),
+              by: Number(d.by),
+              scoreA: Number(d.scoreA),
+              scoreB: Number(d.scoreB),
+              server: d.server as Side,
+              serving: Boolean(d.serving),
+            };
+          } else if (d.kind === 'paddle') {
+            const y = Number(d.y);
+            if (Number.isFinite(y)) {
+              netSnapRef.current = {
+                ...(netSnapRef.current || {
+                  ball: makeBall(),
+                  ay: H / 2,
+                  by: y,
+                  scoreA: 0,
+                  scoreB: 0,
+                  server: 'a' as Side,
+                  serving: true,
+                }),
+                by: y,
+              };
+            }
+          } else if (d.kind === 'serve') {
+            // B 方请求发球，只有 A 方（权威端）执行
+            const s = stateRef.current;
+            if (arenaSideRef.current === 'a' && s.serving && s.server === 'b' && !s.over) launchServe(s);
+          }
+          return;
+        }
+        if (type === 'arena-error') {
+          const reason = String(msg.reason || '');
+          const map: Record<string, string> = {
+            'need-name': t('先起个名字。', 'Enter a name first.'),
+            'not-found': t('找不到这个擂台，检查一下门票号。', 'Arena not found — check the code.'),
+            'already-started': t('这届比赛已经开打了，等下一届吧。', 'That tournament already started.'),
+            full: t('擂台满了（最多 7 人）。', 'Arena is full (max 7).'),
+            'name-taken': t('这个名字有人用了，换一个。', 'That name is taken.'),
+            'need-more': t('至少要 4 个人才能开赛。', 'Need at least 4 players to start.'),
+            'not-host': t('只有开擂台的人能开赛。', 'Only the host can start.'),
+            busy: t('服务器忙，稍后再试。', 'Server busy, try again.'),
+          };
+          setNetError(map[reason] || t('出错了，重试一下。', 'Something went wrong.'));
+          window.setTimeout(() => setNetError(''), 3600);
+          return;
+        }
 
         if (type === 'created') {
           setRoomCode(String(msg.code || ''));
@@ -958,19 +1235,116 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
     setJoinCode('');
     setNetError('');
     setResult(null);
+    setArena(null);
+    setMyId('');
+    myIdRef.current = '';
+    setMyTicket('');
+    arenaSideRef.current = null;
+    arenaMatchIdRef.current = '';
     setScreen('menu');
   }, [closeWs]);
 
+  /* --------------------------- 擂台赛动作 ------------------------------- */
+  const arenaSend = useCallback((payload: Record<string, unknown>) => {
+    const ws = wsRef.current;
+    if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+  }, []);
+
+  const arenaCreate = useCallback(() => {
+    const name = arenaName.trim();
+    if (!name) {
+      setNetError(t('先起个名字。', 'Enter a name first.'));
+      return;
+    }
+    try {
+      localStorage.setItem('pingpong_arena_name_v1', name);
+    } catch {
+      /* noop */
+    }
+    openWs({action: 'arena.create', name});
+  }, [arenaName, openWs, t]);
+
+  const arenaJoin = useCallback(() => {
+    const name = arenaName.trim();
+    const code = arenaJoinCode.trim().toUpperCase();
+    if (!name) {
+      setNetError(t('先起个名字。', 'Enter a name first.'));
+      return;
+    }
+    if (code.length < 4) {
+      setNetError(t('门票号是 4 位。', 'The code is 4 characters.'));
+      return;
+    }
+    try {
+      localStorage.setItem('pingpong_arena_name_v1', name);
+    } catch {
+      /* noop */
+    }
+    openWs({action: 'arena.join', code, name});
+  }, [arenaName, arenaJoinCode, openWs, t]);
+
+  /** 记住上次用的名字 */
+  useEffect(() => {
+    try {
+      const n = localStorage.getItem('pingpong_arena_name_v1');
+      if (n) setArenaName(n);
+    } catch {
+      /* noop */
+    }
+  }, []);
+
   /* ---------------------------- 文案 ----------------------------------- */
-  const nameA = mode === 'ai' ? t('你', 'You') : mode === 'local' ? t('玩家 1', 'P1') : role === 'host' ? t('你', 'You') : t('对手', 'Rival');
-  const nameB = mode === 'ai' ? t('电脑', 'CPU') : mode === 'local' ? t('玩家 2', 'P2') : role === 'guest' ? t('你', 'You') : t('对手', 'Rival');
+  /** 擂台赛：当前这场的两位选手 */
+  const liveMatch = arena?.liveMatchId
+    ? (arena.rounds[arena.roundIndex] || []).find((m) => m.id === arena.liveMatchId) || null
+    : null;
+  const pName = useCallback(
+    (id: string | null | undefined) => (arena?.players.find((p) => p.id === id)?.name ?? '—'),
+    [arena],
+  );
+
+  const nameA =
+    mode === 'arena'
+      ? liveMatch
+        ? pName(liveMatch.aId)
+        : t('选手 A', 'P-A')
+      : mode === 'ai'
+        ? t('你', 'You')
+        : mode === 'local'
+          ? t('玩家 1', 'P1')
+          : role === 'host'
+            ? t('你', 'You')
+            : t('对手', 'Rival');
+  const nameB =
+    mode === 'arena'
+      ? liveMatch
+        ? pName(liveMatch.bId)
+        : t('选手 B', 'P-B')
+      : mode === 'ai'
+        ? t('电脑', 'CPU')
+        : mode === 'local'
+          ? t('玩家 2', 'P2')
+          : role === 'guest'
+            ? t('你', 'You')
+            : t('对手', 'Rival');
 
   const myServeNow = (() => {
     if (!ui.serving) return false;
     if (mode === 'local') return true;
     if (mode === 'ai') return ui.server === 'a';
+    if (mode === 'arena') {
+      const side = arenaSideRef.current;
+      if (!side) return false;
+      return ui.server === side;
+    }
     return role === 'host' ? ui.server === 'a' : ui.server === 'b';
   })();
+
+  /** 擂台赛：我是不是这场的观众 */
+  const iAmSpectator = mode === 'arena' && !!liveMatch && arenaSideRef.current === null;
+  const champion = arena?.championId ? arena.players.find((p) => p.id === arena.championId) : null;
+  const isArenaHost = !!arena && arena.hostId === myId;
+  const aliveCount = arena?.players.filter((p) => p.alive).length ?? 0;
 
   const shareLink = `${window.location.origin}/pingpong`;
 
@@ -993,6 +1367,13 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
             {connected ? (peerHere ? t('对战中', 'Live') : t('等待对手', 'Waiting')) : t('未连接', 'Offline')}
           </span>
         ) : null}
+        {mode === 'arena' && screen === 'play' && arena ? (
+          <span className="pp-conn">
+            <i className={`pp-conn-dot${connected ? ' pp-on' : ''}`} />
+            {liveMatch?.isFinal ? t('总决赛', 'FINAL') : `${t('第', 'R')}${arena.roundIndex + 1}${t(' 轮', '')}`} ·{' '}
+            {t('先到', 'to')} {liveMatch?.target ?? 2} {t('分', 'pts')}
+          </span>
+        ) : null}
         <button
           type="button"
           className="pp-btn pp-btn-icon"
@@ -1006,9 +1387,30 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
           </svg>
         </button>
         {screen === 'play' ? (
-          <button type="button" className="pp-btn" onClick={backToMenu}>
-            {t('退出', 'Quit')}
-          </button>
+          mode === 'arena' ? (
+            <>
+              <button type="button" className="pp-btn" onClick={() => setScreen('arena')}>
+                {t('看对战表', 'Bracket')}
+              </button>
+              {!iAmSpectator ? (
+                <button
+                  type="button"
+                  className="pp-btn"
+                  onClick={() => {
+                    if (window.confirm(t('确定认输？这场会判你输并被淘汰。', 'Forfeit this match? You will be eliminated.'))) {
+                      arenaSend({action: 'arena.forfeit'});
+                    }
+                  }}
+                >
+                  {t('认输', 'Forfeit')}
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <button type="button" className="pp-btn" onClick={backToMenu}>
+              {t('退出', 'Quit')}
+            </button>
+          )
         ) : null}
       </header>
 
@@ -1069,6 +1471,31 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
                     type="button"
                     className="pp-mode"
                     onClick={() => {
+                      setNetError('');
+                      setSignup('create');
+                    }}
+                  >
+                    <span className="pp-mode-icon" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0V4z" />
+                        <path d="M18 5h2a2 2 0 0 1 0 4h-1M6 5H4a2 2 0 0 0 0 4h1" />
+                      </svg>
+                    </span>
+                    <span className="pp-mode-body">
+                      <span className="pp-mode-name">{t('擂台赛', 'Tournament')}</span>
+                      <span className="pp-mode-sub">
+                        {t('4~7 人淘汰赛，角逐冠军', '4–7 players, single elimination')}
+                      </span>
+                    </span>
+                    <span className="pp-mode-arrow" aria-hidden="true">
+                      →
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="pp-mode"
+                    onClick={() => {
                       setMode('online');
                       modeRef.current = 'online';
                       openWs({action: 'create'});
@@ -1123,7 +1550,7 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
                 </div>
 
                 <div className="pp-field">
-                  <span className="pp-label">{t('加入朋友的房间', 'Join a room')}</span>
+                  <span className="pp-label">{t('加入房间 / 擂台', 'Join a room or arena')}</span>
                   <div className="pp-code-row">
                     <input
                       className="pp-input"
@@ -1138,7 +1565,7 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
                     />
                     <button
                       type="button"
-                      className="pp-btn pp-btn-accent pp-btn-lg"
+                      className="pp-btn pp-btn-lg"
                       disabled={joinCode.length < 4}
                       onClick={() => {
                         setMode('online');
@@ -1146,7 +1573,19 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
                         openWs({action: 'join', code: joinCode});
                       }}
                     >
-                      {t('加入', 'Join')}
+                      {t('单挑', '1v1')}
+                    </button>
+                    <button
+                      type="button"
+                      className="pp-btn pp-btn-accent pp-btn-lg"
+                      disabled={joinCode.length < 4}
+                      onClick={() => {
+                        setArenaJoinCode(joinCode);
+                        setNetError('');
+                        setSignup('join');
+                      }}
+                    >
+                      {t('擂台', 'Arena')}
                     </button>
                   </div>
                 </div>
@@ -1281,8 +1720,336 @@ export default function PingPongPage({lang, onBack}: PingPongPageProps) {
               </div>
             </div>
           ) : null}
+
+          {/* ------------------- 擂台赛：观战角标 ------------------- */}
+          {screen === 'play' && iAmSpectator ? (
+            <div className="pp-spect">
+              <i />
+              {t('观战中', 'Spectating')} · {nameA} vs {nameB}
+            </div>
+          ) : null}
         </div>
       </div>
+
+      {/* ==================== 擂台赛主视图 ==================== */}
+      {screen === 'arena' && arena ? (
+        <div className="pp-arena">
+          <div className="pp-arena-head">
+            <div className="pp-arena-head-txt">
+              <span className="pp-panel-eyebrow">
+                {arena.phase === 'lobby'
+                  ? t('候场厅', 'Waiting room')
+                  : arena.phase === 'running'
+                    ? `${t('第', 'Round ')}${arena.roundIndex + 1}${t(' 轮', '')}`
+                    : t('赛事结束', 'Tournament over')}
+              </span>
+              <h2 className="pp-panel-title" style={{fontSize: 19}}>
+                {t('乒乓擂台赛', 'Table Tennis Arena')} · {arena.code}
+              </h2>
+            </div>
+            <div className="pp-bar-spacer" />
+            <span className="pp-conn">
+              <i className={`pp-conn-dot${connected ? ' pp-on' : ''}`} />
+              {arena.players.filter((p) => p.online).length}/{arena.max} {t('人', 'in')}
+            </span>
+            {arena.phase === 'lobby' && isArenaHost ? (
+              <button
+                type="button"
+                className="pp-btn pp-btn-accent"
+                disabled={arena.players.filter((p) => p.online).length < arena.min}
+                onClick={() => arenaSend({action: 'arena.start'})}
+              >
+                {t('开赛', 'Start')} ({arena.players.filter((p) => p.online).length}/{arena.min}+)
+              </button>
+            ) : null}
+            {arena.phase === 'done' && isArenaHost ? (
+              <button type="button" className="pp-btn pp-btn-accent" onClick={() => arenaSend({action: 'arena.reset'})}>
+                {t('再来一届', 'New tournament')}
+              </button>
+            ) : null}
+            <button type="button" className="pp-btn" onClick={backToMenu}>
+              {t('退出', 'Leave')}
+            </button>
+          </div>
+
+          <div className="pp-arena-scroll">
+            {netError ? <p className="pp-error">{netError}</p> : null}
+
+            {/* ---------- 冠军展示 ---------- */}
+            {arena.phase === 'done' && champion ? (
+              <div className="pp-champ">
+                <div className="pp-champ-cup" aria-hidden="true">
+                  🏆
+                </div>
+                <span className="pp-champ-eyebrow">{t('本届冠军', 'Champion')}</span>
+                <h1 className="pp-champ-name">{champion.name}</h1>
+                <p className="pp-champ-sub">
+                  {champion.id === myId ? t('是你！🎉 ', 'That is you! 🎉 ') : ''}
+                  {t('全胜', '')} {champion.wins} {t('场', 'wins')}
+                  {champion.byes > 0 ? ` · ${champion.byes} ${t('次轮空', 'byes')}` : ''} ·{' '}
+                  {t('总得分', 'points')} {champion.pointsFor}:{champion.pointsAgainst}
+                </p>
+                <div className="pp-champ-medals">
+                  {[...arena.players]
+                    .sort((a, b) => b.wins - a.wins || b.pointsFor - a.pointsFor)
+                    .map((p, i) => (
+                      <span className="pp-medal" key={p.id}>
+                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+                        <b>{p.name}</b>
+                        {p.wins}
+                        {t('胜', 'W')} {p.losses}
+                        {t('负', 'L')}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* ---------- 候场厅：门票 ---------- */}
+            {arena.phase === 'lobby' ? (
+              <>
+                <div className="pp-ticket">
+                  <div className="pp-ticket-stub">
+                    <span className="pp-ticket-label">{t('门票', 'Ticket')}</span>
+                    <span className="pp-ticket-no">{myTicket || '····'}</span>
+                  </div>
+                  <div>
+                    <div className="pp-ticket-who">
+                      {arena.players.find((p) => p.id === myId)?.name || t('（未入场）', '(not in)')}
+                    </div>
+                    <div className="pp-ticket-note">
+                      {t('把擂台号 ', 'Share arena code ')}
+                      <b style={{color: 'var(--pp-accent)'}}>{arena.code}</b>
+                      {t(' 发给朋友，他们在菜单里输入并点「擂台」就能报名。', ' — friends enter it and hit "Arena" to sign up.')}
+                    </div>
+                  </div>
+                  <div className="pp-bar-spacer" />
+                  <button
+                    type="button"
+                    className="pp-btn"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(`${shareLink}  ${t('擂台号', 'Arena')}: ${arena.code}`);
+                    }}
+                  >
+                    {t('复制邀请', 'Copy invite')}
+                  </button>
+                </div>
+                <p className="pp-note" style={{marginTop: 12}}>
+                  {t(
+                    `满 ${arena.min} 人就能开赛，最多 ${arena.max} 人。规则：两两单挑、输者淘汰，每场先到 2 分胜，总决赛先到 3 分胜；人数为奇数时会有人轮空直接晋级。`,
+                    `Start with ${arena.min}+ players, up to ${arena.max}. Single elimination 1v1 — first to 2 points wins a match, first to 3 wins the final. Odd counts get a bye.`,
+                  )}
+                </p>
+              </>
+            ) : null}
+
+            {/* ---------- 选手名单 ---------- */}
+            <div className="pp-sec">
+              <div className="pp-sec-title">
+                {t('选手', 'Players')} · {arena.players.length}
+                {arena.phase === 'running' ? ` · ${t('存活', 'alive')} ${aliveCount}` : ''}
+              </div>
+              <div className="pp-roster" style={{marginTop: 0}}>
+                {arena.players.map((p, i) => (
+                  <div
+                    key={p.id}
+                    className={`pp-roster-item${p.id === myId ? ' pp-me' : ''}${!p.alive ? ' pp-out' : ''}`}
+                  >
+                    <span className="pp-roster-seed">{i + 1}</span>
+                    <span className="pp-roster-body">
+                      <span className="pp-roster-name">
+                        {p.name}
+                        {p.id === myId ? t('（你）', ' (you)') : ''}
+                        {p.id === arena.hostId ? ' 👑' : ''}
+                      </span>
+                      <span className="pp-roster-meta">
+                        {arena.phase === 'lobby'
+                          ? `${t('门票', 'Ticket')} ${p.ticket}`
+                          : `${p.wins}${t('胜', 'W')} ${p.losses}${t('负', 'L')}${p.byes ? ` · ${p.byes}${t('轮空', 'bye')}` : ''}`}
+                      </span>
+                    </span>
+                    {!p.alive ? <span className="pp-roster-x">{t('淘汰', 'OUT')}</span> : null}
+                    {!p.online ? <span className="pp-roster-x">{t('离线', 'OFF')}</span> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ---------- 对战表 ---------- */}
+            {arena.rounds.length > 0 ? (
+              <div className="pp-sec">
+                <div className="pp-sec-title">{t('对战表', 'Bracket')}</div>
+                <div className="pp-bracket" style={{marginTop: 0}}>
+                  {arena.rounds.map((round, ri) => (
+                    <div className="pp-round" key={ri}>
+                      <div className="pp-round-title">
+                        {t('第', 'R')}
+                        {ri + 1}
+                        {t(' 轮', '')}
+                        {round.some((m) => m.isFinal) ? ` · ${t('总决赛', 'FINAL')}` : ''}
+                      </div>
+                      {round.map((m) => {
+                        const isLive = m.id === arena.liveMatchId;
+                        if (m.byeId) {
+                          return (
+                            <div className="pp-match pp-bye" key={m.id}>
+                              <div className="pp-match-tag">{t('轮空 · 直接晋级', 'BYE · advances')}</div>
+                              <div className="pp-match-row pp-won">
+                                <span className="pp-match-nm">{pName(m.byeId)}</span>
+                                <span className="pp-match-sc">—</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        const aWon = m.status === 'done' && m.winnerId === m.aId;
+                        const bWon = m.status === 'done' && m.winnerId === m.bId;
+                        return (
+                          <div className={`pp-match${isLive ? ' pp-live' : ''}`} key={m.id}>
+                            <div
+                              className={`pp-match-tag${isLive ? ' pp-tag-live' : ''}${m.isFinal && !isLive ? ' pp-tag-final' : ''}`}
+                            >
+                              {isLive ? t('● 正在比赛', '● LIVE') : m.status === 'done' ? t('已结束', 'DONE') : t('待战', 'UP NEXT')}
+                              <span style={{marginLeft: 'auto'}}>
+                                {t('先到', 'to')} {m.target} {t('分', 'pts')}
+                              </span>
+                            </div>
+                            <div className={`pp-match-row${aWon ? ' pp-won' : bWon ? ' pp-lost' : ''}`}>
+                              <span className="pp-match-nm">
+                                {pName(m.aId)}
+                                {m.aId === myId ? t('（你）', ' (you)') : ''}
+                              </span>
+                              <span className="pp-match-sc">{m.scoreA}</span>
+                            </div>
+                            <div className={`pp-match-row${bWon ? ' pp-won' : aWon ? ' pp-lost' : ''}`}>
+                              <span className="pp-match-nm">
+                                {pName(m.bId)}
+                                {m.bId === myId ? t('（你）', ' (you)') : ''}
+                              </span>
+                              <span className="pp-match-sc">{m.scoreB}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* ---------- 战报 ---------- */}
+            {arena.log.length > 0 ? (
+              <div className="pp-sec">
+                <div className="pp-sec-title">{t('战报', 'Match log')}</div>
+                <div className="pp-log">
+                  {[...arena.log].reverse().map((e, i) => (
+                    <div className="pp-log-item" key={i}>
+                      {e.round ? <span className="pp-log-r">R{e.round}</span> : null}
+                      {e.kind === 'match' || e.kind === 'walkover' || e.kind === 'forfeit' ? (
+                        <span>
+                          <b>{e.winner}</b> {t('击败', 'beat')} <b>{e.loser}</b>
+                          {e.kind === 'match' ? ` · ${e.aName} ${e.scoreA}:${e.scoreB} ${e.bName}` : ''}
+                          {e.isFinal ? ` · ${t('总决赛', 'FINAL')}` : ''}
+                          {e.kind === 'walkover' ? ` · ${t('对手掉线判负', 'opponent disconnected')}` : ''}
+                          {e.kind === 'forfeit' ? ` · ${t('对手认输', 'opponent forfeited')}` : ''}
+                        </span>
+                      ) : e.kind === 'bye' ? (
+                        <span>
+                          <b>{e.name}</b> {t('轮空，直接晋级', 'gets a bye')}
+                        </span>
+                      ) : e.kind === 'dropout' ? (
+                        <span>
+                          <b>{e.name}</b> {t('掉线退赛', 'dropped out')}
+                        </span>
+                      ) : e.kind === 'champion' ? (
+                        <span>
+                          🏆 <b>{e.name}</b> {t('夺冠！', 'is the champion!')}
+                        </span>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {arena.phase === 'lobby' && !isArenaHost ? (
+              <p className="pp-note" style={{marginTop: 16}}>
+                {t('等开擂台的人点「开赛」…', 'Waiting for the host to start…')}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {/* ==================== 擂台赛报名弹窗 ==================== */}
+      {signup ? (
+        <div className="pp-overlay" style={{position: 'fixed', zIndex: 40}}>
+          <div className="pp-panel">
+            <div className="pp-panel-head">
+              <span className="pp-panel-eyebrow">{t('擂台赛报名', 'Arena sign-up')}</span>
+              <h2 className="pp-panel-title">
+                {signup === 'create' ? t('开一个擂台', 'Open an arena') : t('报名参赛', 'Join the arena')}
+              </h2>
+              <p className="pp-panel-desc">
+                {t(
+                  '先给自己起个名字，报名成功会拿到一张门票。4 人即可开赛，最多 7 人：两两单挑、输者淘汰，每场先到 2 分，总决赛先到 3 分，最后角逐出冠军。',
+                  'Pick a name and you will get a ticket. 4 players to start, 7 max: single-elimination 1v1, first to 2 points per match, first to 3 in the final.',
+                )}
+              </p>
+            </div>
+
+            <div className="pp-field">
+              <span className="pp-label">{t('你的名字', 'Your name')}</span>
+              <input
+                className="pp-input"
+                style={{letterSpacing: 'normal', textAlign: 'left', fontSize: 15, textTransform: 'none'}}
+                value={arenaName}
+                maxLength={10}
+                placeholder={t('10 字以内', 'Up to 10 chars')}
+                onChange={(e) => setArenaName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (signup === 'create') arenaCreate();
+                    else arenaJoin();
+                  }
+                }}
+              />
+            </div>
+
+            {signup === 'join' ? (
+              <div className="pp-field">
+                <span className="pp-label">{t('擂台号', 'Arena code')}</span>
+                <input
+                  className="pp-input"
+                  value={arenaJoinCode}
+                  maxLength={4}
+                  placeholder="A1B2"
+                  autoComplete="off"
+                  spellCheck={false}
+                  onChange={(e) =>
+                    setArenaJoinCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase())
+                  }
+                />
+              </div>
+            ) : null}
+
+            {netError ? <p className="pp-error">{netError}</p> : null}
+
+            <div className="pp-row pp-row-end">
+              <button type="button" className="pp-btn pp-btn-lg" onClick={() => setSignup(null)}>
+                {t('取消', 'Cancel')}
+              </button>
+              <button
+                type="button"
+                className="pp-btn pp-btn-accent pp-btn-lg"
+                disabled={!arenaName.trim() || (signup === 'join' && arenaJoinCode.length < 4)}
+                onClick={() => (signup === 'create' ? arenaCreate() : arenaJoin())}
+              >
+                {signup === 'create' ? t('开擂台并领票', 'Open & get ticket') : t('领票参赛', 'Get ticket')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
