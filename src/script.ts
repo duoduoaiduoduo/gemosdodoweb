@@ -8,7 +8,6 @@ declare global {
     closeModal: (id: string) => void;
     setHomeDetailId: (id: string | null, options?: { replace?: boolean }) => void;
     filterTimeline: (type: string, el: HTMLElement) => void;
-    doLogin: () => void;
     adminAddTimeline: () => void;
     adminDeleteTimeline: (index: number) => void;
     adminAddBlock: (type: string) => void;
@@ -1555,17 +1554,6 @@ export function initApp() {
         }
     }
 
-    function doLogin() {
-        if (document.getElementById('adminUser').value === '__REDACTED_PHONE__' && document.getElementById('adminPass').value === '__REDACTED_ADMIN_SECRET__') {
-            closeModal('loginModal');
-            document.getElementById('adminUser').value = ''; document.getElementById('adminPass').value = '';
-            refreshAdminCowList();
-            refreshAdminTimelineList();
-            renderAdminBlocksEditor();
-            openModal('adminModal');
-        } else { alert(window.currentLang === 'en' ? 'Auth failed!' : '身份验证失败'); }
-    }
-
     function getRichBlockTypeLabel(type) {
         const isEn = window.currentLang === 'en';
         if (type === 'text') return isEn ? 'Text' : '文本';
@@ -1985,7 +1973,6 @@ export function initApp() {
     window.openModal = openModal;
     window.closeModal = closeModal;
     window.filterTimeline = filterTimeline;
-    window.doLogin = doLogin;
     window.adminAddTimeline = adminAddTimeline;
     window.adminDeleteTimeline = adminDeleteTimeline;
     window.adminAddBlock = adminAddBlock;

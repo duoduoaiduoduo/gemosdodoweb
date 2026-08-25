@@ -7,7 +7,6 @@ export type AppBridge = {
   closeModal?: (id: string) => void;
   setHomeDetailId?: (id: string | null, options?: { replace?: boolean }) => void;
   spawnCow?: () => void;
-  doLogin?: () => void;
   openDetailById?: (id: string) => void;
 };
 

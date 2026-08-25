@@ -18,8 +18,15 @@ const IP2Region = IP2RegionModule?.default || IP2RegionModule;
 dotenv.config({path: path.join(__dirname, '.env')});
 dotenv.config({path: path.join(__dirname, '.env.local'), override: true});
 
-const FALLBACK_ADMIN_SECRET = '__REDACTED_ADMIN_SECRET__';
-const RESOLVED_ADMIN_SECRET = (process.env.ADMIN_SECRET || '').trim() || FALLBACK_ADMIN_SECRET;
+/**
+ * 管理员口令。**故意不提供任何硬编码兜底口令** —— 以前这里留了一个明文默认值，
+ * 而 server.js 在公开仓库里，等于把后台密码发到了互联网上。
+ * 现在的策略是 fail-closed：没配 ADMIN_SECRET 就让所有管理接口一律拒绝，
+ * 并在启动时大声告警，宁可后台用不了，也不能出现「谁都能进」。
+ * 配置方式：.env.local 写 ADMIN_SECRET=xxx，或线上 `pm2 set <app>:ADMIN_SECRET xxx`。
+ */
+const RESOLVED_ADMIN_SECRET = (process.env.ADMIN_SECRET || '').trim();
+const ADMIN_SECRET_CONFIGURED = RESOLVED_ADMIN_SECRET.length > 0;
 const ALLOWED_COVER_ASPECTS = new Set(['3:4', '4:3', '1:1', '16:9', '9:16']);
 const ALLOWED_TIMELINE_CATEGORIES = new Set(['project', 'video', 'edu']);
 const maxUploadMb = Number(process.env.MAX_UPLOAD_MB || 0);
@@ -2099,6 +2106,11 @@ const extractAdminSecret = (req) => {
 };
 
 const requireAdminSecret = (req, res, next) => {
+  // fail-closed：没配 ADMIN_SECRET 时一律拒绝，绝不放行
+  if (!ADMIN_SECRET_CONFIGURED) {
+    res.status(503).json({success: false, error: 'Admin API disabled: ADMIN_SECRET is not configured on the server.'});
+    return;
+  }
   const provided = extractAdminSecret(req);
   if (!provided || provided !== RESOLVED_ADMIN_SECRET) {
     res.status(401).json({success: false, error: 'Unauthorized'});
@@ -2122,7 +2134,7 @@ app.post('/api/admin/auth/verify', (req, res) => {
     return;
   }
   const provided = extractAdminSecret(req);
-  const ok = !!provided && provided === RESOLVED_ADMIN_SECRET;
+  const ok = ADMIN_SECRET_CONFIGURED && !!provided && provided === RESOLVED_ADMIN_SECRET;
   markAuthAttempt(clientKey, ok);
   auditAuth(req, ok, ok ? 'verified' : 'invalid-secret');
   if (!ok) {
@@ -4350,10 +4362,19 @@ setInterval(() => {
 });
 
 server.listen(PORT, () => {
-  if ((process.env.ADMIN_SECRET || '').trim()) {
-    console.log('Admin auth mode: ENV ADMIN_SECRET');
+  if (ADMIN_SECRET_CONFIGURED) {
+    // 只报长度，不打印口令本身（日志也可能被别人看到）
+    console.log(`Admin auth: ENV ADMIN_SECRET configured (length ${RESOLVED_ADMIN_SECRET.length})`);
   } else {
-    console.log(`Admin auth mode: FALLBACK secret (${FALLBACK_ADMIN_SECRET})`);
+    console.warn('');
+    console.warn('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.warn('!! 警告：未配置 ADMIN_SECRET —— 所有管理接口已被禁用（返回 503）。');
+    console.warn('!! 后台将无法登录。请设置后重启：');
+    console.warn('!!   本地：在 .env.local 写 ADMIN_SECRET=<你的口令>');
+    console.warn('!!   线上：pm2 set gemosdodoweb-site:ADMIN_SECRET <你的口令> && pm2 restart gemosdodoweb-site');
+    console.warn('!! 注意：本项目不再提供任何默认口令（旧的硬编码兜底已移除）。');
+    console.warn('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.warn('');
   }
   if (uploadMaxBytes > 0) {
     console.log(`Upload file limit: ${maxUploadMb}MB per file`);
