@@ -3229,11 +3229,11 @@ const TUCAO_OFFLINE_CAP_H = 12; // 离线最多累计 12 小时收益，防止�
 /** 吐槽情绪：不同情绪产出略有差异，鼓励换着骂 */
 const TUCAO_MOODS = {
   rage: {label: '愤怒', emoji: '😡', gain: 14},
-  tired: {label: '疲惫', emoji: '😮‍💨', gain: 10},
+  tired: {label: '疲惫', emoji: '😩', gain: 10},
   speechless: {label: '无语', emoji: '🙃', gain: 11},
-  broken: {label: '崩溃', emoji: '🫠', gain: 15},
+  broken: {label: '崩溃', emoji: '🤯', gain: 15},
   funny: {label: '好笑', emoji: '😂', gain: 12},
-  melt: {label: '融化', emoji: '🥹', gain: 9},
+  melt: {label: '融化', emoji: '🥺', gain: 9},
 };
 
 /** 座位配色（暖色系，和站点调性一致） */
@@ -3244,15 +3244,15 @@ const TUCAO_SEAT_COLORS = ['#e07b00', '#c2410c', '#a16207', '#4d7c0f', '#0f766e'
  * cost: 怨气售价；rate: 每分钟产怨气；w/h: 逻辑尺寸；需要前置解锁数量 req。
  */
 const TUCAO_FURNITURE = [
-  {id: 'desk', name: '工位', emoji: '🪑', cost: 0, rate: 0.6, w: 96, h: 96, desc: '一切怨气的起点'},
-  {id: 'plant', name: '半死绿萝', emoji: '🪴', cost: 60, rate: 1.2, w: 84, h: 96, desc: '你忘了浇水，它记得'},
+  {id: 'desk', name: '工位', emoji: '💻', cost: 0, rate: 0.6, w: 96, h: 96, desc: '一切怨气的起点'},
+  {id: 'plant', name: '半死绿萝', emoji: '🌿', cost: 60, rate: 1.2, w: 84, h: 96, desc: '你忘了浇水，它记得'},
   {id: 'sofa', name: '塌陷沙发', emoji: '🛋️', cost: 180, rate: 2.6, w: 132, h: 96, desc: '坐下就不想站起来'},
   {id: 'coffee', name: '咖啡机', emoji: '☕', cost: 420, rate: 5, w: 88, h: 104, desc: '续命，也续班'},
   {id: 'whiteboard', name: '需求白板', emoji: '📋', cost: 900, rate: 9, w: 120, h: 116, desc: '写满了改了八版的需求'},
   {id: 'printer', name: '卡纸打印机', emoji: '🖨️', cost: 1800, rate: 16, w: 104, h: 100, desc: '它只在你着急时卡纸'},
   {id: 'cat', name: '摸鱼猫', emoji: '🐈', cost: 3200, rate: 27, w: 92, h: 92, desc: '公司唯一不加班的员工'},
   {id: 'lamp', name: '加班长明灯', emoji: '💡', cost: 5600, rate: 44, w: 80, h: 120, desc: '这层楼最后灭的那盏'},
-  {id: 'window', name: '落地窗', emoji: '🪟', cost: 9500, rate: 70, w: 148, h: 132, desc: '看得见外面，出不去'},
+  {id: 'window', name: '落地窗', emoji: '🌇', cost: 9500, rate: 70, w: 148, h: 132, desc: '看得见外面，出不去'},
   {id: 'fishtank', name: '办公室鱼缸', emoji: '🐠', cost: 16000, rate: 112, w: 136, h: 108, desc: '鱼在游，你在忙'},
   {id: 'bosspic', name: '老板画像', emoji: '🖼️', cost: 27000, rate: 180, w: 108, h: 116, desc: '它的眼睛会跟着你'},
   {id: 'server', name: '嗡嗡服务器', emoji: '🖥️', cost: 45000, rate: 285, w: 112, h: 128, desc: '半夜告警的罪魁祸首'},

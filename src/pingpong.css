@@ -18,6 +18,8 @@
   --pp-accent-ink: #ffffff;
   --pp-table: #e8e5de;
   --pp-table-line: #cfc9bc;
+  /* color-mix() 兜底：老浏览器（Chrome<111）会丢弃整行 background，见 .pp-overlay */
+  --pp-overlay-fb: rgba(244, 242, 237, 0.88);
 
   position: fixed;
   inset: 0;
@@ -25,7 +27,7 @@
   background: var(--pp-paper);
   color: var(--pp-ink);
   font-family: -apple-system, 'SF Pro Text', 'SF Pro Display', BlinkMacSystemFont,
-    'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   -webkit-font-smoothing: antialiased;
   display: flex;
   flex-direction: column;
@@ -48,6 +50,7 @@
     --pp-accent-ink: #1a1512;
     --pp-table: #221f1c;
     --pp-table-line: #3a342e;
+    --pp-overlay-fb: rgba(22, 20, 18, 0.88); /* color-mix 兜底 */
   }
 }
 
@@ -248,10 +251,20 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  /* 纯色半透明，不用渐变 */
-  background: color-mix(in srgb, var(--pp-paper) 88%, transparent);
+  /* 纯色半透明，不用渐变。
+     注意：这里必须用 @supports 门控 color-mix()，不能靠「写两行声明」兜底 ——
+     因为 color-mix() 里含 var()，老浏览器解析时无法判定其无效，会先接受该声明，
+     等变量代入后才发现不认识 color-mix，此时属性直接重置为初始值 transparent，
+     并不会回退到上一行。 */
+  background: var(--pp-overlay-fb, rgba(244, 242, 237, 0.88));
   backdrop-filter: blur(3px);
   z-index: 5;
+}
+
+@supports (color: color-mix(in srgb, red 50%, transparent)) {
+  .pp-overlay {
+    background: color-mix(in srgb, var(--pp-paper) 88%, transparent);
+  }
 }
 
 .pp-panel {

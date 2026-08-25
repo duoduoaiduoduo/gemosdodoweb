@@ -20,6 +20,8 @@
   --tc-room: #e8e5de;
   --tc-room-floor: #ddd8ce;
   --tc-room-line: #cfc9bc;
+  /* color-mix() 兜底：老浏览器（Chrome<111）会丢弃整行 background，见 .tc-overlay */
+  --tc-overlay-fb: rgba(244, 242, 237, 0.86);
 
   position: fixed;
   inset: 0;
@@ -27,7 +29,7 @@
   background: var(--tc-paper);
   color: var(--tc-ink);
   font-family: -apple-system, 'SF Pro Text', 'SF Pro Display', BlinkMacSystemFont,
-    'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   -webkit-font-smoothing: antialiased;
   display: flex;
   flex-direction: column;
@@ -52,6 +54,7 @@
     --tc-room: #221f1c;
     --tc-room-floor: #1b1917;
     --tc-room-line: #3a342e;
+    --tc-overlay-fb: rgba(22, 20, 18, 0.86); /* color-mix 兜底 */
   }
 }
 
@@ -846,8 +849,15 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: color-mix(in srgb, var(--tc-paper) 86%, transparent);
+  /* 必须用 @supports 门控 color-mix()，不能靠「写两行」兜底，原因见 pingpong.css */
+  background: var(--tc-overlay-fb, rgba(244, 242, 237, 0.86));
   backdrop-filter: blur(3px);
+}
+
+@supports (color: color-mix(in srgb, red 50%, transparent)) {
+  .tc-overlay {
+    background: color-mix(in srgb, var(--tc-paper) 86%, transparent);
+  }
 }
 .tc-panel {
   width: 100%;

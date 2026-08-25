@@ -3,6 +3,21 @@
 :root {
     --primary-color: #000000;
     --accent-color: #666666;
+
+    /* ------------------------------------------------------------------
+       color-mix() 兜底色（浅色主题）
+       不支持 color-mix() 的浏览器（Chrome/Edge < 111，含 Windows 7/8.1 最高
+       只能装到的 Chrome 109）需要一个静态替代色。基础规则统一用这些 --fb-*
+       变量，文件末尾再用 @supports 为支持的浏览器升级成精确混色版。
+       （不能用「同一规则写两行声明」兜底，原因见文件末尾 @supports 处注释。）
+       ------------------------------------------------------------------ */
+    --fb-primary-30: rgba(0, 0, 0, 0.30);
+    --fb-primary-18: rgba(0, 0, 0, 0.18);
+    --fb-primary-10: rgba(0, 0, 0, 0.10);
+    --fb-primary-08: rgba(0, 0, 0, 0.08);
+    --fb-track-hover: rgba(0, 0, 0, 0.55);
+    --fb-skeleton-mid: rgba(128, 128, 128, 0.06);
+
     --bg-color: #ffffff;
     --panel-bg: #f8f9fa;
     --text-color: #000000;
@@ -119,6 +134,15 @@
     :root {
         --primary-color: #ffffff;
         --accent-color: #aaaaaa;
+
+        /* color-mix() 兜底色（深色主题）—— 与 :root 同名，随主题切换 */
+        --fb-primary-30: rgba(255, 255, 255, 0.30);
+        --fb-primary-18: rgba(255, 255, 255, 0.18);
+        --fb-primary-10: rgba(255, 255, 255, 0.10);
+        --fb-primary-08: rgba(255, 255, 255, 0.08);
+        --fb-track-hover: rgba(255, 255, 255, 0.55);
+        --fb-skeleton-mid: rgba(255, 255, 255, 0.18);
+
         --bg-color: #111111;
         --panel-bg: #1e1e1e;
         --text-color: #ffffff;
@@ -144,7 +168,7 @@ body, html {
     overflow-x: hidden;
     overflow-y: auto; 
     background-color: var(--bg-color);
-    font-family: "PingFang SC", "Microsoft YaHei", "Inter", sans-serif;
+    font-family: "PingFang SC", "Microsoft YaHei", "Inter", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     color: var(--primary-color);
 }
 
@@ -5990,10 +6014,11 @@ body.layout-desktop .pdf-card:hover {
     position: absolute;
     inset: 0;
     border-radius: 6px;
+    /* 兜底：不支持 color-mix() 时整条渐变会失效，先给一条纯色版渐变 */
     background: linear-gradient(
         90deg,
         var(--border-color, rgba(128,128,128,0.12)) 25%,
-        color-mix(in srgb, var(--border-color, rgba(128,128,128,0.12)) 40%, white 60%) 50%,
+        var(--fb-skeleton-mid, rgba(128,128,128,0.06)) 50%,
         var(--border-color, rgba(128,128,128,0.12)) 75%
     );
     background-size: 200% 100%;
@@ -6062,7 +6087,7 @@ body.layout-desktop .pdf-card:hover {
 
 .awards-timeline-track:hover,
 .awards-timeline-track:focus-visible {
-    background: color-mix(in srgb, var(--border-color) 50%, var(--primary-color) 50%);
+    background: var(--fb-track-hover, rgba(0, 0, 0, 0.55));
     outline: none;
 }
 
@@ -6095,13 +6120,13 @@ body.layout-desktop .pdf-card:hover {
     transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
                 background 0.2s,
                 box-shadow 0.2s;
-    box-shadow: 0 0 0 0px color-mix(in srgb, var(--primary-color) 30%, transparent);
+    box-shadow: 0 0 0 0px var(--fb-primary-30, rgba(0, 0, 0, 0.30));
 }
 
 .awards-timeline-track:hover .awards-timeline-thumb {
     transform: translate(-50%, -50%) scale(1.5);
     background: var(--accent-color, var(--primary-color));
-    box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary-color) 18%, transparent);
+    box-shadow: 0 0 0 6px var(--fb-primary-18, rgba(0, 0, 0, 0.18));
 }
 
 .awards-timeline-year-marker {
@@ -6617,7 +6642,7 @@ body.layout-desktop .pdf-card:hover {
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    background: color-mix(in srgb, var(--primary-color) 8%, transparent);
+    background: var(--fb-primary-08, rgba(0, 0, 0, 0.08));
     color: var(--primary-color);
     opacity: 0.75;
 }
@@ -6651,7 +6676,7 @@ body.layout-desktop .pdf-card:hover {
 
 .awards-hint-dismiss:hover {
     opacity: 0.8;
-    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+    background: var(--fb-primary-10, rgba(0, 0, 0, 0.10));
 }
 
 /* Stack above timeline on mobile where bottom space is tight */
@@ -7180,6 +7205,7 @@ body.layout-phone,
 body.layout-tablet {
   /* 默认 = 暖黑 */
   --st-bg: #141210;
+  --fb-st-bar: rgba(20, 18, 16, 0.78); /* color-mix 兜底 */
   --st-bg-2: #1b1712;
   --st-ink: #F4F1EA;
   --st-ink-2: #B8B2A6;
@@ -7195,13 +7221,14 @@ body.layout-tablet {
   --st-dock-bg: rgba(30,27,23,0.82);
   --st-radius: 26px;
   --st-safe: 22px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Helvetica Neue", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 @media (prefers-color-scheme: light) {
   body.layout-phone,
   body.layout-tablet {
     --st-bg: #F5F3EE;         /* 暖白纸 */
+    --fb-st-bar: rgba(245, 243, 238, 0.78); /* color-mix 兜底 */
     --st-bg-2: #EDEAE3;
     --st-ink: #1C1A16;
     --st-ink-2: #4A463F;
@@ -8006,6 +8033,7 @@ body.layout-phone .art-marquee { display: none !important; }
 .vibecoding-page {
   /* 默认 = 暖白纸（浅色） */
   --vc-bg: #F6F5F1;
+  --fb-vc-scrim: rgba(246, 245, 241, 0.62); /* color-mix 兜底 */
   --vc-bg-soft: #FBFAF7;
   --vc-surface: #FFFFFF;
   --vc-ink: #16150F;
@@ -8023,13 +8051,14 @@ body.layout-phone .art-marquee { display: none !important; }
   padding: 26px 32px 88px;
   background: var(--vc-bg);
   color: var(--vc-ink);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Helvetica Neue", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   -webkit-font-smoothing: antialiased;
 }
 
 @media (prefers-color-scheme: dark) {
   .vibecoding-page {
     --vc-bg: #0C0B09;
+    --fb-vc-scrim: rgba(12, 11, 9, 0.62); /* color-mix 兜底 */
     --vc-bg-soft: #131210;
     --vc-surface: #17150F;
     --vc-ink: #F4F1EA;
@@ -8178,7 +8207,7 @@ body.layout-phone .art-marquee { display: none !important; }
 .vibecoding-hero-copy h1 {
   margin: 22px 0 0;
   max-width: 20ch;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   font-weight: 600;
   font-size: clamp(2.6rem, 5.4vw, 4.8rem);
   line-height: 1.04;
@@ -8504,7 +8533,7 @@ body.layout-phone .art-marquee { display: none !important; }
   position: fixed;
   inset: 0;
   z-index: 240;
-  background: color-mix(in srgb, var(--vc-bg) 62%, transparent);
+  background: var(--fb-vc-scrim, rgba(12, 11, 9, 0.62));
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
   backdrop-filter: blur(16px) saturate(1.1);
   display: flex;
@@ -9084,7 +9113,7 @@ body.layout-phone .vibecoding-topbar {
   display: flex !important; flex-direction: row !important; align-items: center !important; gap: 14px;
   padding: 16px var(--st-safe) 14px !important;
   margin: 0 !important;
-  background: color-mix(in srgb, var(--st-bg) 78%, transparent) !important;
+  background: var(--fb-st-bar, rgba(20, 18, 16, 0.78)) !important;
   border-bottom: 0.5px solid var(--st-hair) !important;
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
@@ -9314,7 +9343,7 @@ body.layout-phone .vibecoding-detail-close {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', BlinkMacSystemFont, 'Segoe UI', sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   color: var(--ink);
   z-index: 40;
   background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 34%, var(--sky-low) 58%);
@@ -10321,4 +10350,57 @@ body.layout-phone .vibecoding-detail-close {
   .pasture-root .pasture-stars, .pasture-root .pasture-fireflies {
     transition-duration: 0.001s !important;
   }
+}
+
+/* ==========================================================================
+   color-mix() 增强层
+   --------------------------------------------------------------------------
+   基础规则里用的是静态 rgba 兜底（--fb-* 变量），这里再用 @supports 把支持
+   color-mix() 的浏览器升级成随主题精确混色的版本。
+
+   为什么必须用 @supports 而不是「同一条规则里写两行声明」：
+   color-mix() 的参数里含 var()，老浏览器在解析阶段无法判定该值是否合法，会先
+   接受这条声明；等到变量代入后才发现不认识 color-mix，此时该属性会「在计算值
+   阶段失效」并重置为初始值（background 变 transparent），**不会**回退到上一行。
+   所以两行声明的经典兜底写法在这种场景下是无效的。
+   ========================================================================== */
+@supports (color: color-mix(in srgb, red 50%, transparent)) {
+    .card-image-skeleton {
+        background: linear-gradient(
+            90deg,
+            var(--border-color, rgba(128,128,128,0.12)) 25%,
+            color-mix(in srgb, var(--border-color, rgba(128,128,128,0.12)) 40%, white 60%) 50%,
+            var(--border-color, rgba(128,128,128,0.12)) 75%
+        );
+        background-size: 200% 100%;
+    }
+
+    .awards-timeline-track:hover,
+    .awards-timeline-track:focus-visible {
+        background: color-mix(in srgb, var(--border-color) 50%, var(--primary-color) 50%);
+    }
+
+    .awards-timeline-thumb {
+        box-shadow: 0 0 0 0px color-mix(in srgb, var(--primary-color) 30%, transparent);
+    }
+
+    .awards-timeline-track:hover .awards-timeline-thumb {
+        box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary-color) 18%, transparent);
+    }
+
+    .awards-hint-icon {
+        background: color-mix(in srgb, var(--primary-color) 8%, transparent);
+    }
+
+    .awards-hint-dismiss:hover {
+        background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+    }
+
+    .vibecoding-detail-overlay {
+        background: color-mix(in srgb, var(--vc-bg) 62%, transparent);
+    }
+
+    body.layout-phone .vibecoding-topbar {
+        background: color-mix(in srgb, var(--st-bg) 78%, transparent) !important;
+    }
 }
