@@ -1,778 +1,198 @@
-import {useEffect, useMemo, useRef, useState, useCallback} from 'react';
-import type {CSSProperties, PointerEvent as ReactPointerEvent, MouseEvent as ReactMouseEvent} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode} from 'react';
+import {ArrowLeft, Bell, Check, ChevronRight, CloudRain, Flower2, Heart, Leaf, Moon, Pause, Play, RotateCcw, Sun, Users, X} from 'lucide-react';
+import {Cow, hosts, type CowData} from './pasture/Cow';
+import {Blossom, Tree} from './pasture/Island';
+import './pasture/pasture.css';
 
-type Lang = 'zh' | 'en';
-
-type CowData = {
-  id?: string;
-  name?: string;
-  message?: string;
-  bodyColor?: string;
-  spotColor?: string;
-  hornColor?: string;
-  noseColor?: string;
-  legColor?: string;
-  hoofColor?: string;
-  tailColor?: string;
-  eyeColor?: string;
-  eyeStyle?: string;
-  spotType?: string;
-  bodyShape?: string;
-  hornStyle?: string;
-  tailStyle?: string;
-  createdAt?: string;
+type Point = {x: number; y: number};
+type Agent = Point & {key: string; cow: CowData; target: Point; facing: number; phase: number; eat: number; heart: number; summonUntil?: number};
+type Seed = Point & {id: number; born: number; bites: number};
+type Flower = Point & {id: number};
+const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, n));
+const fieldPoint = (x: number, y: number): Point => {
+  const dx = (x - 50) / 40, dy = (y - 53) / 33, d = Math.max(1, Math.hypot(dx, dy));
+  return {x: 50 + dx / d * 40, y: 53 + dy / d * 33};
 };
+const wander = (): Point => {const angle = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * .87; return {x: 50 + Math.cos(angle) * 40 * r, y: 53 + Math.sin(angle) * 33 * r};};
+const mix = (a: number[], b: number[], v: number) => `rgb(${a.map((n, i) => Math.round(n + (b[i] - n) * v)).join(',')})`;
 
-type PasturePageProps = {
-  lang: Lang;
-  onBack: () => void;
-  onToggleLang: () => void;
-};
-
-// Pure SVG generator — mirrors getCowSVG in script.ts so the pasture cows
-// look identical to the ones floating on the home page.
-function getCowSVG(
-  bodyColor: string,
-  spotColor: string,
-  hornColor: string,
-  noseColor: string,
-  legColor: string,
-  hoofColor: string,
-  tailColor: string,
-  eyeColor: string,
-  eyeStyle: string,
-  spotType: string,
-  bodyShape: string,
-  hornStyle: string,
-  tailStyle: string,
-): string {
-  const outline = '#2f2a26';
-  const bodyX = bodyShape === 'chubby' ? 13 : 17;
-  const bodyY = bodyShape === 'chubby' ? 39 : 41;
-  const bodyW = bodyShape === 'chubby' ? 72 : 62;
-  const bodyH = bodyShape === 'chubby' ? 43 : 37;
-  const bodyRx = bodyShape === 'boxy' ? 9 : bodyShape === 'chubby' ? 23 : 18;
-  const bodySVG = `<rect x="${bodyX}" y="${bodyY}" width="${bodyW}" height="${bodyH}" rx="${bodyRx}" fill="${bodyColor}" stroke="${outline}" stroke-width="2.4"/>`;
-
-  let hornSVG = '';
-  if (hornStyle === 'long') {
-    hornSVG = `<path d="M 70 30 Q 55 8 76 10" stroke="${hornColor}" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 89 30 Q 104 8 83 10" stroke="${hornColor}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
-  } else if (hornStyle === 'devil') {
-    hornSVG = `<path d="M 71 31 L 65 15 L 76 24 Z" fill="${hornColor}" stroke="${outline}" stroke-width="1.6" stroke-linejoin="round"/><path d="M 88 31 L 94 15 L 83 24 Z" fill="${hornColor}" stroke="${outline}" stroke-width="1.6" stroke-linejoin="round"/>`;
-  } else {
-    hornSVG = `<path d="M 71 30 Q 68 20 74 20" stroke="${hornColor}" stroke-width="3.6" fill="none" stroke-linecap="round"/><path d="M 88 30 Q 91 20 85 20" stroke="${hornColor}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
-  }
-
-  const tailTipColor = (spotColor === 'none' ? tailColor : spotColor);
-  let tailSVG = '';
-  if (tailStyle === 'curly') {
-    tailSVG = `<path d="M 19 48 C 5 47 4 58 14 59 C 22 60 22 70 10 70" stroke="${tailColor}" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="10" cy="70" r="4.6" fill="${tailTipColor}" stroke="${outline}" stroke-width="1.4"/>`;
-  } else if (tailStyle === 'lightning') {
-    tailSVG = `<polyline points="19,48 12,54 17,60 8,70" stroke="${tailColor}" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><polygon points="8,70 4,76 13,76" fill="${tailTipColor}" stroke="${outline}" stroke-width="1.4" stroke-linejoin="round"/>`;
-  } else {
-    tailSVG = `<path d="M 19 48 Q 8 49 9 64" stroke="${tailColor}" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="9" cy="64" r="4.6" fill="${tailTipColor}" stroke="${outline}" stroke-width="1.4"/>`;
-  }
-
-  let eyeSVG = '';
-  if (eyeStyle === 'happy') {
-    eyeSVG = `<path d="M 73 39 Q 75.5 36 78 39 M 84 39 Q 86.5 36 89 39" stroke="${eyeColor}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
-  } else if (eyeStyle === 'sleepy') {
-    eyeSVG = `<path d="M 73 40 Q 75.5 42 78 40 M 84 40 Q 86.5 42 89 40" stroke="${eyeColor}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
-  } else {
-    eyeSVG = `<circle cx="76" cy="39" r="2.8" fill="${eyeColor}"/><circle cx="87" cy="39" r="2.8" fill="${eyeColor}"/><circle cx="77" cy="38" r="0.8" fill="#fff" opacity="0.85"/><circle cx="88" cy="38" r="0.8" fill="#fff" opacity="0.85"/>`;
-  }
-
-  let spotSVG = '';
-  if (spotType === 'classic') {
-    spotSVG = `<circle cx="35" cy="56" r="8.5" fill="${spotColor}"/><path d="M 58 44 Q 69 44 68 55 Q 58 61 53 50 Z" fill="${spotColor}"/>`;
-  } else if (spotType === 'heart') {
-    spotSVG = `<path d="M 45 53 A 5.5 5.5 0 0 1 54 53 A 5.5 5.5 0 0 1 63 53 Q 63 62 54 70 Q 45 62 45 53 Z" fill="${spotColor}"/>`;
-  }
-
-  const earSVG = `<path d="M 69 35 Q 58 30 60 42 Q 66 46 72 41 Z" fill="${bodyColor}" stroke="${outline}" stroke-width="2" stroke-linejoin="round"/><path d="M 90 35 Q 101 30 99 42 Q 93 46 87 41 Z" fill="${bodyColor}" stroke="${outline}" stroke-width="2" stroke-linejoin="round"/>`;
-  const legSVG = `<rect x="28" y="72" width="8" height="16" rx="4" fill="${legColor}"/><rect x="47" y="72" width="8" height="16" rx="4" fill="${legColor}"/><rect x="67" y="72" width="8" height="16" rx="4" fill="${legColor}"/><rect x="28" y="84" width="8" height="6" rx="3" fill="${hoofColor}"/><rect x="47" y="84" width="8" height="6" rx="3" fill="${hoofColor}"/><rect x="67" y="84" width="8" height="6" rx="3" fill="${hoofColor}"/>`;
-  const headSVG = `<rect x="66" y="29" width="31" height="31" rx="14" fill="${bodyColor}" stroke="${outline}" stroke-width="2.4"/>`;
-  const muzzleSVG = `<rect x="72" y="43" width="25" height="17" rx="8.5" fill="${noseColor}" stroke="${outline}" stroke-width="1.8"/><circle cx="79" cy="50" r="1.8" fill="rgba(0,0,0,0.34)"/><circle cx="89" cy="50" r="1.8" fill="rgba(0,0,0,0.34)"/>`;
-
-  return `<svg viewBox="0 0 110 100" width="100%" height="100%" stroke-linejoin="round">${tailSVG}${legSVG}${bodySVG}${spotSVG}${earSVG}${headSVG}${muzzleSVG}${eyeSVG}${hornSVG}</svg>`;
+function Sheet({title, children, close}: {title: string; children: ReactNode; close: () => void}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useLayoutEffect(() => {ref.current?.showModal(); return () => ref.current?.close();}, []);
+  return <dialog ref={ref} className="pg-sheet" aria-label={title} onCancel={(e) => {e.preventDefault(); close();}} onClick={(e) => {if (e.target === e.currentTarget) close();}}><div className="pg-sheet-inner"><header><h2>{title}</h2><button className="pg-icon" onClick={close} aria-label="Close / 关闭"><X size={20} /></button></header>{children}</div></dialog>;
 }
 
-function cowSVGFor(c: CowData): string {
-  return getCowSVG(
-    c.bodyColor || '#ffffff',
-    c.spotColor || 'none',
-    c.hornColor || '#f2c94c',
-    c.noseColor || '#f6b8c4',
-    c.legColor || (c.bodyColor || '#ffffff'),
-    c.hoofColor || '#333333',
-    c.tailColor || (c.bodyColor || '#ffffff'),
-    c.eyeColor || '#1a1a1a',
-    c.eyeStyle || 'normal',
-    c.spotType || 'none',
-    c.bodyShape || 'normal',
-    c.hornStyle || 'normal',
-    c.tailStyle || 'normal',
-  );
-}
-
-// Deterministic pseudo-random from a string seed.
-function hashSeed(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) / 4294967295;
-}
-
-// ---- Simulation types ----
-// The lawn is a virtual field in percentage coordinates (0..100 on both axes).
-// x/y are the cow's foot position on that field. Depth (y) drives scale + z.
-type CowState = 'wander' | 'graze' | 'idle' | 'seekFood' | 'eat';
-
-type Mood = 'content' | 'happy' | 'bored';
-
-type CowAgent = {
-  data: CowData;
-  key: string;
-  x: number; // 0..100 field %
-  y: number; // 0..100 field % (bigger = nearer/bottom)
-  tx: number; // target x
-  ty: number; // target y
-  facing: 1 | -1; // 1 = right, -1 = left
-  speed: number; // % per second
-  state: CowState;
-  stateT: number; // seconds remaining in current state
-  scaleBase: number; // per-cow size variety
-  fed: number; // times fed
-  mood: Mood;
-  moodT: number; // seconds since last fed (for boredom)
-  bobPhase: number; // walking bob offset
-  el?: HTMLButtonElement | null;
-  emoteT: number; // emote bubble timer
-  emote: string; // current emote glyph
-};
-
-type FoodSprite = {
-  id: number;
-  x: number;
-  y: number;
-  amount: number; // bites left
-  born: number; // timestamp
-};
-
-type Critter = {
-  id: number;
-  kind: 'bird' | 'butterfly' | 'rabbit';
-  born: number;
-  dur: number;
-  fromLeft: boolean;
-  y: number; // vertical band %
-};
-
-// Field bounds (in %). Keep cows off the very edges & fence.
-const FX_MIN = 6;
-const FX_MAX = 92;
-const FY_MIN = 20; // top of grazable lawn (below fence)
-const FY_MAX = 86; // bottom
-
-function clamp(v: number, lo: number, hi: number) {
-  return v < lo ? lo : v > hi ? hi : v;
-}
-
-// scale from depth: far (small y) -> small, near (big y) -> big
-function depthScale(y: number, base: number) {
-  const tNorm = (y - FY_MIN) / (FY_MAX - FY_MIN); // 0..1
-  return (0.72 + tNorm * 0.5) * base;
-}
-
-const TIME_PHASES = ['day', 'dusk', 'night', 'dawn'] as const;
-type TimePhase = (typeof TIME_PHASES)[number];
-
-export default function PasturePage({lang, onBack, onToggleLang}: PasturePageProps) {
-  const t = useCallback((zh: string, en: string) => (lang === 'en' ? en : zh), [lang]);
+export default function PasturePage({lang, onBack, onToggleLang}: {lang: 'zh' | 'en'; onBack: () => void; onToggleLang: () => void}) {
+  const t = useCallback((zh: string, en: string) => lang === 'en' ? en : zh, [lang]);
   const [cows, setCows] = useState<CowData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [tool, setTool] = useState<'feed' | 'flower'>('feed');
+  const [rain, setRain] = useState(false);
+  const [time, setTime] = useState(28);
+  const [autoTime, setAutoTime] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [reduced, setReduced] = useState(false);
   const [active, setActive] = useState<CowData | null>(null);
-  const [feedTotal, setFeedTotal] = useState(0);
-  const [phase, setPhase] = useState<TimePhase>('day');
-  const [foods, setFoods] = useState<FoodSprite[]>([]);
-  const [critters, setCritters] = useState<Critter[]>([]);
-  const [hint, setHint] = useState(true);
+  const [residents, setResidents] = useState(false);
+  const [flowers, setFlowers] = useState<Flower[]>([]);
+  const [food, setFood] = useState<Seed[]>([]);
+  const [feeds, setFeeds] = useState(0);
+  const [pets, setPets] = useState(0);
+  const [notice, setNotice] = useState('');
+  const agents = useRef<Agent[]>([]);
+  const elements = useRef<Record<string, HTMLButtonElement | null>>({});
+  const lawn = useRef<HTMLDivElement>(null);
+  const seeds = useRef<Seed[]>([]);
+  const identity = useRef(0);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toolRef = useRef(tool);
+  toolRef.current = tool;
+  const inhabitants = cows.length ? cows : hosts;
+  const night = clamp((time - 56) / 30, 0, 1);
+  const sunset = Math.max(0, 1 - Math.abs(time - 57) / 20);
+  const scene = {
+    '--pg-sky': mix([245, 247, 242], [28, 41, 45], night), '--pg-ink': mix([35, 51, 43], [236, 243, 232], night),
+    '--pg-muted': mix([114, 126, 114], [168, 186, 175], night), '--pg-grass': mix([188, 210, 156], [80, 112, 91], night),
+    '--pg-grass-light': mix([214, 228, 190], [106, 140, 116], night), '--pg-earth': mix([147, 172, 128], [52, 78, 67], night),
+    '--pg-tree': mix([132, 166, 122], [57, 93, 73], night), '--pg-glass': night > .5 ? 'rgba(41,58,57,.82)' : 'rgba(255,255,255,.79)',
+    '--pg-night': night, '--pg-sunset': sunset,
+  } as CSSProperties;
+  const phaseLabel = time < 16 ? t('晨光', 'Dawn') : time < 48 ? t('晴昼', 'Daylight') : time < 72 ? t('日落', 'Sunset') : t('星夜', 'Starlight');
 
-  const lawnRef = useRef<HTMLDivElement | null>(null);
-  const agentsRef = useRef<CowAgent[]>([]);
-  // DOM node per cow, keyed by cow key — decoupled from agent object identity so
-  // rebuilding agents (when cows change) never loses the element references.
-  const elsRef = useRef<Record<string, HTMLButtonElement | null>>({});
-  const foodsRef = useRef<FoodSprite[]>([]);
-  const rafRef = useRef<number>(0);
-  const lastTsRef = useRef<number>(0);
-  const pointerRef = useRef<{x: number; y: number; active: boolean}>({x: 50, y: 50, active: false});
-  const foodIdRef = useRef(1);
-  const critterIdRef = useRef(1);
-  const feedCountRef = useRef(0);
-
-  // keep foods ref in sync with state (state used for render, ref for sim loop)
   useEffect(() => {
-    foodsRef.current = foods;
-  }, [foods]);
-
-  // ---- fetch cows ----
-  useEffect(() => {
-    let alive = true;
-    fetch('/api/data')
-      .then((r) => r.json())
-      .then((d) => {
-        if (!alive) return;
-        const list: CowData[] = Array.isArray(d?.cows) ? d.cows : [];
-        setCows(list);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (alive) setLoading(false);
-      });
-    return () => {
-      alive = false;
-    };
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => {setReduced(media.matches); if (media.matches) setPaused(true);};
+    update(); media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
   }, []);
-
-  // ---- build agents from cows ----
   useEffect(() => {
-    const prev = new Map<string, CowAgent>(agentsRef.current.map((a) => [a.key, a]));
-    agentsRef.current = cows.map((c, i) => {
-      const key = c.id || `${c.name || 'cow'}-${i}`;
-      // if this cow already existed, keep its live position/state so nothing snaps
-      const existing = prev.get(key);
-      if (existing) {
-        existing.data = c;
-        existing.el = elsRef.current[key] ?? existing.el ?? null;
-        return existing;
-      }
-      const rx = hashSeed(key + 'x');
-      const ry = hashSeed(key + 'y');
-      const rs = hashSeed(key + 's');
-      const x = FX_MIN + rx * (FX_MAX - FX_MIN);
-      const y = FY_MIN + ry * (FY_MAX - FY_MIN);
-      return {
-        data: c,
-        key,
-        x,
-        y,
-        tx: x,
-        ty: y,
-        facing: rx > 0.5 ? 1 : -1,
-        speed: 3.2 + rs * 2.6,
-        state: 'graze' as CowState,
-        stateT: 1 + rs * 3,
-        scaleBase: 0.92 + rs * 0.26,
-        fed: 0,
-        mood: 'content' as Mood,
-        moodT: 0,
-        bobPhase: rx * Math.PI * 2,
-        el: elsRef.current[key] ?? null,
-        emoteT: 0,
-        emote: '',
-      };
+    const controller = new AbortController(); setLoading(true); setFailed(false);
+    fetch('/api/data', {signal: controller.signal}).then((r) => {if (!r.ok) throw new Error('load'); return r.json();}).then((data) => setCows(Array.isArray(data.cows) ? data.cows : [])).catch((e) => {if (e.name !== 'AbortError') setFailed(true);}).finally(() => {if (!controller.signal.aborted) setLoading(false);});
+    return () => controller.abort();
+  }, [retry]);
+  useEffect(() => {
+    agents.current = inhabitants.map((cow, i) => {
+      const key = cow.id || `cow-${i}`;
+      const previous = agents.current.find((a) => a.key === key);
+      const point = fieldPoint(30 + (i * 27) % 51, 44 + (i * 19) % 32);
+      return previous || {...point, cow, key, target: point, facing: 1, phase: i, eat: 0, heart: 0};
     });
   }, [cows]);
-
-  // ---- day/night cycle (advances every ~30s of real time) ----
   useEffect(() => {
-    const id = window.setInterval(() => {
-      setPhase((p) => {
-        const idx = TIME_PHASES.indexOf(p);
-        return TIME_PHASES[(idx + 1) % TIME_PHASES.length];
-      });
-    }, 30000);
-    return () => window.clearInterval(id);
-  }, []);
+    if (!autoTime || paused) return;
+    const timer = setInterval(() => setTime((v) => (v + .35) % 101), 1000);
+    return () => clearInterval(timer);
+  }, [autoTime, paused]);
+  useEffect(() => () => {if (noticeTimer.current) clearTimeout(noticeTimer.current);}, []);
+  const tell = (text: string) => {setNotice(text); if (noticeTimer.current) clearTimeout(noticeTimer.current); noticeTimer.current = setTimeout(() => setNotice(''), 3000);};
 
-  // ---- ambient critters spawn occasionally ----
   useEffect(() => {
-    let alive = true;
-    const spawn = () => {
-      if (!alive) return;
-      const kinds: Critter['kind'][] = ['bird', 'butterfly', 'butterfly', 'rabbit'];
-      const kind = kinds[Math.floor(Math.random() * kinds.length)];
-      const c: Critter = {
-        id: critterIdRef.current++,
-        kind,
-        born: performance.now(),
-        dur: kind === 'bird' ? 7000 : kind === 'rabbit' ? 5200 : 9000,
-        fromLeft: Math.random() > 0.5,
-        y: kind === 'bird' ? 8 + Math.random() * 14 : kind === 'rabbit' ? 78 + Math.random() * 8 : 34 + Math.random() * 34,
-      };
-      setCritters((list) => [...list.filter((it) => performance.now() - it.born < it.dur), c]);
-      const next = 6000 + Math.random() * 9000;
-      window.setTimeout(spawn, next);
-    };
-    const first = window.setTimeout(spawn, 3500);
-    return () => {
-      alive = false;
-      window.clearTimeout(first);
-    };
-  }, []);
-
-  // ---- pick a new wander target ----
-  const pickTarget = (a: CowAgent) => {
-    a.tx = FX_MIN + Math.random() * (FX_MAX - FX_MIN);
-    a.ty = FY_MIN + Math.random() * (FY_MAX - FY_MIN);
-    a.state = 'wander';
-    a.stateT = 0;
-  };
-
-  // ---- the simulation loop ----
-  useEffect(() => {
-    if (loading || cows.length === 0) return;
-
-    const step = (ts: number) => {
-      const last = lastTsRef.current || ts;
-      let dt = (ts - last) / 1000;
-      lastTsRef.current = ts;
-      if (dt > 0.1) dt = 0.1; // clamp big gaps (tab switch)
-
-      const agents = agentsRef.current;
-      const foodList = foodsRef.current;
-      const pointer = pointerRef.current;
+    let frame = 0, last = 0;
+    const step = (now: number) => {
+      const dt = Math.min((now - (last || now)) / 1000, .05); last = now;
       let foodChanged = false;
-
-      for (const a of agents) {
-        a.moodT += dt;
-        if (a.emoteT > 0) a.emoteT -= dt;
-
-        // hungry mood over time
-        if (a.moodT > 22) a.mood = 'bored';
-        else if (a.moodT < 6 && a.fed > 0) a.mood = 'happy';
-        else a.mood = 'content';
-
-        // --- food seeking has priority ---
-        let nearestFood: FoodSprite | null = null;
-        let nearestD = 999;
-        for (const f of foodList) {
-          if (f.amount <= 0) continue;
-          const d = Math.hypot(f.x - a.x, f.y - a.y);
-          if (d < nearestD) {
-            nearestD = d;
-            nearestFood = f;
-          }
+      for (const a of agents.current) {
+        let walking = false, eating = false;
+        if (!paused && !document.hidden) {
+          a.heart = Math.max(0, a.heart - dt);
+          const nearest = now < (a.summonUntil || 0) ? undefined : seeds.current.filter((s) => s.bites > 0).sort((s, b) => Math.hypot(s.x - a.x, s.y - a.y) - Math.hypot(b.x - a.x, b.y - a.y))[0];
+          if (nearest) a.target = nearest;
+          const dx = a.target.x - a.x, dy = a.target.y - a.y, distance = Math.hypot(dx, dy);
+          if (distance > (nearest ? 7 : 1.2)) {
+            walking = true;
+            const speed = (nearest ? 11 : 4) * dt;
+            a.x += dx / distance * Math.min(distance, speed); a.y += dy / distance * Math.min(distance, speed);
+            a.facing = dx >= 0 ? 1 : -1; a.phase += dt * (nearest ? 12 : 7); a.eat = 0;
+          } else if (nearest) {
+            eating = true;
+            a.eat += dt;
+            if (a.eat > 1.2) {nearest.bites--; a.heart = 2; a.eat = 0; foodChanged = true;}
+          } else {a.eat += dt; if (a.eat > 2.5) {a.target = wander(); a.eat = 0;}}
         }
-        // only chase food within reasonable range (28% of field)
-        if (nearestFood && nearestD < 30 && a.state !== 'eat') {
-          a.tx = nearestFood.x;
-          a.ty = clamp(nearestFood.y, FY_MIN, FY_MAX);
-          a.state = 'seekFood';
-        }
-
-        if (a.state === 'seekFood' && nearestFood) {
-          const dx = a.tx - a.x;
-          const dy = a.ty - a.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < 2.2) {
-            // arrived → eat
-            a.state = 'eat';
-            a.stateT = 1.6;
-            a.emote = '❤️';
-            a.emoteT = 1.6;
-          } else {
-            const sp = a.speed * 1.7 * dt; // rush to food
-            a.x += (dx / dist) * sp;
-            a.y += (dy / dist) * sp;
-            a.facing = dx >= 0 ? 1 : -1;
-            a.bobPhase += dt * 11;
-          }
-        } else if (a.state === 'eat') {
-          a.stateT -= dt;
-          if (a.stateT <= 0) {
-            // consume one bite from nearest food
-            if (nearestFood) {
-              nearestFood.amount -= 1;
-              foodChanged = true;
-            }
-            a.fed += 1;
-            a.moodT = 0;
-            a.mood = 'happy';
-            a.emote = '😋';
-            a.emoteT = 1.4;
-            // more food nearby? keep eating : resume wander
-            if (nearestFood && nearestFood.amount > 0 && nearestD < 30) {
-              a.state = 'seekFood';
-            } else {
-              a.state = 'idle';
-              a.stateT = 0.8 + Math.random() * 1.2;
+        // Keep a little personal space, especially when several friends share a snack.
+        if (!paused) {
+          for (const other of agents.current) {
+            if (a === other) continue;
+            const dx = (a.x - other.x) / 18, dy = (a.y - other.y) / 13;
+            const d = Math.hypot(dx, dy);
+            if (d > .001 && d < 1) {
+              const push = (1 - d) * Math.min(1, dt * 18);
+              a.x += dx / d * push * 5; a.y += dy / d * push * 4;
             }
           }
-        } else if (a.state === 'wander') {
-          const dx = a.tx - a.x;
-          const dy = a.ty - a.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < 1.5) {
-            // reached → graze or idle
-            a.state = Math.random() > 0.4 ? 'graze' : 'idle';
-            a.stateT = 2 + Math.random() * 4;
-          } else {
-            const sp = a.speed * dt;
-            a.x += (dx / dist) * sp;
-            a.y += (dy / dist) * sp;
-            a.facing = dx >= 0 ? 1 : -1;
-            a.bobPhase += dt * 7;
-          }
-        } else {
-          // graze / idle → count down then pick new target
-          a.stateT -= dt;
-          if (a.stateT <= 0) {
-            pickTarget(a);
-          }
+          Object.assign(a, fieldPoint(a.x, a.y));
         }
-
-        a.x = clamp(a.x, FX_MIN, FX_MAX);
-        a.y = clamp(a.y, FY_MIN, FY_MAX);
-
-        // --- write to DOM ---
-        const el = elsRef.current[a.key] || a.el;
+        const el = elements.current[a.key];
         if (el) {
-          const sc = depthScale(a.y, a.scaleBase);
-          const walking = a.state === 'wander' || a.state === 'seekFood';
-          const bob = walking ? Math.sin(a.bobPhase) * 3 : 0;
-          el.style.left = `${a.x}%`;
-          el.style.top = `${a.y}%`;
-          el.style.transform = `translate(-50%, -100%) scale(${sc}) translateY(${bob}px)`;
-          el.style.zIndex = String(6 + Math.round(a.y));
-          el.dataset.state = a.state;
-          el.dataset.facing = a.facing === -1 ? 'left' : 'right';
-          el.dataset.mood = a.mood;
-          // pointer-look on hover proximity (subtle head tilt handled via CSS data-mood)
-          // emote bubble
-          const em = el.querySelector('.pasture-emote') as HTMLElement | null;
-          if (em) {
-            if (a.emoteT > 0 && a.emote) {
-              em.textContent = a.emote;
-              em.style.opacity = '1';
-              em.style.transform = 'translateX(-50%) translateY(-6px) scale(1)';
-            } else {
-              em.style.opacity = '0';
-              em.style.transform = 'translateX(-50%) translateY(0) scale(0.6)';
-            }
-          }
+          el.style.left = `${a.x}%`; el.style.top = `${a.y}%`;
+          el.style.transform = `translate(-50%,-100%) scale(${.76 + a.y / 160})`;
+          // Diagonal leg pairs share the movement clock, so rushing to food speeds up the gait.
+          const stride = walking && !reduced ? Math.sin(a.phase) : 0;
+          el.style.setProperty('--pg-leg-a', `${stride * 25}deg`);
+          el.style.setProperty('--pg-leg-b', `${-stride * 25}deg`);
+          el.style.setProperty('--pg-lift-a', `${-Math.max(0, stride) * 3}px`);
+          el.style.setProperty('--pg-lift-b', `${-Math.max(0, -stride) * 3}px`);
+          el.style.setProperty('--pg-bob', `${-Math.abs(stride) * 1.6}px`);
+          el.style.setProperty('--pg-sway', `${stride * 1.2}deg`);
+          el.style.zIndex = String(Math.round(a.y));
+          el.style.setProperty('--pg-facing', String(a.facing));
+          el.dataset.walking = String(walking); el.dataset.loved = String(a.heart > 0); el.dataset.eating = String(eating);
         }
       }
-
-      // hover / pointer curiosity: nearest cow to pointer looks toward it (light effect via facing)
-      if (pointer.active) {
-        for (const a of agents) {
-          if (a.state === 'graze' || a.state === 'idle') {
-            const d = Math.hypot(pointer.x - a.x, pointer.y - a.y);
-            if (d < 18) a.facing = pointer.x >= a.x ? 1 : -1;
-          }
-        }
-      }
-
-      if (foodChanged) {
-        // prune eaten food
-        const remaining = foodsRef.current.filter((f) => f.amount > 0);
-        if (remaining.length !== foodsRef.current.length) {
-          setFoods(remaining);
-        }
-      }
-
-      rafRef.current = requestAnimationFrame(step);
+      const fresh = seeds.current.filter((s) => s.bites > 0 && now - s.born < 35000);
+      if (foodChanged || fresh.length !== seeds.current.length) {seeds.current = fresh; setFood([...fresh]);}
+      frame = requestAnimationFrame(step);
     };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [paused, reduced]);
 
-    rafRef.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [loading, cows.length]);
-
-  // ---- pointer tracking over lawn ----
-  const onLawnMove = (e: ReactPointerEvent) => {
-    const el = lawnRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    pointerRef.current = {
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
-      active: true,
-    };
+  const drop = (point: Point) => {
+    const location = fieldPoint(point.x, point.y);
+    if (toolRef.current === 'flower') {
+      setFlowers((list) => [...list.slice(-35), {...location, id: identity.current++}]);
+    } else {
+      const seed = {...location, id: identity.current++, born: performance.now(), bites: 3};
+      seeds.current = [...seeds.current.slice(-15), seed]; setFood([...seeds.current]); setFeeds((v) => v + 1);
+    }
   };
-  const onLawnLeave = () => {
-    pointerRef.current.active = false;
+  const call = () => {
+    agents.current.forEach((a, i) => {a.target = fieldPoint(36 + (i % 4) * 10, 62 + Math.floor(i / 4) * 8); a.eat = 0; a.heart = 3; a.summonUntil = performance.now() + 12000;});
+    tell(paused ? t('继续时间，牛牛就会过来。', 'Resume time to let them come over.') : t('听到啦，正在向你走来。', 'They heard you. Here they come.'));
+  };
+  const pet = (cow: CowData) => {
+    const a = agents.current.find((agent) => agent.cow === cow);
+    if (a) {a.heart = 3; a.target = {x: a.x, y: a.y}; a.eat = -2;}
+    setPets((v) => v + 1); tell(t('这份喜欢，牛牛收到了。', 'A little love, received.'));
   };
 
-  // ---- scatter food where the user clicks the lawn ----
-  const onLawnClick = (e: ReactMouseEvent) => {
-    const el = lawnRef.current;
-    if (!el) return;
-    // ignore clicks that originated on a cow button (handled separately)
-    const target = e.target as HTMLElement;
-    if (target.closest('.pasture-cow')) return;
-    const rect = el.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    if (y < FY_MIN - 2) return; // don't drop in the sky/fence zone
-    const cx = clamp(x, FX_MIN, FX_MAX);
-    const cy = clamp(y, FY_MIN, FY_MAX);
-    const f: FoodSprite = {
-      id: foodIdRef.current++,
-      x: cx,
-      y: cy,
-      amount: 3,
-      born: performance.now(),
-    };
-    setFoods((list) => [...list, f]);
-    feedCountRef.current += 1;
-    setFeedTotal(feedCountRef.current);
-    if (hint) setHint(false);
-  };
-
-  const laid = useMemo(() => {
-    return cows.map((c, i) => {
-      const key = c.id || `${c.name || 'cow'}-${i}`;
-      return {c, key};
-    });
-  }, [cows]);
-
-  // Close dialog on Escape
-  useEffect(() => {
-    if (!active) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setActive(null);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [active]);
-
-  const registerCowEl = useCallback((key: string, el: HTMLButtonElement | null) => {
-    // store in the key→node map first (survives agent rebuilds), then link to the
-    // agent if it already exists. Ref callbacks can fire before the build-agents
-    // effect runs, so relying only on agentsRef.find() would silently drop the node.
-    elsRef.current[key] = el;
-    const a = agentsRef.current.find((x) => x.key === key);
-    if (a) a.el = el;
-  }, []);
-
-  return (
-    <div className={`pasture-root phase-${phase}`} lang={lang}>
-      {/* Sky layer */}
-      <div className="pasture-sky" aria-hidden="true">
-        <div className="pasture-celestial pasture-sun" />
-        <div className="pasture-celestial pasture-moon" />
-        <div className="pasture-stars" />
-        <div className="pasture-cloud pc-1" />
-        <div className="pasture-cloud pc-2" />
-        <div className="pasture-cloud pc-3" />
-        <div className="pasture-cloud pc-4" />
-        <div className="pasture-hill pasture-hill-back" />
-        <div className="pasture-hill pasture-hill-front" />
+  return <div className={`pg-page ${rain ? 'is-raining' : ''} ${paused ? 'is-paused' : ''}`} style={scene} lang={lang === 'zh' ? 'zh-CN' : 'en'}>
+    <header className="pg-header"><button onClick={onBack} className="pg-back"><ArrowLeft size={18} />{t('回到主页', 'Home')}</button><span className="pg-brand">Gemos<span> / </span>{t('牛牛牧场', 'Pasture')}</span><button className="pg-icon" onClick={onToggleLang} aria-label={t('切换语言', 'Change language')}>{lang === 'zh' ? 'EN' : '中'}</button></header>
+    <main className="pg-main">
+      <div className="pg-intro"><p className="pg-eyebrow">A LITTLE WORLD, JUST FOR YOU</p><h1>{t('在这里，慢一点。', 'A little less hurry.')}</h1><p>{t('喂喂牛，种朵花。把时间留给无所事事。', 'Feed a friend. Plant a flower. Let the world wait.')}</p></div>
+      <div className="pg-world" aria-label={t('互动草岛', 'Interactive meadow')}>
+        <div className="pg-atmosphere" aria-hidden="true"><span className="pg-orb" />{Array.from({length: 18}, (_, i) => <i key={i} style={{left: `${(i * 37 + 9) % 94}%`, top: `${(i * 23 + 5) % 53}%`, animationDelay: `${i % 4}s`}} />)}</div>
+        <div className="pg-cloud pg-cloud-one" aria-hidden="true" /><div className="pg-cloud pg-cloud-two" aria-hidden="true" />
+        <div className="pg-island-shadow" aria-hidden="true" />
+        <div className="pg-lawn" ref={lawn} tabIndex={0} role="group" aria-label={tool === 'feed' ? t('草地：点击投喂，键盘回车在中央投喂', 'Meadow: click to feed, or press Enter to feed in the center') : t('草地：点击种花，键盘回车在中央种花', 'Meadow: click to plant, or press Enter to plant in the center')} onKeyDown={(e) => {if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {e.preventDefault(); drop({x: 50, y: 64});}}} onClick={(e) => {if ((e.target as HTMLElement).closest('button')) return; const rect = e.currentTarget.getBoundingClientRect(); drop({x: (e.clientX - rect.left) / rect.width * 100, y: (e.clientY - rect.top) / rect.height * 100});}}>
+          <div className="pg-ground" aria-hidden="true"><div className="pg-pond"><i /><i /></div>{Array.from({length: 42}, (_, i) => <i className="pg-grass-mark" key={i} style={{left: `${(i * 37 + 7) % 90 + 5}%`, top: `${(i * 29 + 3) % 78 + 10}%`, transform: `rotate(${i % 3 * 20}deg)`}} />)}</div>
+          <div className="pg-tree pg-tree-one"><Tree /></div><div className="pg-tree pg-tree-two"><Tree variant={1} /></div><div className="pg-stone pg-stone-one" /><div className="pg-stone pg-stone-two" />
+          {[{id: -1, x: 26, y: 71}, {id: -2, x: 78, y: 61}, {id: -3, x: 69, y: 31}, ...flowers].map((f) => <span className="pg-flower" key={f.id} style={{left: `${f.x}%`, top: `${f.y}%`, zIndex: Math.round(f.y - 1)}}><Blossom variant={Math.abs(f.id) % 3} /></span>)}
+          {food.map((s) => <span key={s.id} className="pg-seed" style={{left: `${s.x}%`, top: `${s.y}%`, zIndex: Math.round(s.y - 1)}} aria-hidden="true"><Leaf size={22} /><i /></span>)}
+          {inhabitants.map((cow, i) => <button key={cow.id || `cow-${i}`} ref={(el) => {elements.current[cow.id || `cow-${i}`] = el;}} className="pg-cow" onClick={(e) => {e.stopPropagation(); pet(cow); setActive(cow);}} aria-label={t(`认识${cow.name || '牛牛'}`, `Meet ${cow.name || 'a cow'}`)}><span className="pg-cow-heart"><Heart size={18} fill="currentColor" /></span><span className="pg-cow-shadow" /><span className="pg-cow-art"><Cow data={cow} /></span><span className="pg-cow-name">{cow.name || t('小牛牛', 'Little cow')}</span></button>)}
+        </div>
+        {rain && <div className="pg-rain" aria-hidden="true">{Array.from({length: 32}, (_, i) => <i key={i} style={{left: `${i * 3.2}%`, animationDelay: `${i % 7 * .16}s`}} />)}</div>}
+        <div className="pg-world-caption"><span className="pg-status-dot" />{loading ? t('正在迎接牛牛…', 'Welcoming the herd…') : rain ? t('一场刚刚好的小雨', 'A soft little shower') : t('风很轻，草地很软', 'A soft breeze. A softer landing.')}</div>
       </div>
-
-      {/* Top bar */}
-      <header className="pasture-topbar">
-        <button
-          type="button"
-          className="pasture-back"
-          onClick={onBack}
-          aria-label={t('返回首页', 'Back to home')}
-        >
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span>{t('回家', 'Home')}</span>
-        </button>
-
-        <div className="pasture-sign" role="img" aria-label={t('牛牛牧场', 'Cow Pasture')}>
-          <span className="pasture-sign-emoji" aria-hidden="true">🐮</span>
-          <span className="pasture-sign-text">{t('牛牛牧场', 'Cow Pasture')}</span>
-          <span className="pasture-sign-count">
-            {loading
-              ? t('清点中…', 'Counting…')
-              : t(`现居 ${cows.length} 只牛牛`, `${cows.length} cows`)}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          className="pasture-lang"
-          onClick={onToggleLang}
-          aria-label={t('切换语言', 'Toggle language')}
-        >
-          {lang === 'en' ? '中' : 'EN'}
-        </button>
-      </header>
-
-      {/* HUD: feed counter + time badge */}
-      {!loading && cows.length > 0 ? (
-        <div className="pasture-hud" aria-hidden="false">
-          <div className="pasture-hud-pill">
-            <span className="pasture-hud-emoji">🌾</span>
-            <span>{t('已投喂', 'Fed')}</span>
-            <b>{feedTotal}</b>
-          </div>
-          <div className="pasture-hud-pill pasture-hud-time" title={t('昼夜循环', 'Day/night cycle')}>
-            <span className="pasture-hud-emoji">
-              {phase === 'day' ? '☀️' : phase === 'dusk' ? '🌅' : phase === 'night' ? '🌙' : '🌄'}
-            </span>
-            <span>
-              {phase === 'day'
-                ? t('白天', 'Day')
-                : phase === 'dusk'
-                ? t('黄昏', 'Dusk')
-                : phase === 'night'
-                ? t('夜晚', 'Night')
-                : t('清晨', 'Dawn')}
-            </span>
-          </div>
-        </div>
-      ) : null}
-
-      {/* The field */}
-      <main className="pasture-field">
-        {loading ? (
-          <div className="pasture-empty">{t('正在唤醒牛牛们…', 'Waking up the cows…')}</div>
-        ) : cows.length === 0 ? (
-          <div className="pasture-empty">
-            {t('牧场空空的，还没有牛牛入住～', 'The pasture is empty — no cows yet.')}
-          </div>
-        ) : (
-          <div
-            className="pasture-lawn"
-            ref={lawnRef}
-            onClick={onLawnClick}
-            onPointerMove={onLawnMove}
-            onPointerLeave={onLawnLeave}
-          >
-            {/* fence */}
-            <div className="pasture-fence" aria-hidden="true">
-              {Array.from({length: 16}).map((_, i) => (
-                <span className="fence-post" key={i} />
-              ))}
-              <span className="fence-rail fence-rail-top" />
-              <span className="fence-rail fence-rail-bottom" />
-            </div>
-
-            {/* fireflies (only visible at night via CSS) */}
-            <div className="pasture-fireflies" aria-hidden="true">
-              {Array.from({length: 14}).map((_, i) => {
-                const s = hashSeed('ff' + i);
-                const s2 = hashSeed('ff2' + i);
-                return (
-                  <span
-                    className="firefly"
-                    key={i}
-                    style={{
-                      left: `${6 + s * 88}%`,
-                      top: `${24 + s2 * 60}%`,
-                      animationDelay: `${s * 6}s`,
-                      animationDuration: `${4 + s2 * 4}s`,
-                    }}
-                  />
-                );
-              })}
-            </div>
-
-            {/* scattered food */}
-            {foods.map((f) => (
-              <span
-                key={f.id}
-                className={`pasture-food amount-${f.amount}`}
-                style={{left: `${f.x}%`, top: `${f.y}%`, zIndex: 5 + Math.round(f.y)} as CSSProperties}
-                aria-hidden="true"
-              >
-                🌾
-              </span>
-            ))}
-
-            {/* cows */}
-            {laid.map(({c, key}) => (
-              <button
-                type="button"
-                key={key}
-                ref={(el) => registerCowEl(key, el)}
-                className="pasture-cow"
-                data-state="graze"
-                data-facing="right"
-                data-mood="content"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActive(c);
-                }}
-                aria-label={t(`查看 ${c.name || '牛牛'} 的留言`, `See ${c.name || 'cow'}'s message`)}
-              >
-                <span className="pasture-emote" aria-hidden="true" />
-                <span className="pasture-cow-shadow" aria-hidden="true" />
-                <span
-                  className="pasture-cow-svg"
-                  aria-hidden="true"
-                  dangerouslySetInnerHTML={{__html: cowSVGFor(c)}}
-                />
-                {c.name ? <span className="pasture-nametag">{c.name}</span> : null}
-              </button>
-            ))}
-
-            {/* ambient critters */}
-            {critters.map((cr) => (
-              <span
-                key={cr.id}
-                className={`pasture-critter critter-${cr.kind} ${cr.fromLeft ? 'from-left' : 'from-right'}`}
-                style={{top: `${cr.y}%`, animationDuration: `${cr.dur}ms`} as CSSProperties}
-                aria-hidden="true"
-              >
-                {cr.kind === 'bird' ? '🐦' : cr.kind === 'rabbit' ? '🐇' : '🦋'}
-              </span>
-            ))}
-
-            {/* flowers decor */}
-            <div className="pasture-decor" aria-hidden="true">
-              {Array.from({length: 22}).map((_, i) => {
-                const seed = hashSeed('decor' + i);
-                const seed2 = hashSeed('decor2' + i);
-                const kinds = ['🌼', '🌱', '🌷', '🍀'];
-                return (
-                  <span
-                    className="decor-item"
-                    key={i}
-                    style={{
-                      left: `${4 + seed * 92}%`,
-                      top: `${20 + seed2 * 68}%`,
-                      fontSize: `${14 + seed * 12}px`,
-                      opacity: 0.55 + seed2 * 0.35,
-                    }}
-                  >
-                    {kinds[Math.floor(seed2 * kinds.length)]}
-                  </span>
-                );
-              })}
-            </div>
-
-            {/* feed hint */}
-            {hint ? (
-              <div className="pasture-feed-hint" aria-hidden="true">
-                {t('点击草地任意处撒草料喂牛 🌾', 'Click the grass to scatter feed 🌾')}
-              </div>
-            ) : null}
-          </div>
-        )}
-      </main>
-
-      {/* Message dialog */}
-      {active ? (
-        <div className="pasture-dialog-overlay" onClick={() => setActive(null)} role="presentation">
-          <div className="pasture-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-            <div className="pasture-dialog-portrait" aria-hidden="true">
-              <div className="pasture-dialog-svg" dangerouslySetInnerHTML={{__html: cowSVGFor(active)}} />
-            </div>
-            <div className="pasture-dialog-body">
-              <div className="pasture-dialog-name">{active.name || t('无名牛牛', 'A shy cow')}</div>
-              <div className="pasture-dialog-message">
-                {active.message
-                  ? `“${active.message}”`
-                  : t('这只牛牛还没有留言，正忙着吃草～', 'This cow left no message — busy grazing.')}
-              </div>
-              <button type="button" className="pasture-dialog-close" onClick={() => setActive(null)}>
-                {t('哞，再见！', 'Moo, bye!')}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
+      <aside className="pg-time-card"><div><span>{t('此刻的小岛', 'Your island, right now')}</span><strong>{phaseLabel}{rain ? t(' · 小雨', ' · Rain') : ''}</strong></div><div className="pg-time-slider"><Sun size={17} /><input type="range" min="0" max="100" step="1" value={time} onChange={(e) => {setTime(Number(e.target.value)); setAutoTime(false);}} aria-label={t('拨动昼夜', 'Change time of day')} aria-valuetext={phaseLabel} /><Moon size={16} /></div><div className="pg-time-bottom"><button onClick={() => setAutoTime(!autoTime)} aria-pressed={autoTime}>{autoTime ? <Pause size={13} /> : <Play size={13} />}{t('昼夜流转', 'Day cycle')}</button><button className="pg-pause" onClick={() => setPaused(!paused)} aria-pressed={paused}>{paused ? t('继续时间', 'Resume') : t('暂停一下', 'Pause')}</button></div></aside>
+      <aside className="pg-resident-card"><button onClick={() => setResidents(true)}><span className="pg-resident-icon"><Users size={18} /></span><span><strong>{inhabitants.length} {t('位小岛住客', 'island friends')}</strong><small>{t('每只牛牛，都有一句话想说', 'Everyone has a little story')}</small></span><ChevronRight size={17} /></button><div><span><Leaf size={14} />{feeds} {t('次投喂', 'feeds')}</span><span><Heart size={14} />{pets} {t('次贴贴', 'cuddles')}</span></div></aside>
+      <div className="pg-bottom"><div className="pg-tool-dock" role="group" aria-label={t('牧场玩法', 'Meadow tools')}><button aria-pressed={tool === 'feed'} onClick={() => setTool('feed')}><Leaf size={21} /><span>{t('喂一口', 'Feed')}</span></button><button aria-pressed={tool === 'flower'} onClick={() => setTool('flower')}><Flower2 size={21} /><span>{t('种朵花', 'Plant')}</span></button><span className="pg-dock-divider" /><button aria-pressed={rain} onClick={() => setRain(!rain)}><CloudRain size={21} /><span>{t('下点雨', 'Rain')}</span></button><button onClick={call}><Bell size={21} /><span>{t('来集合', 'Gather')}</span></button></div><p className="pg-tool-hint">{tool === 'feed' ? t('点点草地，牛牛会循着草香走来。', 'Tap the meadow. Follow the happy little footsteps.') : t('点点草地，让喜欢的地方开花。', 'Tap the meadow. Leave a little bloom behind.')}</p>{flowers.length > 0 && <button className="pg-clear" onClick={() => setFlowers([])}><RotateCcw size={12} />{t('清理本次种花', 'Clear your flowers')}</button>}</div>
+      {failed && <div className="pg-fetch-error" role="alert">{t('住客暂未加载，先和小岛伙伴玩一会儿。', 'Residents could not load. The island hosts are here.')}<button onClick={() => setRetry((v) => v + 1)}>{t('重试', 'Retry')}</button></div>}
+    </main>
+    <div className={`pg-toast ${notice ? 'is-visible' : ''}`} role="status"><Check size={15} />{notice}</div>
+    {active && <Sheet title={active.name || t('小岛住客', 'Island friend')} close={() => setActive(null)}><div className="pg-profile-art" key={pets}><Cow data={active} /><span className="pg-profile-heart"><Heart size={24} fill="currentColor" /></span></div><p className="pg-message">{active.message || t('没什么大事，只是想和你一起晒晒太阳。', 'Nothing much. Just a little sunshine with you.')}</p><button className="pg-pet-button" onClick={() => pet(active)}><Heart size={18} />{t('再摸摸它', 'One more cuddle')}</button><small className="pg-session-note">{t('投喂、种花与贴贴，留在这一次相遇里。', 'Feeds, flowers and cuddles stay in this visit.')}</small></Sheet>}
+    {residents && <Sheet title={t('小岛住客', 'Island friends')} close={() => setResidents(false)}><div className="pg-residents">{inhabitants.map((cow, i) => <button key={cow.id || i} onClick={() => {setResidents(false); setActive(cow);}}><Cow data={cow} /><span>{cow.name || t('小牛牛', 'Little cow')}</span><ChevronRight size={18} /></button>)}</div>{!cows.length && <p className="pg-session-note">{t('这几位是小岛的常驻伙伴。', 'These are the island’s resident hosts.')}</p>}</Sheet>}
+  </div>;
 }
