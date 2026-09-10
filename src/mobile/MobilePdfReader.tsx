@@ -7,11 +7,11 @@ import {localized} from './types';
 
 pdfjs.GlobalWorkerOptions.workerSrc = worker;
 
-const Page: FC<{document: PDFDocumentProxy; index: number; lang: Language}> = ({document, index, lang}) => {
+const Page: FC<{document: PDFDocumentProxy; index: number; lang: Language; aspect: number}> = ({document, index, lang, aspect}) => {
   const ref = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [nearby, setNearby] = useState(index === 1);
-  const [ratio, setRatio] = useState(0.707);
+  const [ratio, setRatio] = useState(aspect);
   const [width, setWidth] = useState(0);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -40,7 +40,7 @@ const Page: FC<{document: PDFDocumentProxy; index: number; lang: Language}> = ({
     }).catch((error) => {if (!cancelled && error?.name !== 'RenderingCancelledException') setFailed(true);});
     return () => {cancelled = true; task?.cancel();};
   }, [document, index, nearby, width]);
-  return <figure className="mi-pdf-page">
+  return <figure className="mi-pdf-page" data-page={index}>
     <div ref={ref} style={{aspectRatio: ratio}}>
       {failed ? <p>{localized(lang, '这一页暂时无法显示，请打开原文件查看。', 'This page could not be displayed. Please open the original file.')}</p> : <canvas ref={canvas} role="img" aria-label={localized(lang, `第 ${index} 页`, `Page ${index}`)} />}
     </div>
@@ -49,17 +49,24 @@ const Page: FC<{document: PDFDocumentProxy; index: number; lang: Language}> = ({
 }
 
 export default function MobilePdfReader({url, lang}: {url: string; lang: Language}) {
+  const pagesRef = useRef<HTMLDivElement>(null);
+  const [pageNumber,setPageNumber] = useState('1');
+  const [ratios,setRatios] = useState<number[]>([]);
   const [document, setDocument] = useState<PDFDocumentProxy | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     setDocument(null);
+    setPageNumber('1');
     setFailed(false);
     let cancelled = false;
     const task = pdfjs.getDocument({url});
-    task.promise.then((value) => {if (!cancelled) setDocument(value);}).catch(() => {if (!cancelled) setFailed(true);});
+    task.promise.then(async (value) => {
+      const dimensions = await Promise.all(Array.from({length:value.numPages},async (_,i)=>{const page=await value.getPage(i+1);const viewport=page.getViewport({scale:1});return viewport.width/viewport.height;}));
+      if (!cancelled) {setRatios(dimensions);setDocument(value);}
+    }).catch(() => {if (!cancelled) setFailed(true);});
     return () => {cancelled = true; void task.destroy();};
   }, [url]);
   if (failed) return <div className="mi-state" role="alert"><p>{localized(lang, '预览暂时无法载入', 'Preview unavailable')}</p><a className="mi-text-action" href={url} target="_blank" rel="noopener noreferrer">{localized(lang, '打开 PDF 原文件', 'Open original PDF')}</a></div>;
   if (!document) return <div className="mi-state" role="status"><span className="mi-spinner" /><p>{localized(lang, '正在准备阅读…', 'Preparing your document…')}</p></div>;
-  return <div className="mi-pdf-pages">{Array.from({length: document.numPages}, (_, i) => <Page key={i} document={document} index={i + 1} lang={lang} />)}</div>;
+  return <div className="mi-pdf-pages" ref={pagesRef}><form className="co-pdf-controls" onSubmit={(event)=>{event.preventDefault();const page=Math.min(document.numPages,Math.max(1,Number(pageNumber)||1));setPageNumber(String(page));pagesRef.current?.querySelector(`[data-page="${page}"]`)?.scrollIntoView({behavior:'smooth',block:'start'});}}><label>{localized(lang,'页码','Page')} <input type="number" min="1" max={document.numPages} value={pageNumber} onChange={event=>setPageNumber(event.target.value)} aria-label={localized(lang,'跳转页码','Jump to page')}/></label><span>/ {document.numPages}</span><button type="submit">{localized(lang,'跳转','Go')}</button></form>{Array.from({length: document.numPages}, (_, i) => <Page key={i} document={document} index={i + 1} lang={lang} aspect={ratios[i] || .707} />)}</div>;
 }

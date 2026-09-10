@@ -5,9 +5,7 @@ import { ArrowDown, ArrowUpRight, Plus } from 'lucide-react';
 import { initApp } from './script';
 import AdminStudio from './AdminStudio';
 import AwardsPage from './AwardsPage';
-import PdfsPage from './PdfsPage';
-import JournalPage from './JournalPage';
-import VibecodingPage from './VibecodingPage';
+import CollectionPage from './collections/CollectionPage';
 import VibecodingLaunchPage from './VibecodingLaunchPage';
 import PasturePage from './PasturePage';
 import PingPongPage from './PingPongPage';
@@ -483,7 +481,7 @@ export default function App() {
     !isPingPongRoute &&
     !isTucaoRoute;
 
-  const isMobileContent = layoutMode === 'phone' && (showHome || isAwardsRoute || isPdfsRoute || isJournalRoute || isVibecodingRoute);
+  const isMobileContent = layoutMode === 'phone' && (showHome || isAwardsRoute);
 
   useLayoutEffect(() => {
     document.documentElement.classList.toggle('mobile-ui', isMobileContent);
@@ -751,10 +749,10 @@ export default function App() {
 
       {isAdminRoute ? <AdminStudio lang={lang} onBack={goHome} /> : null}
       {isAwardsRoute && !isMobileContent ? <AwardsPage lang={lang} focusAwardId={awardsFocusId} onBack={goHome} onOpenWork={openHomeDetail} /> : null}
-      {isPdfsRoute && !isMobileContent ? <PdfsPage lang={lang} focusPdfId={pdfFocusId} onBack={goHome} onOpenWork={openHomeDetail} /> : null}
-      {isVibecodingRoute && !isMobileContent ? <VibecodingPage lang={lang} onBack={goHome} onToggleLang={handleToggleLang} /> : null}
+      {isPdfsRoute ? <CollectionPage kind="pdfs" lang={lang} onToggleLang={handleToggleLang} /> : null}
+      {isVibecodingRoute ? <CollectionPage kind="vibecoding" lang={lang} onToggleLang={handleToggleLang} /> : null}
       {isVibecodingLaunchRoute ? <VibecodingLaunchPage lang={lang} slug={vibecodingSlug} onBackToList={() => navigateToPath('/vibecoding')} /> : null}
-      {isJournalRoute && !isMobileContent ? <JournalPage lang={lang} focusJournalId={journalFocusId} onBack={goHome} /> : null}
+      {isJournalRoute ? <CollectionPage kind="journal" lang={lang} onToggleLang={handleToggleLang} /> : null}
       {isPastureRoute ? <PasturePage lang={lang} onBack={goHome} onToggleLang={handleToggleLang} /> : null}
       {isPingPongRoute ? <PingPongPage lang={lang} onBack={goHome} /> : null}
       {isTucaoRoute ? <TucaoPage lang={lang} onBack={goHome} /> : null}
