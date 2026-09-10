@@ -1,7 +1,7 @@
 import { ReactNode, Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Code2 } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, Plus } from 'lucide-react';
 import { initApp } from './script';
 import AdminStudio from './AdminStudio';
 import AwardsPage from './AwardsPage';
@@ -186,10 +186,10 @@ function CommonModals({
       />
       <div className="modal-overlay diy-panel no-grass" id="diyPanel">
         <div className="modal-header">
-          <h3>{t('牛牛实验室 MAX', 'Cow Lab MAX')}</h3>
-          <span className="close-btn" onClick={() => bridge.closeModal?.('diyPanel')}>
+          <h3>{t('捏一只牛牛', 'Make a little friend')}</h3>
+          <button type="button" aria-label={t('关闭', 'Close')} className="close-btn" onClick={() => bridge.closeModal?.('diyPanel')}>
             &times;
-          </span>
+          </button>
         </div>
         <div className="preview-box" id="cowPreviewContainer"></div>
         <div className="form-group">
@@ -336,17 +336,16 @@ function DesktopFilterSidebar({
           { code: 'edu' as const, icon: 'graduation-cap', zh: '教育', en: 'Edu' },
         ] as const
       ).map(({ code, icon, zh, en }) => (
-        <div
+        <button
+          type="button"
           key={code}
           className={`filter-item${activeFilter === code ? ' active' : ''}`}
-          role="button"
-          tabIndex={0}
+          aria-pressed={activeFilter === code}
           onClick={(e) => handleFilter(code, e.currentTarget as HTMLElement)}
-          onKeyDown={(e) => e.key === 'Enter' && handleFilter(code, e.currentTarget as HTMLElement)}
         >
           <div className="filter-icon"><i data-lucide={icon}></i></div>
           <div className="filter-text">{t(zh, en)}</div>
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -387,50 +386,38 @@ function DesktopHome({
   return (
     <div className="desktop-home">
 
-      <button
-        type="button"
-        className="lang-toggle-btn desktop-quick-entry desktop-quick-lang animate-item no-grass"
-        onClick={onToggleLang}
-        disabled={isLangTransitioning}
-        aria-busy={isLangTransitioning}
-        aria-label={t('切换语言', 'Toggle language')}
-      >
-        <span className="desktop-quick-icon" aria-hidden="true">{lang === 'zh' ? 'EN' : '中'}</span>
-        <span className="desktop-quick-text">{lang === 'zh' ? 'EN/中文' : '中文/EN'}</span>
-      </button>
+      <header className="home-nav no-grass">
+        <button className="home-brand" onClick={onAvatarTap} aria-label={t('多多 GemosDodo', 'GemosDodo')}><img src="/avatar.png" alt="" className="avatar-unlock-hit" />Gemos<span>.</span></button>
+        <nav aria-label={t('主导航', 'Main navigation')}>
+          <button onClick={onScrollArchive}>{t('作品', 'Work')}</button>
+          <button onClick={onOpenAwards}>{t('奖状', 'Awards')}</button>
+          <button onClick={onOpenPdfs}>{t('作品集', 'Portfolio')}</button>
+          <button onClick={onOpenVibecoding}>{t('实验', 'Experiments')}</button>
+          <button onClick={onOpenJournal}>{t('手账', 'Journal')}</button>
+          <button onClick={onOpenPasture}>{t('牧场', 'Pasture')}<ArrowUpRight size={13}/></button>
+        </nav>
+        <button className="home-language" onClick={onToggleLang} disabled={isLangTransitioning} aria-label={t('切换语言', 'Toggle language')}>{lang === 'zh' ? 'EN' : '中'}</button>
+      </header>
 
       <div className="hero-screen">
-        <div className="site-logo-container animate-item no-grass">
-          <img src="/avatar.png" alt="Avatar" className="site-avatar avatar-unlock-hit" onClick={onAvatarTap} />
-          <img src="/logo.png" alt="Logo" className="site-logo" />
-        </div>
         <main className="stela-container">
           <section className="stela-content no-grass">
-            <div className="title-with-badge">
-              <div className="main-title">{t('多多 GemosDodo', 'GemosDodo')}</div>
-              <span className="official-badge">{t('官网', 'Official')}</span>
-            </div>
-            <div className="sub-title">{t('的刻录石碑', 'The Engraved Stela')}</div>
-            <div className="english-meta">
-              <span className="en-line">Digital Archive & Creative Works</span>
-              <span className="en-line hero-manifesto-line">{t(heroManifesto.zh, heroManifesto.en)}</span>
-              <SocialLinks lang={lang} />
-              <span className="en-line desktop-icp-inline">浙ICP备2026017753号</span>
-            </div>
+            <p className="home-eyebrow">GEMOSDODO / PERSONAL ARCHIVE</p>
+            <h1 className="home-title">{t('把灵光，', 'Ideas,')}<br/><span>{t('留在这里。', 'kept here.')}</span></h1>
+            <p className="home-intro">{t('我是多多。做设计，记录日常，', 'I’m Dodo. I design, document,')}<br/>{t('也给好奇心留一点空间。', 'and leave room for curiosity.')}</p>
+            <div className="home-hero-actions"><button onClick={onScrollArchive}>{t('浏览作品', 'Explore work')}<ArrowDown size={15}/></button><button onClick={onOpenPasture}>{t('去牧场歇一会儿', 'Take a pasture break')}<ArrowUpRight size={15}/></button></div>
+            <SocialLinks lang={lang} />
           </section>
         </main>
         <aside className="roller-container no-grass animate-item" id="rollerContainer">
           <div className="roller-axis"></div>
           <div className="roller-wheel" id="rollerWheel"></div>
         </aside>
-        <div className="scroll-indicator animate-item" onClick={onScrollArchive}>
-          <i data-lucide="chevron-down"></i>
-          <div>{t('下滑探索全景纪事', 'Scroll down to explore archive')}</div>
-        </div>
+        <div className="home-bottom-note no-grass"><button onClick={() => bridge.openModal?.('diyPanel')}><Plus size={15}/>{t('创造一只牛牛', 'Create a cow')}</button></div>
       </div>
 
       <section className="masonry-section" id="masonrySection">
-        <h2 className="masonry-header">{t('全部纪事 / ARCHIVE', 'ARCHIVE')}</h2>
+        <div className="home-archive-head"><div><p className="home-eyebrow">THE COLLECTION</p><h2 className="masonry-header">{t('创作与记录', 'Works & moments')}</h2></div><p>{t('每一次好奇，都留下了痕迹。', 'A trace of every curiosity.')}</p></div>
         <div className="masonry-grid no-grass" id="masonryGrid"></div>
       </section>
 
@@ -438,68 +425,7 @@ function DesktopHome({
            so script.ts can toggle active class on the correct node */}
       <DesktopFilterSidebar t={t} bridge={bridge} />
 
-      <button
-        type="button"
-        className="awards-floating-entry desktop-quick-entry desktop-quick-awards no-grass animate-item"
-        onClick={onOpenAwards}
-        aria-label={t('进入奖状页面', 'Open awards page')}
-      >
-        <span className="desktop-quick-icon" aria-hidden="true">AW</span>
-        <span className="desktop-quick-text">{t('奖状', 'Awards')}</span>
-      </button>
-
-      <button
-        type="button"
-        className="pdf-floating-entry desktop-quick-entry desktop-quick-pdf no-grass animate-item"
-        onClick={onOpenPdfs}
-        aria-label={t('进入作品集页面', 'Open portfolio page')}
-      >
-        <span className="desktop-quick-icon" aria-hidden="true">PDF</span>
-        <span className="desktop-quick-text">{t('作品集', 'Portfolio')}</span>
-      </button>
-
-      <button
-        type="button"
-        className="vibecoding-portal no-grass animate-item"
-        onClick={onOpenVibecoding}
-        aria-label={t('打开 VibeCoding 页面', 'Open VibeCoding page')}
-      >
-        <span className="vibecoding-portal-core">
-          <span className="vibecoding-portal-icon" aria-hidden="true">
-            <Code2 size={18} strokeWidth={1.8} />
-          </span>
-          <span className="vibecoding-portal-text">
-            <span className="vibecoding-portal-title">VibeCoding</span>
-            <span className="vibecoding-portal-sub">
-              {t('可玩 HTML 实验', 'Playable HTML Lab')}
-            </span>
-          </span>
-        </span>
-      </button>
-
-      <button
-        type="button"
-        className="journal-floating-entry desktop-quick-entry desktop-quick-journal no-grass animate-item"
-        onClick={onOpenJournal}
-        aria-label={t('打开手账本页面', 'Open journal page')}
-      >
-        <span className="desktop-quick-icon" aria-hidden="true">JR</span>
-        <span className="desktop-quick-text">{t('手账本', 'Journal')}</span>
-      </button>
-
-      <button
-        type="button"
-        className="pasture-floating-entry desktop-quick-entry desktop-quick-pasture no-grass animate-item"
-        onClick={onOpenPasture}
-        aria-label={t('进入牛牛牧场', 'Open cow pasture')}
-      >
-        <span className="desktop-quick-icon" aria-hidden="true">🐮</span>
-        <span className="desktop-quick-text">{t('牛牛牧场', 'Pasture')}</span>
-      </button>
-
-      <button className="create-btn no-grass animate-item" onClick={() => bridge.openModal?.('diyPanel')}>
-        ✦ {t('创造专属牛牛', 'Create Exclusive Cow')}
-      </button>
+      <footer className="home-footer no-grass"><span>GemosDodo · {t('的刻录石碑', 'The Engraved Stela')}</span><span>浙ICP备2026017753号</span></footer>
 
       {showAdminEntry ? (
         <div className="admin-trigger admin-entry-gate no-grass animate-item" onClick={onOpenAdmin} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onOpenAdmin()} aria-label={t('后台', 'Admin')}>

@@ -5,6 +5,7 @@ import {ImageViewer, MobileCanvas, MobileDialog, MobileImage, MobileWorkContent}
 import {categoryName, displayDate, fileSize, localized, type Language, type SiteData} from './types';
 
 import MobileArchive from './MobileArchive';
+import HomeCompanion from '../HomeCompanion';
 import {initialArchive} from './archive';
 
 const MobilePdfReader = lazy(() => import('./MobilePdfReader'));
@@ -166,6 +167,7 @@ export default function MobileSite({lang, onToggleLang, onAvatarTap, showAdminEn
           </> : <>
             {isHome && <>
               <header className="mi-home-intro"><p className="mi-eyebrow">{t('多多 GemosDodo', 'GemosDodo')}</p><h1>{t('一些创作。', 'Made with curiosity.')}<br /><span>{t('一些日常。', 'Collected along the way.')}</span></h1><p className="mi-intro-note">{t('设计、影像，还有生活里的灵光一现。', 'Design, moving images, and moments in between.')}</p></header>
+              <HomeCompanion lang={lang} />
               <MobileArchive works={data.timeline} lang={lang} state={archive} onChange={setArchive} onOpen={openDetail} />
               <section className="mi-explore"><h2>{t('继续看看', 'Keep exploring')}</h2>{sections.slice(1).map((section) => <Link to={section.path} key={section.path} className="mi-link-row"><span>{t(section.zh, section.en)}</span><ChevronRight size={18} /></Link>)}</section>
             </>}

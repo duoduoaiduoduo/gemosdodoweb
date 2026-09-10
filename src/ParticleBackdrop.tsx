@@ -43,10 +43,10 @@ const POINTER_REPEL_STRENGTH = 18;
 
 const VISUAL_PROFILES: Record<VisualMode, VisualProfile> = {
   base: {
-    count: 110,
+    count: 38,
     speed: 0.032,
     size: 1.04,
-    alpha: 0.24,
+    alpha: 0.12,
     riverBlend: 0.12,
     riverWidth: 0.42,
     camera: 0.22,

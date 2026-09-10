@@ -18,13 +18,13 @@ export function Cow({data}: {data: CowData}) {
       </g>)}
     </g>
     <g className="pg-torso">
-    <g className="pg-tail"><path d="M27 49Q8 38 12 64" stroke={color(data.tailColor, body)} strokeWidth="5" strokeLinecap="round" /><path d="M12 60L8 68Q14 72 17 65Z" fill={spot} /></g>
+    <g className="pg-tail"><path d={data.tailStyle === 'curly' ? 'M27 49C5 37 4 65 15 61C23 57 15 48 10 56' : data.tailStyle === 'lightning' ? 'M27 49L12 46L18 56L10 65' : 'M27 49Q8 38 12 64'} stroke={color(data.tailColor, body)} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 60L8 68Q14 72 17 65Z" fill={spot} /></g>
     <rect x="22" y="34" width="66" height={data.bodyShape === 'chubby' ? 45 : 40} rx={data.bodyShape === 'boxy' ? 12 : 23} fill={body} />
     <path d="M26 60Q51 79 86 60V65Q78 83 42 74Q29 72 26 60" fill="#4c5845" opacity=".07" />
     {data.spotType !== 'none' && (data.spotType === 'heart' ? <path d="M42 49C31 38 29 58 49 65C67 51 57 39 49 48Z" fill={spot} /> : <><path d="M36 36Q54 30 53 45Q51 54 39 51Q27 48 36 36" fill={spot} /><path d="M62 56Q76 50 78 65Q72 77 59 71Z" fill={spot} /></>)}
     <g className="pg-head">
       <path d="M75 28Q66 21 64 32Q69 39 78 36M95 29Q109 22 108 34Q104 40 97 36" fill={body} />
-      <path d="M76 29Q70 17 78 14M94 29Q101 18 95 14" stroke={color(data.hornColor, '#d6c6a3')} strokeWidth="5" strokeLinecap="round" />
+      <path d={data.hornStyle === 'long' ? 'M76 29Q60 8 76 6M94 29Q111 8 95 6' : data.hornStyle === 'devil' ? 'M76 29L72 10L82 26M94 29L99 10L90 26' : 'M76 29Q70 17 78 14M94 29Q101 18 95 14'} stroke={color(data.hornColor, '#d6c6a3')} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
       <rect x="73" y="23" width="31" height="36" rx="15" fill={body} />
       <ellipse cx="92" cy="52" rx="18" ry="11" fill={color(data.noseColor, '#e9b9ae')} />
       <g className="pg-open-eyes">{data.eyeStyle === 'happy' ? <path d="M80 39Q83 35 86 39M94 38Q97 34 100 38" stroke={color(data.eyeColor, '#283a30')} strokeWidth="2" strokeLinecap="round" /> : <g fill={color(data.eyeColor, '#283a30')}><ellipse cx="83" cy="39" rx="2" ry={data.eyeStyle === 'sleepy' ? 1 : 2.5} /><ellipse cx="97" cy="38" rx="2" ry={data.eyeStyle === 'sleepy' ? 1 : 2.5} /></g>}

@@ -1,5 +1,9 @@
 // @ts-nocheck
 
+import {createElement} from 'react';
+import {createRoot} from 'react-dom/client';
+import {Cow as CowIllustration} from './pasture/Cow';
+
 import { detectLayoutMode, isDesktopGrassAllowed } from './layoutMode';
 
 declare global {
@@ -749,10 +753,13 @@ export function initApp() {
     }
 
     function clearRenderedCows() {
+        grassList.forEach(grass => grass.el.remove());
+        grassList = [];
         cows.forEach((cow) => {
             try {
                 clearInterval(cow.wanderInterval);
                 cow.el.remove();
+                cow.spriteEl?._cowRoot?.unmount();
             } catch {}
         });
         cows = [];
@@ -1493,74 +1500,15 @@ export function initApp() {
 
     let cows = []; let grassList = [];
 
-    function getCowSVG(bodyColor, spotColor, hornColor, noseColor, legColor, hoofColor, tailColor, eyeColor, eyeStyle, spotType, bodyShape, hornStyle, tailStyle) {
-        const outline = '#2f2a26';
-        const bodyX = bodyShape === 'chubby' ? 13 : 17;
-        const bodyY = bodyShape === 'chubby' ? 39 : 41;
-        const bodyW = bodyShape === 'chubby' ? 72 : 62;
-        const bodyH = bodyShape === 'chubby' ? 43 : 37;
-        const bodyRx = bodyShape === 'boxy' ? 9 : bodyShape === 'chubby' ? 23 : 18;
-        const bodySVG = `<rect x="${bodyX}" y="${bodyY}" width="${bodyW}" height="${bodyH}" rx="${bodyRx}" fill="${bodyColor}" stroke="${outline}" stroke-width="2.4"/>`;
-
-        let hornSVG = '';
-        if (hornStyle === 'long') {
-            hornSVG = `<path d="M 70 30 Q 55 8 76 10" stroke="${hornColor}" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 89 30 Q 104 8 83 10" stroke="${hornColor}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
-        } else if (hornStyle === 'devil') {
-            hornSVG = `<path d="M 71 31 L 65 15 L 76 24 Z" fill="${hornColor}" stroke="${outline}" stroke-width="1.6" stroke-linejoin="round"/><path d="M 88 31 L 94 15 L 83 24 Z" fill="${hornColor}" stroke="${outline}" stroke-width="1.6" stroke-linejoin="round"/>`;
-        } else {
-            hornSVG = `<path d="M 71 30 Q 68 20 74 20" stroke="${hornColor}" stroke-width="3.6" fill="none" stroke-linecap="round"/><path d="M 88 30 Q 91 20 85 20" stroke="${hornColor}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
-        }
-
-        let tailSVG = ''; let tailTipColor = (spotColor === 'none' ? tailColor : spotColor);
-        if (tailStyle === 'curly') {
-            tailSVG = `<path d="M 19 48 C 5 47 4 58 14 59 C 22 60 22 70 10 70" stroke="${tailColor}" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="10" cy="70" r="4.6" fill="${tailTipColor}" stroke="${outline}" stroke-width="1.4"/>`;
-        } else if (tailStyle === 'lightning') {
-            tailSVG = `<polyline points="19,48 12,54 17,60 8,70" stroke="${tailColor}" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><polygon points="8,70 4,76 13,76" fill="${tailTipColor}" stroke="${outline}" stroke-width="1.4" stroke-linejoin="round"/>`;
-        } else {
-            tailSVG = `<path d="M 19 48 Q 8 49 9 64" stroke="${tailColor}" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="9" cy="64" r="4.6" fill="${tailTipColor}" stroke="${outline}" stroke-width="1.4"/>`;
-        }
-
-        let eyeSVG = '';
-        if (eyeStyle === 'happy') {
-            eyeSVG = `<path d="M 73 39 Q 75.5 36 78 39 M 84 39 Q 86.5 36 89 39" stroke="${eyeColor}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
-        } else if (eyeStyle === 'sleepy') {
-            eyeSVG = `<path d="M 73 40 Q 75.5 42 78 40 M 84 40 Q 86.5 42 89 40" stroke="${eyeColor}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
-        } else {
-            eyeSVG = `<circle cx="76" cy="39" r="2.8" fill="${eyeColor}"/><circle cx="87" cy="39" r="2.8" fill="${eyeColor}"/><circle cx="77" cy="38" r="0.8" fill="#fff" opacity="0.85"/><circle cx="88" cy="38" r="0.8" fill="#fff" opacity="0.85"/>`;
-        }
-
-        let spotSVG = '';
-        if (spotType === 'classic') {
-            spotSVG = `<circle cx="35" cy="56" r="8.5" fill="${spotColor}"/><path d="M 58 44 Q 69 44 68 55 Q 58 61 53 50 Z" fill="${spotColor}"/>`;
-        } else if (spotType === 'heart') {
-            spotSVG = `<path d="M 45 53 A 5.5 5.5 0 0 1 54 53 A 5.5 5.5 0 0 1 63 53 Q 63 62 54 70 Q 45 62 45 53 Z" fill="${spotColor}"/>`;
-        }
-
-        const earSVG = `<path d="M 69 35 Q 58 30 60 42 Q 66 46 72 41 Z" fill="${bodyColor}" stroke="${outline}" stroke-width="2" stroke-linejoin="round"/><path d="M 90 35 Q 101 30 99 42 Q 93 46 87 41 Z" fill="${bodyColor}" stroke="${outline}" stroke-width="2" stroke-linejoin="round"/>`;
-        const legSVG = `<rect x="28" y="72" width="8" height="16" rx="4" fill="${legColor}"/><rect x="47" y="72" width="8" height="16" rx="4" fill="${legColor}"/><rect x="67" y="72" width="8" height="16" rx="4" fill="${legColor}"/><rect x="28" y="84" width="8" height="6" rx="3" fill="${hoofColor}"/><rect x="47" y="84" width="8" height="6" rx="3" fill="${hoofColor}"/><rect x="67" y="84" width="8" height="6" rx="3" fill="${hoofColor}"/>`;
-        const headSVG = `<rect x="66" y="29" width="31" height="31" rx="14" fill="${bodyColor}" stroke="${outline}" stroke-width="2.4"/>`;
-        const muzzleSVG = `<rect x="72" y="43" width="25" height="17" rx="8.5" fill="${noseColor}" stroke="${outline}" stroke-width="1.8"/><circle cx="79" cy="50" r="1.8" fill="rgba(0,0,0,0.34)"/><circle cx="89" cy="50" r="1.8" fill="rgba(0,0,0,0.34)"/>`;
-
-        return `<svg viewBox="0 0 110 100" width="100%" height="100%" stroke-linejoin="round">${tailSVG}${legSVG}${bodySVG}${spotSVG}${earSVG}${headSVG}${muzzleSVG}${eyeSVG}${hornSVG}</svg>`;
+    function mountCowSVG(container, bodyColor, spotColor, hornColor, noseColor, legColor, hoofColor, tailColor, eyeColor, eyeStyle, spotType, bodyShape, hornStyle, tailStyle) {
+        const root = container._cowRoot || (container._cowRoot = createRoot(container));
+        root.render(createElement(CowIllustration, {data: {bodyColor, spotColor, hornColor, noseColor, legColor, hoofColor, tailColor, eyeColor, eyeStyle, spotType, bodyShape, hornStyle, tailStyle}}));
     }
 
     function getCowSpawnPoint() {
-        const avatar = document.querySelector('.avatar-unlock-hit');
-        const scrollY = window.scrollY || 0;
-        let baseX = 80;
-        let baseY = 110 + scrollY;
-
-        if (avatar && typeof avatar.getBoundingClientRect === 'function') {
-            const rect = avatar.getBoundingClientRect();
-            baseX = rect.left + rect.width * 0.5;
-            baseY = rect.top + rect.height + 26 + scrollY;
-        }
-
-        // Add small jitter so multiple cows do not overlap completely.
-        const jitterX = (Math.random() - 0.5) * 28;
-        const jitterY = (Math.random() - 0.5) * 16;
-        const x = Math.max(40, Math.min(window.innerWidth - 40, baseX + jitterX));
-        const y = Math.max(scrollY + 56, baseY + jitterY);
+        const hero = document.querySelector('.desktop-home .hero-screen')?.getBoundingClientRect();
+        const x = (hero?.left || 0) + (hero?.width || window.innerWidth) * .07 + 40 + cows.length * 95;
+        const y = (hero?.bottom || window.innerHeight) + window.scrollY - 90;
         return {x, y};
     }
 
@@ -1580,24 +1528,31 @@ export function initApp() {
             
             this.nameEl = document.createElement('div'); this.nameEl.className = 'cow-name'; this.nameEl.innerText = name;
             this.spriteEl = document.createElement('div'); this.spriteEl.className = 'cow-sprite';
-            this.spriteEl.innerHTML = getCowSVG(bodyColor, spotColor, hornColor, noseColor, legColor, hoofColor, tailColor, eyeColor, eyeStyle, spotType, bodyShape, hornStyle, tailStyle);
+            mountCowSVG(this.spriteEl, bodyColor, spotColor, hornColor, noseColor, legColor, hoofColor, tailColor, eyeColor, eyeStyle, spotType, bodyShape, hornStyle, tailStyle);
 
             this.el.appendChild(this.nameEl); this.el.appendChild(this.spriteEl); document.body.appendChild(this.el);
             this.el.addEventListener('click', () => { 
+                this.state='IDLE';this.targetGrass=null;this.restUntil=performance.now()+12000;this.el.classList.remove('walking','eating');
                 document.getElementById('msgDialogName').innerText = window.currentLang === 'en' ? `${name}'s Message` : `${name} 留下的信`;
                 document.getElementById('msgDialogTime').innerText = window.currentLang === 'en' ? `Hatched at ${this.createdAt}` : `孵化于 ${this.createdAt}`;
                 document.getElementById('msgDialogContent').innerText = this.message;
                 openModal('messageDialog'); 
             });
             
+            this.restUntil = performance.now() + 7000 + Math.random()*5000; this.walkUntil = 0;
+            this.el.tabIndex = 0; this.el.setAttribute('role','button'); this.el.setAttribute('aria-label', name);
+            this.el.addEventListener('keydown', (e) => {if(e.key === 'Enter' || e.key === ' ') {e.preventDefault();this.el.click();}});
             this.wanderInterval = setInterval(() => this.randomWander(), 3000 + Math.random() * 2000); this.update();
         }
 
         randomWander() {
-        if ((this.state === 'IDLE' || this.state === 'WANDERING') && grassList.length === 0) {
+        if (this.state === 'IDLE' && performance.now() > this.restUntil && Math.random() > .4) {
                 const scrollY = window.scrollY;
-                this.targetX = 100 + Math.random() * (window.innerWidth - 200); 
-                this.targetY = scrollY + 100 + Math.random() * (window.innerHeight - 200);
+                this.targetX = Math.max(70,Math.min(window.innerWidth-70,this.x+(Math.random()-.5)*220));
+                const hero = document.querySelector('.desktop-home .hero-screen')?.getBoundingClientRect();
+                const floor = (hero?.bottom || window.innerHeight) + scrollY - 90;
+                this.targetY = Math.max(floor-20,Math.min(floor,this.y+(Math.random()-.5)*30));
+                this.walkUntil = performance.now()+4000;
                 this.state = 'WANDERING'; this.el.classList.add('walking'); this.el.classList.remove('eating');
             }
         }
@@ -1605,24 +1560,29 @@ export function initApp() {
         eat(grass) {
             this.state = 'EATING'; this.el.classList.remove('walking'); this.el.classList.add('eating');
             if (grass.el.parentNode) grass.el.remove(); grassList = grassList.filter(g => g !== grass);
-            setTimeout(() => { this.state = 'IDLE'; this.el.classList.remove('eating'); this.checkGrass(); }, 2000);
+            setTimeout(() => { this.state = 'IDLE'; this.restUntil=performance.now()+15000; this.targetGrass=null; this.el.classList.remove('eating'); }, 2000);
         }
 
         checkGrass() {
-            if (grassList.length > 0) {
+            if (grassList.length > 0 && performance.now() > this.restUntil) {
                 let closestGrass = grassList[0]; let minDist = Infinity;
                 grassList.forEach(g => { let dist = Math.sqrt(Math.pow(g.x - this.x, 2) + Math.pow(g.y - this.y, 2)); if(dist < minDist) { minDist = dist; closestGrass = g; } });
+                if(minDist>250 || cows.some(c=>c!==this && c.targetGrass===closestGrass && c.state==='SEEKING')) return;
                 this.targetGrass = closestGrass; this.targetX = closestGrass.x; this.targetY = closestGrass.y;
                 this.state = 'SEEKING'; this.el.classList.add('walking'); this.el.classList.remove('eating');
             }
         }
 
         update() {
+            if (!this.el.isConnected) return;
+            const now=performance.now(), dt=Math.min((now-(this.lastFrame || now))/1000,.05);this.lastFrame=now;
+            if (document.hidden) {requestAnimationFrame(() => this.update());return;}
+            if(this.state === 'WANDERING' && performance.now()>this.walkUntil) {this.state='IDLE';this.restUntil=performance.now()+8000+Math.random()*8000;this.el.classList.remove('walking');}
             if (this.state === 'WANDERING' || this.state === 'SEEKING') {
-                if (this.state === 'SEEKING' && !grassList.includes(this.targetGrass)) { this.checkGrass(); if(this.state !== 'SEEKING') this.randomWander(); }
+                if (this.state === 'SEEKING' && !grassList.includes(this.targetGrass)) {this.state='IDLE';this.targetGrass=null;this.el.classList.remove('walking');this.checkGrass();}
                 let dx = this.targetX - this.x; let dy = this.targetY - this.y; let dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < 5) { if (this.state === 'SEEKING' && grassList.includes(this.targetGrass)) { this.eat(this.targetGrass); } else { this.state = 'IDLE'; this.el.classList.remove('walking'); } } 
-                else { this.x += (dx / dist) * this.speed; this.y += (dy / dist) * this.speed; }
+                if (dist < 5) { if (this.state === 'SEEKING' && grassList.includes(this.targetGrass)) { this.eat(this.targetGrass); } else { this.state = 'IDLE'; this.restUntil=performance.now()+8000+Math.random()*8000; this.el.classList.remove('walking'); } }
+                else { const travel=Math.min(dist,this.speed*32*dt);const x=this.x+(dx/dist)*travel,y=this.y+(dy/dist)*travel;if(cows.every(c=>c===this || Math.hypot(c.x-x,(c.y-y)*1.5)>78)){this.x=x;this.y=y;}else{this.state="IDLE";this.targetGrass=null;this.restUntil=now+7000;this.el.classList.remove("walking");} }
                 if (dx > 0) this.facingRight = true; else if (dx < 0) this.facingRight = false;
             }
             this.el.style.transform = `translate(${this.x - 30}px, ${this.y - 60}px)`;
@@ -1644,7 +1604,7 @@ export function initApp() {
         const getVal = (id) => document.getElementById(id)?.value;
         const previewContainer = document.getElementById('cowPreviewContainer');
         if(previewContainer) {
-            previewContainer.innerHTML = `<div style="display: flex; flex-direction: column; align-items: center;"><div class="cow-name" style="position: relative; top: 10px; z-index: 2;">${getVal('cowNameInput') || (window.currentLang === 'en' ? 'Unknown Cow' : '未知牛牛')}</div><div style="width: 80px; height: 80px;">${getCowSVG(getVal('bodyColorInput'), getVal('spotColorInput'), getVal('hornColorInput'), getVal('noseColorInput'), getVal('legColorInput'), getVal('hoofColorInput'), getVal('tailColorInput'), getVal('eyeColorInput'), getVal('eyeStyleInput'), getVal('spotTypeInput'), getVal('bodyShapeInput'), getVal('hornStyleInput'), getVal('tailStyleInput'))}</div></div>`;
+            mountCowSVG(previewContainer, getVal('bodyColorInput'), getVal('spotColorInput'), getVal('hornColorInput'), getVal('noseColorInput'), getVal('legColorInput'), getVal('hoofColorInput'), getVal('tailColorInput'), getVal('eyeColorInput'), getVal('eyeStyleInput'), getVal('spotTypeInput'), getVal('bodyShapeInput'), getVal('hornStyleInput'), getVal('tailStyleInput'));
         }
     }
 
@@ -1713,7 +1673,7 @@ export function initApp() {
 
     function plantGrass(clientX, clientY, target) {
         if (!shouldEnableGrass()) return;
-        if (target.closest('.no-grass')) return;
+        if (target.closest('.no-grass, button, a, input, select, textarea, [role=button]')) return;
         
         const scrollY = window.scrollY;
         
