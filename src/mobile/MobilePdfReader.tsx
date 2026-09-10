@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState, type FC} from 'react';
 import * as pdfjs from 'pdfjs-dist';
-import worker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import worker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker&url';
 import type {PDFDocumentProxy} from 'pdfjs-dist';
 import type {Language} from './types';
 import {localized} from './types';
