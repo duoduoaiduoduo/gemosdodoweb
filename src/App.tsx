@@ -1,7 +1,7 @@
-import { ReactNode, Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { ReactNode, Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Lock, Copy, BookOpen, PenTool, Code2, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
+import { Code2 } from 'lucide-react';
 import { initApp } from './script';
 import AdminStudio from './AdminStudio';
 import AwardsPage from './AwardsPage';
@@ -16,6 +16,8 @@ import { getAppBridge } from './appBridge';
 import { runLanguageErosionTransition } from './langErosion';
 import { detectLayoutMode, type LayoutMode } from './layoutMode';
 import ParticleBackdrop from './ParticleBackdrop';
+
+const MobileSite = lazy(() => import('./mobile/MobileSite'));
 
 const ProposalPdfPage = lazy(() => import('./ProposalPdfPage'));
 
@@ -351,152 +353,6 @@ function DesktopFilterSidebar({
 }
 
 
-function TouchHome({
-  lang,
-  t,
-  bridge,
-  isPhone,
-  showAdminEntry,
-  isLangTransitioning,
-  onAvatarTap,
-  onToggleLang,
-  onOpenAwards,
-  onOpenPdfs,
-  onOpenVibecoding,
-  onOpenJournal,
-  onOpenAdmin,
-  onScrollArchive,
-}: {
-  lang: AppLang;
-  t: (zh: string, en: string) => string;
-  bridge: ReturnType<typeof getAppBridge>;
-  isPhone: boolean;
-  showAdminEntry: boolean;
-  isLangTransitioning: boolean;
-  onAvatarTap: () => void;
-  onToggleLang: () => void;
-  onOpenAwards: () => void;
-  onOpenPdfs: () => void;
-  onOpenVibecoding: () => void;
-  onOpenJournal: () => void;
-  onOpenAdmin: () => void;
-  onScrollArchive: () => void;
-}) {
-  // Track active filter with React state so the UI re-renders on change
-  const [activeFilter, setActiveFilter] = useState<string>(
-    () => (window as any).currentFilterCode || 'all'
-  );
-
-  const handleFilter = (type: 'all' | 'project' | 'video' | 'edu', el: HTMLElement) => {
-    // Update React state first so buttons re-render with correct active class
-    setActiveFilter(type);
-    // Then delegate to script.ts which updates the roller + masonry
-    bridge.filterTimeline?.(type, el);
-  };
-
-  const filters: Array<{ code: 'all' | 'project' | 'video' | 'edu'; zh: string; en: string }> = [
-    { code: 'all', zh: '全部', en: 'All' },
-    { code: 'project', zh: '作品', en: 'Work' },
-    { code: 'video', zh: '视频', en: 'Video' },
-    { code: 'edu', zh: '教育', en: 'Edu' },
-  ];
-
-  return (
-    <div className="stack-home">
-      {/* 顶部：品牌引子 + 语言/头像/管理 + 进度 */}
-      <header className="stack-topbar">
-        <div className="stack-brand">
-          <p className="stack-eyebrow">GEMOSDODO</p>
-          <p className="stack-subtitle">{t('数字档案馆 · 拨开每一件', 'Digital archive · flick to explore')}</p>
-        </div>
-        <div className="stack-topbar-right">
-          <button className="stack-lang" onClick={onToggleLang}>
-            {lang === 'zh' ? '中 / EN' : 'EN / 中'}
-          </button>
-          {showAdminEntry && (
-            <button className="stack-icon-btn" onClick={onOpenAdmin} aria-label="admin">
-              <Lock size={16} strokeWidth={2} />
-            </button>
-          )}
-          <button className="stack-avatar" onClick={onAvatarTap} aria-label="avatar">
-            <img src="/avatar.png" alt="Avatar" />
-          </button>
-        </div>
-      </header>
-
-      {/* 极简筛选（切换换整叠牌） */}
-      <div className="stack-filter" role="tablist">
-        {filters.map((f) => (
-          <button
-            key={f.code}
-            role="tab"
-            aria-selected={activeFilter === f.code}
-            className={`stack-filter-item ${activeFilter === f.code ? 'active' : ''}`}
-            onClick={(e) => handleFilter(f.code, e.currentTarget)}
-          >
-            {t(f.zh, f.en)}
-          </button>
-        ))}
-        <span className="stack-progress">
-          <span id="stackProgressCur">01</span>
-          <span className="stack-progress-sep"> / </span>
-          <span id="stackProgressTotal">00</span>
-        </span>
-      </div>
-
-      {/* 中央：可拨弄的作品卡牌堆（DOM 由 script.ts 填充） */}
-      <section className="stack-area">
-        <div id="cardStack" className="card-stack" aria-label={t('作品卡牌堆', 'Work card stack')}></div>
-        <div id="stackEmpty" className="stack-empty" style={{ display: 'none' }}>
-          <p>{t('这一类还没有作品', 'Nothing here yet')}</p>
-        </div>
-      </section>
-
-      {/* 拨弄提示 + 左右按钮 */}
-      <div className="stack-controls">
-        <button id="stackPrev" className="stack-nav-btn" aria-label={t('上一张', 'Previous')}>
-          <ArrowLeft size={18} strokeWidth={2} />
-        </button>
-        <div className="stack-hint">
-          <span>{t('上滑展开', 'Swipe up to open')}</span>
-          <ArrowUp size={14} strokeWidth={2.4} />
-        </div>
-        <button id="stackNext" className="stack-nav-btn" aria-label={t('下一张', 'Next')}>
-          <ArrowRight size={18} strokeWidth={2} />
-        </button>
-      </div>
-
-      {/* 底部：极简圆点入口 */}
-      <nav className="stack-dock">
-        <button className="stack-dock-item" onClick={onOpenAwards}>
-          <Copy size={19} strokeWidth={1.7} />
-          <span>{t('奖状', 'Awards')}</span>
-        </button>
-        <button className="stack-dock-item" onClick={onOpenPdfs}>
-          <BookOpen size={19} strokeWidth={1.7} />
-          <span>{t('作品集', 'Portfolio')}</span>
-        </button>
-        <button className="stack-dock-item active" aria-current="page">
-          <span className="stack-dock-dot" />
-          <span>{t('档案', 'Archive')}</span>
-        </button>
-        <button className="stack-dock-item" onClick={onOpenVibecoding}>
-          <Code2 size={19} strokeWidth={1.8} />
-          <span>{t('实验室', 'Lab')}</span>
-        </button>
-        <button className="stack-dock-item" onClick={onOpenJournal}>
-          <PenTool size={19} strokeWidth={1.7} />
-          <span>{t('手账', 'Journal')}</span>
-        </button>
-      </nav>
-
-      <aside id="rollerContainer" className="m-bridge-roller" aria-hidden="true" style={{ display: 'none' }}>
-        <div id="rollerWheel"></div>
-      </aside>
-    </div>
-  );
-}
-
 function DesktopHome({
   lang,
   t,
@@ -701,6 +557,17 @@ export default function App() {
     !isPingPongRoute &&
     !isTucaoRoute;
 
+  const isMobileContent = layoutMode === 'phone' && (showHome || isAwardsRoute || isPdfsRoute || isJournalRoute || isVibecodingRoute);
+
+  useLayoutEffect(() => {
+    document.documentElement.classList.toggle('mobile-ui', isMobileContent);
+    document.body.classList.toggle('mobile-ui', isMobileContent);
+    return () => {
+      document.documentElement.classList.remove('mobile-ui');
+      document.body.classList.remove('mobile-ui');
+    };
+  }, [isMobileContent]);
+
   const onAvatarTap = () => {
     const now = Date.now();
     const { count, lastAt } = avatarUnlockRef.current;
@@ -713,6 +580,12 @@ export default function App() {
   };
 
   const handleToggleLang = useCallback(() => {
+    if (layoutMode === 'phone') {
+      const next = lang === 'zh' ? 'en' : 'zh';
+      setLang(next);
+      bridge.setAppLanguage?.(next);
+      return;
+    }
     if (langTransitionLockRef.current || isLangTransitioning) return;
     langTransitionLockRef.current = true;
     setIsLangTransitioning(true);
@@ -729,11 +602,12 @@ export default function App() {
       langTransitionLockRef.current = false;
       setIsLangTransitioning(false);
     });
-  }, [bridge, isLangTransitioning, lang]);
+  }, [bridge, isLangTransitioning, lang, layoutMode]);
 
   useEffect(() => {
-    initApp();
-  }, []);
+    // The mobile site owns its rendering and touch interactions entirely.
+    if (layoutMode === 'desktop') initApp();
+  }, [layoutMode]);
 
   useEffect(() => {
     if (isAdminRoute) return;
@@ -782,7 +656,7 @@ export default function App() {
   }, [isAwardsRoute, isPdfsRoute, isJournalRoute, location.search, showHome]);
 
   useEffect(() => {
-    if (!showHome) return;
+    if (!showHome || isMobileContent) return;
     if (!homeDetailId) {
       const detailModal = document.getElementById('detailModal');
       if (detailModal?.classList.contains('active')) {
@@ -794,7 +668,7 @@ export default function App() {
       (window as any).openDetailById?.(homeDetailId);
     }, 60);
     return () => window.clearTimeout(timer);
-  }, [bridge, homeDetailId, showHome]);
+  }, [bridge, homeDetailId, showHome, isMobileContent]);
 
   useEffect(() => {
     const syncMode = () => setLayoutMode(detectLayoutMode());
@@ -926,27 +800,8 @@ export default function App() {
   return (
     <>
       <ParticleBackdrop enabled={showHome && layoutMode === 'desktop'} />
-      <div style={{ display: showHome ? undefined : 'none' }} aria-hidden={!showHome}>
-        {layoutMode !== 'desktop' ? (
-          <TouchHome
-            lang={lang}
-            t={t}
-            bridge={bridge}
-            isPhone={layoutMode === 'phone'}
-            showAdminEntry={showAdminEntry}
-            isLangTransitioning={isLangTransitioning}
-            onAvatarTap={onAvatarTap}
-            onToggleLang={handleToggleLang}
-            onOpenAwards={() => navigateToPath('/awards')}
-            onOpenPdfs={() => navigateToPath('/pdfs')}
-            onOpenVibecoding={() => navigateToPath('/vibecoding')}
-            onOpenJournal={() => navigateToPath('/journal')}
-            onOpenAdmin={() => navigateToPath('/admin')}
-            onScrollArchive={() => {
-              document.getElementById('masonrySection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
-          />
-        ) : (
+      {isMobileContent && <Suspense fallback={<div style={{minHeight: '100svh'}} />}><MobileSite lang={lang} onToggleLang={handleToggleLang} onAvatarTap={onAvatarTap} showAdminEntry={showAdminEntry} /></Suspense>}
+      <div style={{ display: showHome && !isMobileContent ? undefined : 'none' }} aria-hidden={!showHome || isMobileContent}>
           <DesktopHome
             lang={lang}
             t={t}
@@ -965,16 +820,15 @@ export default function App() {
               document.getElementById('masonrySection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
           />
-        )}
         <CommonModals lang={lang} t={t} bridge={bridge} onCopyCurrentLink={copyCurrentLink} />
       </div>
 
       {isAdminRoute ? <AdminStudio lang={lang} onBack={goHome} /> : null}
-      {isAwardsRoute ? <AwardsPage lang={lang} focusAwardId={awardsFocusId} onBack={goHome} onOpenWork={openHomeDetail} /> : null}
-      {isPdfsRoute ? <PdfsPage lang={lang} focusPdfId={pdfFocusId} onBack={goHome} onOpenWork={openHomeDetail} /> : null}
-      {isVibecodingRoute ? <VibecodingPage lang={lang} onBack={goHome} onToggleLang={handleToggleLang} /> : null}
+      {isAwardsRoute && !isMobileContent ? <AwardsPage lang={lang} focusAwardId={awardsFocusId} onBack={goHome} onOpenWork={openHomeDetail} /> : null}
+      {isPdfsRoute && !isMobileContent ? <PdfsPage lang={lang} focusPdfId={pdfFocusId} onBack={goHome} onOpenWork={openHomeDetail} /> : null}
+      {isVibecodingRoute && !isMobileContent ? <VibecodingPage lang={lang} onBack={goHome} onToggleLang={handleToggleLang} /> : null}
       {isVibecodingLaunchRoute ? <VibecodingLaunchPage lang={lang} slug={vibecodingSlug} onBackToList={() => navigateToPath('/vibecoding')} /> : null}
-      {isJournalRoute ? <JournalPage lang={lang} focusJournalId={journalFocusId} onBack={goHome} /> : null}
+      {isJournalRoute && !isMobileContent ? <JournalPage lang={lang} focusJournalId={journalFocusId} onBack={goHome} /> : null}
       {isPastureRoute ? <PasturePage lang={lang} onBack={goHome} onToggleLang={handleToggleLang} /> : null}
       {isPingPongRoute ? <PingPongPage lang={lang} onBack={goHome} /> : null}
       {isTucaoRoute ? <TucaoPage lang={lang} onBack={goHome} /> : null}

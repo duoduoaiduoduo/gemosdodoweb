@@ -23,6 +23,10 @@ export default defineConfig(({mode}) => {
         ignored: ['**/uploads/**', '**/data.json', '**/visitor_stats.json', '**/vibecoding-projects.json'],
       },
       proxy: {
+        '/uploads': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+        },
         '/api': {
           target: 'http://localhost:3001',
           changeOrigin: true,
