@@ -27,7 +27,8 @@ export function Cow({data}: {data: CowData}) {
       <path d="M76 29Q70 17 78 14M94 29Q101 18 95 14" stroke={color(data.hornColor, '#d6c6a3')} strokeWidth="5" strokeLinecap="round" />
       <rect x="73" y="23" width="31" height="36" rx="15" fill={body} />
       <ellipse cx="92" cy="52" rx="18" ry="11" fill={color(data.noseColor, '#e9b9ae')} />
-      {data.eyeStyle === 'happy' ? <path d="M80 39Q83 35 86 39M94 38Q97 34 100 38" stroke={color(data.eyeColor, '#283a30')} strokeWidth="2" strokeLinecap="round" /> : <g fill={color(data.eyeColor, '#283a30')}><ellipse cx="83" cy="39" rx="2" ry={data.eyeStyle === 'sleepy' ? 1 : 2.5} /><ellipse cx="97" cy="38" rx="2" ry={data.eyeStyle === 'sleepy' ? 1 : 2.5} /></g>}
+      <g className="pg-open-eyes">{data.eyeStyle === 'happy' ? <path d="M80 39Q83 35 86 39M94 38Q97 34 100 38" stroke={color(data.eyeColor, '#283a30')} strokeWidth="2" strokeLinecap="round" /> : <g fill={color(data.eyeColor, '#283a30')}><ellipse cx="83" cy="39" rx="2" ry={data.eyeStyle === 'sleepy' ? 1 : 2.5} /><ellipse cx="97" cy="38" rx="2" ry={data.eyeStyle === 'sleepy' ? 1 : 2.5} /></g>}
+      </g><path className="pg-sleep-eyes" d="M80 40Q83 42 86 40M94 39Q97 41 100 39" stroke={color(data.eyeColor, '#283a30')} strokeWidth="2" strokeLinecap="round" />
       <g fill="#7f635c" opacity=".55"><ellipse cx="88" cy="53" rx="1.5" ry="2" /><ellipse cx="100" cy="52" rx="1.5" ry="2" /></g>
     </g>
     </g>
