@@ -1,7 +1,7 @@
-import * as ort from './ort/ort.webgpu.min.mjs';
+import * as ort from './ort/ort.webgpu.min.js';
 import {prepare,half} from './prepare.js';
 ort.env.wasm.numThreads=1;
-ort.env.wasm.wasmPaths={mjs:new URL('./ort/ort-wasm-simd-threaded.asyncify.mjs',import.meta.url).href,wasm:new URL('./ort/ort-wasm-simd-threaded.asyncify.wasm',import.meta.url).href};
+ort.env.wasm.wasmPaths={mjs:new URL('./ort/ort-wasm-simd-threaded.asyncify.js',import.meta.url).href,wasm:new URL('./ort/ort-wasm-simd-threaded.asyncify.wasm',import.meta.url).href};
 let session=null,busy=false;
 const status=(text,phase='loading')=>postMessage({type:'status',text,phase});
 async function modelFile(config,name,size){
