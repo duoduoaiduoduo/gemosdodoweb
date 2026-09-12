@@ -33,15 +33,11 @@ export function makeTide(mobile){
  varying vec3 color,sphereCenter;varying float sphereRadius;
  void main(){
   vec2 q=gl_PointCoord*2.-1.;q.y=-q.y;float r2=dot(q,q);if(r2>=1.)discard;
-  // Analytic sphere surface, including per-fragment depth and directional shading.
+  // Analytic sphere surface, with per-fragment depth and a solid unlit color.
   vec3 N=vec3(q,sqrt(1.-r2)),surface=sphereCenter+N*sphereRadius;
   vec4 clip=projectionMatrix*vec4(surface,1.);gl_FragDepth=clip.z/clip.w*.5+.5;
-  vec3 L=normalize(vec3(-.55,.75,1.)),V=normalize(-surface),H=normalize(L+V);
-  float diffuse=max(dot(N,L),0.),spec=pow(max(dot(N,H),0.),64.);
-  float rim=pow(1.-max(dot(N,V),0.),3.);
-  vec3 lit=color*(.16+.78*diffuse)+vec3(.92,.90,1.)*spec*.65+color*rim*.055;
   float edge=1.-smoothstep(1.-fwidth(r2),1.,r2);
-  gl_FragColor=vec4(lit,fade*edge);
+  gl_FragColor=vec4(color,fade*edge);
  }`});
  const mesh=new THREE.Points(geometry,material);mesh.frustumCulled=false;
  return {mesh,update(t,vortex,opacity,pixels){material.uniforms.time.value=t;material.uniforms.swirl.value=vortex;material.uniforms.fade.value=opacity;material.uniforms.pixels.value=pixels;mesh.visible=opacity>.001;}};
