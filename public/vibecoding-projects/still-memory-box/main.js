@@ -162,9 +162,9 @@ function fitContent(){
  const center=b.getCenter(new THREE.Vector3());
  memoryMesh.rotation.y=0;
  // Give the subject the usable depth of the case; earlier XY scaling flattened it twice.
- memoryMesh.scale.set(scale,scale,1.32*depthVolume/Math.max(size.z,.01));
- memoryMesh.position.copy(center).multiply(memoryMesh.scale).negate().add(new THREE.Vector3(0,.84,-.02));
- memoryMesh.material.uniforms.clipMin.value.set(-1.54,-.53,-.76);
+ memoryMesh.scale.set(scale,scale,3.22*depthVolume/Math.max(size.z,.01));
+ memoryMesh.position.copy(center).multiply(memoryMesh.scale).negate().add(new THREE.Vector3(0,.84,-.97));
+ memoryMesh.material.uniforms.clipMin.value.set(-1.54,-.53,-2.66);
  memoryMesh.material.uniforms.clipMax.value.set(1.54,2.21,.66);
  memoryMesh.lastDirection=null;
  $('fit-cover').setAttribute('aria-pressed',String(fill==='cover'));$('fit-contain').setAttribute('aria-pressed',String(fill==='contain'));

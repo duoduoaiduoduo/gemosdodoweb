@@ -19,7 +19,7 @@ export function makeTide(mobile){
  // Most grains occupy the entire column; a small fraction emphasizes surface foam.
  float layer=s.y<.88?s.y/.88: .91+(s.y-.88)*.75;
  float eddy=field(vec3(uv*2.3,s.y*3.+t*.8));
- vec3 p=vec3(uv.x*1.44,-.50+layer*level,uv.y*.61);
+ vec3 p=vec3(uv.x*1.44,-.50+layer*level,uv.y*1.56-.95);
  p.x+= (field(vec3(uv*2.,s.y*4.-t))-.5)*.18*(1.-abs(uv.x));
  p.z+= (eddy-.5)*.14*(1.-abs(uv.y));
  p.y+= (eddy-.5)*.15*sin(layer*3.14159);

@@ -124,5 +124,24 @@ export function buildComputer(glassMaterial,absHeight=null){
  key(1.203,.304,2,'0',alt);key(1.467,.304,1,'.',keyMat);
  // Thick rounded front lip and low rubber feet, kept separate from the sloping deck.
  for(const x of [-1.46,1.46])for(const z of [-.72,1.66])add(box(.24,.069,.245,.022),dark,[x,-1.718,z]);
+ // Extend the rear chamber by 1.90 units while retaining the front controls,
+ // keyboard and front/rear bevel thicknesses. Deform shared solids continuously.
+ group.updateMatrixWorld(true);
+ group.traverse(mesh=>{
+  if(!mesh.isMesh)return;
+  mesh.geometry=mesh.geometry.clone();
+  const p=mesh.geometry.attributes.position,n=mesh.geometry.attributes.normal;
+  const inverse=mesh.matrixWorld.clone().invert(),normalMatrix=new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld),normalInverse=normalMatrix.clone().invert();
+  const v=new THREE.Vector3(),normal=new THREE.Vector3();
+  for(let i=0;i<p.count;i++){
+   v.fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);
+   const z=v.z,k=THREE.MathUtils.clamp((.35-z)/.8,0,1);
+   v.z-=1.90*k;v.applyMatrix4(inverse);p.setXYZ(i,v.x,v.y,v.z);
+   normal.fromBufferAttribute(n,i).applyMatrix3(normalMatrix);
+   if(z>-.45&&z<.35)normal.z/=3.375;
+   normal.applyMatrix3(normalInverse).normalize();n.setXYZ(i,normal.x,normal.y,normal.z);
+  }
+  mesh.geometry.computeBoundingBox();mesh.geometry.computeBoundingSphere();
+ });
  return {group,glass,driveSlot};
 }
