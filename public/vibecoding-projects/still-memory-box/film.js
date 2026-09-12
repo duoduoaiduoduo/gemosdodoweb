@@ -1,5 +1,6 @@
+import {createFilmScore} from './film-score.js?v=score-20260913-1';
 import {drawFilmOutro} from './film-outro.js?v=outro-20260913-1';
-import {memoryBox} from './main.js?v=macro-20260913-1';
+import {memoryBox} from './main.js?v=score-20260913-1';
 const ease=t=>t*t*(3-2*t);
 // Continuous, shape-preserving camera velocity through each shot landmark.
 export const FILM_DURATION=40;
@@ -18,17 +19,19 @@ export function filmView(t){
  return Object.fromEntries(['azimuth','elevation','zoom','lift','fov'].map((n,j)=>{const c=j+1;return [n,(2*u**3-3*u*u+1)*a[c]+(u**3-2*u*u+u)*dt*slope(i,c)+(-2*u**3+3*u*u)*b[c]+(u**3-u*u)*dt*slope(i+1,c)];}));
 }
 const button=document.createElement('button');button.textContent='制作展示影片 ↗';button.id='make-film';document.getElementById('memory-actions').append(button);
-const dialog=document.createElement('dialog');dialog.className='local-generation';dialog.innerHTML=`<button id="film-close" class="dialog-close" aria-label="关闭影片制作">×</button><p class="eyebrow">GEMOS STILL / MOTION</p><h2>让记忆，成为影片。</h2><p>40 秒空间影片 · 风景卡入仓、粒子漩涡、仓内微距巡游、近距离由下而上构筑、越过正面的双侧环绕、俯看玻璃空间、全景收尾。完整显现后出现片名，最后以黑底品牌片尾与体验网址收尾。</p><label>画幅 <select id="film-format"><option value="wide">横屏 16:9</option><option value="portrait">竖屏 9:16</option></select></label><p id="film-status" role="status">在本机渲染，无需上传。录制期间请保持页面在前台。</p><canvas id="film-canvas" hidden style="width:100%;max-height:45vh;object-fit:contain"></canvas><video id="film-video" controls playsinline hidden style="width:100%;max-height:45vh"></video><button id="film-start" class="primary">生成展示影片</button><a id="film-save" hidden class="primary">保存视频 ↓</a><button id="film-cancel" hidden>取消渲染</button>`;document.body.append(dialog);
+const dialog=document.createElement('dialog');dialog.className='local-generation';dialog.innerHTML=`<button id="film-close" class="dialog-close" aria-label="关闭影片制作">×</button><p class="eyebrow">GEMOS STILL / MOTION</p><h2>让记忆，成为影片。</h2><p>40 秒空间影片 · 风景卡入仓、粒子漩涡、仓内弧线微距绕拍、近距离由下而上构筑、越过正面的双侧环绕、俯看玻璃空间、全景收尾。完整显现后出现片名，最后以黑底品牌片尾与体验网址收尾。</p><label>画幅 <select id="film-format"><option value="wide">横屏 16:9</option><option value="portrait">竖屏 9:16</option></select></label><label><input id="film-music" type="checkbox" checked> 同步配乐 · 电子氛围</label><p id="film-status" role="status">在本机渲染，无需上传。录制期间请保持页面在前台。</p><canvas id="film-canvas" hidden style="width:100%;max-height:45vh;object-fit:contain"></canvas><video id="film-video" controls playsinline hidden style="width:100%;max-height:45vh"></video><button id="film-start" class="primary">生成展示影片</button><a id="film-save" hidden class="primary">保存视频 ↓</a><button id="film-cancel" hidden>取消渲染</button>`;document.body.append(dialog);
 const $=id=>document.getElementById(id);let running=false,cancel=null,videoURL=null;
 button.onclick=()=>dialog.showModal();
 function close(){if(running){cancel?.();return;}dialog.close();$('film-video').pause();}
 $('film-close').onclick=close;dialog.addEventListener('cancel',e=>{if(running){e.preventDefault();cancel?.();}});$('film-cancel').onclick=()=>cancel?.();
 $('film-start').onclick=async()=>{
- let recorder,stream,raf,timer,rejectRun,aborted=false;
+ if(running)return;running=true;$('film-start').disabled=true;
+ let recorder,stream,raf,timer,rejectRun,score,aborted=false;
  const hidden=()=>{if(document.hidden)cancel?.();};
  try{
+ if($('film-music').checked)score=await createFilmScore();
  if(!globalThis.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)throw Error('这个浏览器不支持视频导出，请换用支持录制的浏览器。');
- const mime=['video/mp4;codecs=avc1.42001E','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8'].find(t=>MediaRecorder.isTypeSupported(t));if(!mime)throw Error('浏览器没有可用的视频编码器');
+ const mime=['video/mp4;codecs=avc1.42001E,mp4a.40.2','video/mp4;codecs=avc1.42001E','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8'].find(t=>MediaRecorder.isTypeSupported(t));if(!mime)throw Error('浏览器没有可用的视频编码器');
  const small=matchMedia('(pointer:coarse)').matches,portrait=$('film-format').value==='portrait',w=portrait?720:small?1280:1920,h=portrait?1280:small?720:1080;
  const canvas=$('film-canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d',{alpha:false});
  const logo=new Image();logo.src=new URL('./avatar.png',import.meta.url).href;await logo.decode();
@@ -36,9 +39,9 @@ $('film-start').onclick=async()=>{
  if(videoURL){URL.revokeObjectURL(videoURL);videoURL=null;}
  const title=($('memory-name').textContent||'一刻记忆').slice(0,45),chunks=[];
  function draw(t){if(t<32.8)ctx.drawImage(memoryBox.filmFrame(filmView(t),t),0,0,w,h);const pad=w*.055;ctx.save();ctx.globalAlpha=ease(Math.max(0,Math.min(1,(t-29)/2)));const gradient=ctx.createLinearGradient(0,h*.72,0,h);gradient.addColorStop(0,'#0000');gradient.addColorStop(1,'#000b');ctx.fillStyle=gradient;ctx.fillRect(0,h*.72,w,h*.28);ctx.fillStyle='#f5f3e7';ctx.font=`500 ${w*.028}px sans-serif`;let label=title;while(ctx.measureText(label).width>w*.78)label=label.slice(0,-2)+'…';ctx.fillText(label,pad,h-pad-w*.032);ctx.font=`${w*.014}px sans-serif`;ctx.fillStyle='#c9cbbd';ctx.fillText('GEMOS STILL  /  A MOMENT, KEPT.',pad,h-pad);ctx.restore();drawFilmOutro(ctx,w,h,t,logo);}
- draw(0);stream=canvas.captureStream(30);recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:small?6000000:12000000});
- await new Promise((resolve,reject)=>{rejectRun=reject;cancel=()=>{aborted=true;reject(Error('渲染已取消，记忆保持不变。'));};recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};recorder.onerror=()=>reject(Error('视频编码失败，请降低设备负担后重试'));recorder.onstop=resolve;recorder.start(1000);const start=performance.now();let last=-100;function tick(now){try{const t=Math.min(FILM_DURATION,(now-start)/1000);if(now-last>=32){draw(t);last=now;$('film-status').textContent=`正在渲染 ${Math.round(t/FILM_DURATION*100)}% · 请保持页面打开`;}if(t>=FILM_DURATION){recorder.stop();return;}raf=requestAnimationFrame(tick);}catch(e){reject(e);}}raf=requestAnimationFrame(tick);timer=setTimeout(()=>reject(Error('录制超时，请保持页面在前台后重试')),65000);document.addEventListener('visibilitychange',hidden);});
+ draw(0);stream=canvas.captureStream(30);if(score)score.stream.getAudioTracks().forEach(track=>stream.addTrack(track));recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:small?6000000:12000000});
+ await new Promise((resolve,reject)=>{rejectRun=reject;cancel=()=>{aborted=true;reject(Error('渲染已取消，记忆保持不变。'));};recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};recorder.onerror=()=>reject(Error('视频编码失败，请降低设备负担后重试'));recorder.onstop=resolve;recorder.start(1000);score?.start();const start=performance.now();let last=-100;function tick(now){try{const t=Math.min(FILM_DURATION,score?score.elapsed():(now-start)/1000);if(now-last>=32){draw(t);last=now;$('film-status').textContent=`正在渲染 ${Math.round(t/FILM_DURATION*100)}% · 请保持页面打开`;}if(t>=FILM_DURATION){recorder.stop();return;}raf=requestAnimationFrame(tick);}catch(e){reject(e);}}raf=requestAnimationFrame(tick);timer=setTimeout(()=>reject(Error('录制超时，请保持页面在前台后重试')),65000);document.addEventListener('visibilitychange',hidden);});
  if(aborted)throw Error('渲染已取消');const blob=new Blob(chunks,{type:recorder.mimeType||mime});if(blob.size<1000)throw Error('视频没有录制成功，请重试');videoURL=URL.createObjectURL(blob);$('film-video').src=videoURL;$('film-video').hidden=false;canvas.hidden=true;$('film-save').href=videoURL;$('film-save').download=`Gemos Still-${title.replace(/[\\/:*?"<>|]/g,'_')}.${mime.includes('mp4')?'mp4':'webm'}`;$('film-save').hidden=false;$('film-status').textContent=`影片已完成 · ${mime.includes('mp4')?'MP4':'WebM'} · ${(blob.size/1048576).toFixed(1)} MB`;
  }catch(e){$('film-status').textContent=e.message;$('film-canvas').hidden=true;}
- finally{clearTimeout(timer);cancelAnimationFrame(raf);document.removeEventListener('visibilitychange',hidden);if(recorder&&recorder.state!=='inactive')recorder.stop();stream?.getTracks().forEach(t=>t.stop());memoryBox.endFilm();running=false;cancel=null;$('film-start').disabled=false;$('film-format').disabled=false;$('film-cancel').hidden=true;}
+ finally{score?.close();clearTimeout(timer);cancelAnimationFrame(raf);document.removeEventListener('visibilitychange',hidden);if(recorder&&recorder.state!=='inactive')recorder.stop();stream?.getTracks().forEach(t=>t.stop());memoryBox.endFilm();running=false;cancel=null;$('film-start').disabled=false;$('film-format').disabled=false;$('film-cancel').hidden=true;}
 };

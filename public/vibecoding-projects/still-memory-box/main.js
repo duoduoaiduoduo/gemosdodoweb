@@ -1,9 +1,9 @@
 import {BokehPass} from './vendor/addons/postprocessing/BokehPass.js';
-import {makeTide} from './tide.js?v=macro-20260913-1';
+import {makeTide} from './tide.js?v=score-20260913-1';
 import * as THREE from './vendor/three.module.js';
-import { MemoryGaussians } from './gaussian.js?v=macro-20260913-1';
-import { applyBakedLighting } from './baked-lighting.js?v=macro-20260913-1';
-import { buildComputer } from './computer.js?v=macro-20260913-1';
+import { MemoryGaussians } from './gaussian.js?v=score-20260913-1';
+import { applyBakedLighting } from './baked-lighting.js?v=score-20260913-1';
+import { buildComputer } from './computer.js?v=score-20260913-1';
 import { addLogoSticker } from './logo-sticker.js';
 import { createCeremony } from './ceremony.js';
 import { createStudio } from './studio.js';
@@ -195,9 +195,10 @@ export const memoryBox={
  filmFrame(view,t){azimuth=view.azimuth;elevation=view.elevation;zoom=view.zoom;time=filmSaved.time+t;glassMaterial.uniforms.time.value=time;camera.fov=view.fov??29;setCamera();if(view.lift){camera.position.y+=view.lift;camera.lookAt(target.clone().add(new THREE.Vector3(0,view.lift,0)));}// Leave the whole-object framing for a physical close-up through the front glass.
  const macro=THREE.MathUtils.smoothstep(t,8,11)*(1-THREE.MathUtils.smoothstep(t,17,21));
  const travel=THREE.MathUtils.smoothstep(t,9,18);
- const macroTarget=new THREE.Vector3(THREE.MathUtils.lerp(-.18,.18,travel),THREE.MathUtils.lerp(.35,1.10,travel),-.8);
+ const macroTarget=new THREE.Vector3(0,THREE.MathUtils.lerp(.35,1.10,travel),-.8);
  const wideTarget=target.clone().add(new THREE.Vector3(0,view.lift??0,0));
- const macroPosition=new THREE.Vector3(THREE.MathUtils.lerp(-.30,.32,travel),macroTarget.y+.06,3.05);
+ const orbit=THREE.MathUtils.lerp(-.24,.28,travel),radius=3.9;
+ const macroPosition=new THREE.Vector3(Math.sin(orbit)*radius,macroTarget.y+.10+Math.sin(travel*Math.PI)*.18,macroTarget.z+Math.cos(orbit)*radius);
  camera.position.lerp(macroPosition,macro);camera.lookAt(wideTarget.lerp(macroTarget,macro));
  camera.fov=THREE.MathUtils.lerp(view.fov??29,27,macro);camera.zoom=THREE.MathUtils.lerp(view.zoom,1,macro);camera.updateProjectionMatrix();
  if(t>=8&&!filmRevealed){filmRevealed=true;memoryMesh.visible=true;ceremony.reveal(memoryMesh,filmStart+8000);}ceremony.update(filmStart+t*1000);const focusPoint=new THREE.Vector3(0,.65+(view.lift??0),-.35).lerp(macroTarget,macro),forward=camera.getWorldDirection(new THREE.Vector3());filmDof.uniforms.focus.value=focusPoint.sub(camera.position).dot(forward);filmDof.uniforms.aperture.value=.00065*THREE.MathUtils.smoothstep(t,7,9)*(1-THREE.MathUtils.smoothstep(t,16,20));renderScene();return renderer.domElement;},
