@@ -28,7 +28,19 @@ const HOME={azimuth:.56,elevation:.28,zoom:1};
 let azimuth=HOME.azimuth,elevation=HOME.elevation,zoom=1,time=0,paused=false,dragging=false;
 let memoryMesh=null,loadVersion=0,fill='cover',contentScale=1,depthVolume=1;
 const displaySize=new THREE.Vector2();
-function setCamera(){camera.position.set(cameraDistance*Math.cos(elevation)*Math.sin(azimuth),cameraDistance*Math.sin(elevation),cameraDistance*Math.cos(elevation)*Math.cos(azimuth));camera.lookAt(target);camera.zoom=zoom;camera.updateProjectionMatrix();}
+let modelBounds=new THREE.Box3(new THREE.Vector3(-1.9,-1.76,-1.15),new THREE.Vector3(1.9,2.5,2.1));
+function setCamera(){
+ const back=new THREE.Vector3(Math.cos(elevation)*Math.sin(azimuth),Math.sin(elevation),Math.cos(elevation)*Math.cos(azimuth));
+ const right=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),back).normalize(),up=new THREE.Vector3().crossVectors(back,right);
+ modelBounds.getCenter(target);
+ const tanY=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5),tanX=tanY*camera.aspect;
+ cameraDistance=0;
+ for(const x of [modelBounds.min.x,modelBounds.max.x])for(const y of [modelBounds.min.y,modelBounds.max.y])for(const z of [modelBounds.min.z,modelBounds.max.z]){
+  const v=new THREE.Vector3(x,y,z).sub(target);
+  cameraDistance=Math.max(cameraDistance,v.dot(back)+Math.max(Math.abs(v.dot(right))/tanX,Math.abs(v.dot(up))/tanY)/.84);
+ }
+ camera.position.copy(target).addScaledVector(back,cameraDistance);camera.lookAt(target);camera.zoom=zoom;camera.updateProjectionMatrix();
+}
 setCamera();
 const rtOptions={type:THREE.HalfFloatType,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter};
 const innerRT=new THREE.WebGLRenderTarget(1,1,rtOptions),blurA=innerRT.clone(),blurB=innerRT.clone();
@@ -75,7 +87,7 @@ const glassMaterial=new THREE.ShaderMaterial({uniforms:{sharp:{value:innerRT.tex
   gl_FragColor=vec4(c,1.);
  }`});
 const absHeight=new THREE.TextureLoader().load('./baked/abs-height.png');absHeight.colorSpace=THREE.NoColorSpace;absHeight.wrapS=absHeight.wrapT=THREE.RepeatWrapping;absHeight.anisotropy=8;
-const computer=buildComputer(glassMaterial,absHeight);scene.add(computer.group);
+const computer=buildComputer(glassMaterial,absHeight);scene.add(computer.group);modelBounds.setFromObject(computer.group);setCamera();
 const ceremony=createCeremony(scene,inside,camera,stage,computer.driveSlot);
 addLogoSticker(computer.group);
 // Retain the established studio look independently of reflection cards.
@@ -122,7 +134,7 @@ const originalOverride=ao._overrideVisibility.bind(ao);
 ao._overrideVisibility=()=>{originalOverride();scene.traverse(o=>{if(o.visible&&(o.userData.aoExcluded||o.material?.transparent)){o.visible=false;ao._visibilityCache.push(o);}});};
 composer.addPass(ao);composer.addPass(new OutputPass());
 applyBakedLighting(computer.group,floor).then(result=>{if(!result.pending){ao.blendIntensity=0;stage.dataset.lighting="baked";}}).catch(error=>console.warn("离线光照未加载，使用实时材质",error));
-function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;const ratio=Math.min(2.5,Math.max(devicePixelRatio,1.5),Math.sqrt(5000000/(w*h)));if(renderer.getPixelRatio()!==ratio){renderer.setPixelRatio(ratio);composer.setPixelRatio(ratio);}renderer.setSize(w,h);renderer.getDrawingBufferSize(displaySize);for(const rt of [innerRT,blurA,blurB])rt.setSize(displaySize.x,displaySize.y);composer.setSize(w,h);const span=Math.max(2.80,2.55*h/w);camera.aspect=w/h;cameraDistance=span/Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);setCamera();}
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;const ratio=Math.min(2.5,Math.max(devicePixelRatio,1.5),Math.sqrt(5000000/(w*h)));if(renderer.getPixelRatio()!==ratio){renderer.setPixelRatio(ratio);composer.setPixelRatio(ratio);}renderer.setSize(w,h);renderer.getDrawingBufferSize(displaySize);for(const rt of [innerRT,blurA,blurB])rt.setSize(displaySize.x,displaySize.y);composer.setSize(w,h);camera.aspect=w/h;setCamera();}
 new ResizeObserver(resize).observe(stage);window.addEventListener('resize',resize);resize();
 let last=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.04);last=now;ceremony.update(now);if(!paused)time+=dt;glassMaterial.uniforms.time.value=time;camera.updateMatrixWorld();glassMaterial.uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);if(memoryMesh)memoryMesh.update(camera,displaySize);renderer.setRenderTarget(innerRT);renderer.clear(true,true,true);renderer.render(inside,camera);blur();renderer.setRenderTarget(null);composer.render();}
 requestAnimationFrame(animate);
@@ -159,7 +171,7 @@ $('depth-volume').oninput=e=>{depthVolume=Number(e.target.value);$('depth-volume
 $('fit-cover').onclick=()=>{fill='cover';fitContent();};$('fit-contain').onclick=()=>{fill='contain';fitContent();};
 $('motion').onclick=e=>{paused=!paused;e.target.textContent=paused?'继续流光':'暂停流光';e.target.setAttribute('aria-pressed',String(!paused));};
 $('reset').onclick=()=>{if(ceremony.active)return;({azimuth,elevation,zoom}=HOME);setCamera();};
-$('front-view').onclick=()=>{if(ceremony.active)return;azimuth=0;elevation=.08;zoom=1.12;setCamera();};
+$('front-view').onclick=()=>{if(ceremony.active)return;azimuth=0;elevation=.08;zoom=1;setCamera();};
 export const memoryBox={
  async beginCreation(file,name){loadVersion++;({azimuth,elevation,zoom}=HOME);setCamera();if(memoryMesh)memoryMesh.visible=false;demo.visible=false;try{await ceremony.begin(file,name);}catch(e){this.cancelCreation();throw e;}},
  waiting(message){if(memoryMesh)memoryMesh.visible=false;demo.visible=false;ceremony.wait(message);},
