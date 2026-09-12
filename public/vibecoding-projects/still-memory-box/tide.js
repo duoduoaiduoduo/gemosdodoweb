@@ -1,10 +1,10 @@
 import * as THREE from './vendor/three.module.js';
 // A filled particle bed with non-periodic, multi-scale turbulent surface motion.
 export function makeTide(mobile){
- const count=mobile?7000:15000,a=new Float32Array(count*3);let seed=42;const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};for(let i=0;i<count*3;i++)a[i]=rand();
+ const count=mobile?62000:135000,a=new Float32Array(count*3);let seed=42;const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};for(let i=0;i<count*3;i++)a[i]=rand();
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(a,3));
- const material=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{time:{value:0},swirl:{value:0},fade:{value:1},pixels:{value:700}},vertexShader:`
- uniform float time,swirl,pixels;varying vec3 color;varying float strength;
+ const material=new THREE.ShaderMaterial({transparent:true,depthWrite:true,blending:THREE.NormalBlending,uniforms:{time:{value:0},swirl:{value:0},fade:{value:1},pixels:{value:700}},vertexShader:`
+ uniform float time,swirl,pixels;varying vec3 color;varying vec3 sphereCenter;varying float sphereRadius;
  float hash(vec3 p){p=fract(p*.3183099+vec3(.17,.31,.73));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
  float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
  float field(vec3 p){return noise(p)*.60+noise(p*2.07+13.1)*.28+noise(p*4.19+7.7)*.12;}
@@ -25,10 +25,24 @@ export function makeTide(mobile){
  p.y+= (eddy-.5)*.15*sin(layer*3.14159);
  float crest=smoothstep(.74,.99,layer)*smoothstep(.38,.68,n+detail*.12);
  color=mix(vec3(.22,.10,.62),vec3(.53,.31,1.),layer);color=mix(color,vec3(1.,.90,1.),crest);
- strength=(.27+layer*.14+crest*.52)*.12;
  vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
  gl_PointSize=clamp(pixels*.156*(.65+s.y*.25)/-mv.z,13.2,43.2);
- }`,fragmentShader:`uniform float fade;varying vec3 color;varying float strength;void main(){float d=length(gl_PointCoord-.5)*2.;if(d>1.)discard;gl_FragColor=vec4(color*2.2,exp(-d*d*3.5)*strength*fade);}`});
+ sphereCenter=mv.xyz;sphereRadius=gl_PointSize*(-mv.z)/(pixels*projectionMatrix[1][1]);
+ }`,fragmentShader:`
+ uniform float fade;uniform mat4 projectionMatrix;
+ varying vec3 color,sphereCenter;varying float sphereRadius;
+ void main(){
+  vec2 q=gl_PointCoord*2.-1.;q.y=-q.y;float r2=dot(q,q);if(r2>=1.)discard;
+  // Analytic sphere surface, including per-fragment depth and directional shading.
+  vec3 N=vec3(q,sqrt(1.-r2)),surface=sphereCenter+N*sphereRadius;
+  vec4 clip=projectionMatrix*vec4(surface,1.);gl_FragDepth=clip.z/clip.w*.5+.5;
+  vec3 L=normalize(vec3(-.55,.75,1.)),V=normalize(-surface),H=normalize(L+V);
+  float diffuse=max(dot(N,L),0.),spec=pow(max(dot(N,H),0.),64.);
+  float rim=pow(1.-max(dot(N,V),0.),3.);
+  vec3 lit=color*(.16+.78*diffuse)+vec3(.92,.90,1.)*spec*.65+color*rim*.055;
+  float edge=1.-smoothstep(1.-fwidth(r2),1.,r2);
+  gl_FragColor=vec4(lit,fade*edge);
+ }`});
  const mesh=new THREE.Points(geometry,material);mesh.frustumCulled=false;
  return {mesh,update(t,vortex,opacity,pixels){material.uniforms.time.value=t;material.uniforms.swirl.value=vortex;material.uniforms.fade.value=opacity;material.uniforms.pixels.value=pixels;mesh.visible=opacity>.001;}};
 }
