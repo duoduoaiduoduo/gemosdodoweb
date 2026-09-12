@@ -1,7 +1,7 @@
 import * as THREE from './vendor/three.module.js';
 // A filled particle bed with non-periodic, multi-scale turbulent surface motion.
 export function makeTide(mobile){
- const count=mobile?62000:135000,a=new Float32Array(count*3);let seed=42;const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};for(let i=0;i<count*3;i++)a[i]=rand();
+ const count=mobile?7000:15000,a=new Float32Array(count*3);let seed=42;const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};for(let i=0;i<count*3;i++)a[i]=rand();
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(a,3));
  const material=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{time:{value:0},swirl:{value:0},fade:{value:1},pixels:{value:700}},vertexShader:`
  uniform float time,swirl,pixels;varying vec3 color;varying float strength;
@@ -27,7 +27,7 @@ export function makeTide(mobile){
  color=mix(vec3(.22,.10,.62),vec3(.53,.31,1.),layer);color=mix(color,vec3(1.,.90,1.),crest);
  strength=(.27+layer*.14+crest*.52)*.12;
  vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
- gl_PointSize=clamp(pixels*.052*(.65+s.y*.25)/-mv.z,4.4,14.4);
+ gl_PointSize=clamp(pixels*.156*(.65+s.y*.25)/-mv.z,13.2,43.2);
  }`,fragmentShader:`uniform float fade;varying vec3 color;varying float strength;void main(){float d=length(gl_PointCoord-.5)*2.;if(d>1.)discard;gl_FragColor=vec4(color*2.2,exp(-d*d*3.5)*strength*fade);}`});
  const mesh=new THREE.Points(geometry,material);mesh.frustumCulled=false;
  return {mesh,update(t,vortex,opacity,pixels){material.uniforms.time.value=t;material.uniforms.swirl.value=vortex;material.uniforms.fade.value=opacity;material.uniforms.pixels.value=pixels;mesh.visible=opacity>.001;}};

@@ -1,4 +1,4 @@
-import {memoryBox} from '../main.js?v=idle-20260913-3';
+import {memoryBox} from '../main.js?v=idle-20260913-4';
 import {save,list,pack,unpack} from './library.js';
 const $=id=>document.getElementById(id);let records=[],current=null,worker=null,busy=false,epoch=0,urls=[],operation=null,cancelJob=null;
 function notice(text=''){ $('notice').textContent=text;$('notice').hidden=!text;}
