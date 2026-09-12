@@ -1,8 +1,6 @@
 import {memoryBox} from './main.js?v=gallery-20260913-1';
 import {drawFilmOutro} from './film-outro.js';
 import {createFilmScore} from './film-score.js';
-import {prepareMontage} from './film-montage.js';
-import {checkExportSupport,encodeFilm} from './film-encoder.js';
 import {FILM,EXPORT_PRESETS,exportSettings} from './film-timeline.js';
 export const FILM_DURATION=FILM.duration;
 const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
@@ -32,6 +30,8 @@ $('film-start').onclick=async()=>{
  const controls=['film-start','film-format','film-quality','film-music'];controls.forEach(id=>$(id).disabled=true);$('film-cancel').hidden=false;$('film-save').hidden=true;$('film-video').hidden=true;$('film-video').pause();
  try{
  const settings=exportSettings($('film-quality').value,$('film-format').value==='portrait'),music=$('film-music').checked;
+ $('film-status').textContent='正在加载影片组件…';
+ const [{prepareMontage},{checkExportSupport,encodeFilm}]=await Promise.all([import('./film-montage.js?v=film-fix-20260913-1'),import('./film-encoder.js?v=film-fix-20260913-1')]);signal.throwIfAborted();
  $('film-status').textContent='正在检查导出规格…';await checkExportSupport(settings,music);signal.throwIfAborted();
  $('film-status').textContent='正在准备九宫格与配乐…';montage=await prepareMontage(settings.fps,signal);const audio=music?await createFilmScore():null;signal.throwIfAborted();
  const logo=new Image();logo.src=new URL('./avatar.png',import.meta.url).href;await logo.decode();signal.throwIfAborted();

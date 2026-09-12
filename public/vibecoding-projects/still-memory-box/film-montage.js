@@ -1,4 +1,4 @@
-import {Input,BlobSource,MP4,CanvasSink} from './vendor/mediabunny.mjs';
+import {Input,BlobSource,MP4,CanvasSink} from './vendor/mediabunny.js';
 import {FILM} from './film-timeline.js';
 const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
 export async function prepareMontage(fps,signal){

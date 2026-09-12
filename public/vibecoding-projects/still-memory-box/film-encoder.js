@@ -1,4 +1,4 @@
-import {Output,Mp4OutputFormat,BufferTarget,CanvasSource,AudioBufferSource,Quality,canEncodeVideo,canEncodeAudio} from './vendor/mediabunny.mjs';
+import {Output,Mp4OutputFormat,BufferTarget,CanvasSource,AudioBufferSource,Quality,canEncodeVideo,canEncodeAudio} from './vendor/mediabunny.js';
 export async function checkExportSupport(settings,music){
  if(!globalThis.VideoEncoder)throw Error('此浏览器不支持逐帧视频导出，请用最新版 Chrome 或 Safari');
  if(!await canEncodeVideo('avc',{width:settings.width,height:settings.height,quality:new Quality({bitrate:settings.bitrate})}))throw Error('此设备不支持所选分辨率，请选择 1080P 或换用电脑');
