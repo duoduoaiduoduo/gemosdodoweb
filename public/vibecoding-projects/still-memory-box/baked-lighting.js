@@ -2,11 +2,11 @@ import * as THREE from './vendor/three.module.js';
 
 /** Fixed diffuse GI from Cycles; reflections and dielectric highlights stay live. */
 export async function applyBakedLighting(group,floor){
- const [metaResponse,uvResponse]=await Promise.all([fetch('./baked/manifest.json?v=sphere-20260913-2'),fetch('./baked/lightmap-uv.bin?v=sphere-20260913-2')]);
+ const [metaResponse,uvResponse]=await Promise.all([fetch('./baked/manifest.json?v=flow-20260913-1'),fetch('./baked/lightmap-uv.bin?v=flow-20260913-1')]);
  if(!metaResponse.ok||!uvResponse.ok)throw new Error('Baked lighting assets unavailable');
  const meta=await metaResponse.json(),uvs=new Float32Array(await uvResponse.arrayBuffer());
  if(meta.ready===false)return {pending:true};
- const [map,groundMap]=await Promise.all([new THREE.TextureLoader().loadAsync('./baked/irradiance.png?v=sphere-20260913-2'),new THREE.TextureLoader().loadAsync('./baked/ground.png?v=sphere-20260913-2')]);
+ const [map,groundMap]=await Promise.all([new THREE.TextureLoader().loadAsync('./baked/irradiance.png?v=flow-20260913-1'),new THREE.TextureLoader().loadAsync('./baked/ground.png?v=flow-20260913-1')]);
  map.colorSpace=THREE.NoColorSpace;map.flipY=true;map.anisotropy=8;
  const meshes=[];group.traverse(o=>{if(o.isMesh)meshes.push(o);});
  const pending=meta.parts.map(part=>{

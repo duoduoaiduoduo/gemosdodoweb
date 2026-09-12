@@ -1,9 +1,9 @@
 import {BokehPass} from './vendor/addons/postprocessing/BokehPass.js';
-import {makeTide} from './tide.js?v=sphere-20260913-2';
+import {makeTide} from './tide.js?v=flow-20260913-1';
 import * as THREE from './vendor/three.module.js';
 import { MemoryGaussians } from './gaussian.js';
-import { applyBakedLighting } from './baked-lighting.js?v=sphere-20260913-2';
-import { buildComputer } from './computer.js?v=sphere-20260913-2';
+import { applyBakedLighting } from './baked-lighting.js?v=flow-20260913-1';
+import { buildComputer } from './computer.js?v=flow-20260913-1';
 import { addLogoSticker } from './logo-sticker.js';
 import { createCeremony } from './ceremony.js';
 import { createStudio } from './studio.js';

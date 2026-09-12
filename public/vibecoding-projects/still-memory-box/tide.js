@@ -24,7 +24,16 @@ export function makeTide(mobile){
  p.z+= (eddy-.5)*.14*(1.-abs(uv.y));
  p.y+= (eddy-.5)*.15*sin(layer*3.14159);
  float crest=smoothstep(.74,.99,layer)*smoothstep(.38,.68,n+detail*.12);
- color=mix(vec3(.22,.10,.62),vec3(.53,.31,1.),layer);color=mix(color,vec3(1.,.90,1.),crest);
+ // Color travels with the same eddies that move the grains, throughout the bed.
+ float flow=clamp((eddy-.28)*2.2+(detail-.5)*.16,0.,1.);
+ vec3 submerged=mix(vec3(.09,.16,.62),vec3(.39,.12,.82),smoothstep(.08,.50,flow));
+ submerged=mix(submerged,vec3(.66,.14,.53),smoothstep(.50,.88,flow));
+ float ribbon=smoothstep(.56,.76,noise(domain+vec3(0.,layer*2.,-t*.35)));
+ submerged=mix(submerged,vec3(.06,.43,.52),ribbon*.65);
+ submerged*=.85+.15*layer;
+ // Only the moving upper skin becomes pale: keep submerged colors saturated.
+ color=mix(submerged,vec3(.62,.43,.96),smoothstep(.82,.98,layer));
+ color=mix(color,vec3(1.,.90,1.),crest);
  vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
  gl_PointSize=clamp(pixels*.156*(.65+s.y*.25)/-mv.z,13.2,43.2);
  sphereCenter=mv.xyz;sphereRadius=gl_PointSize*(-mv.z)/(pixels*projectionMatrix[1][1]);
