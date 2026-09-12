@@ -1,0 +1,1 @@
+{"id": "still-public-tree", "name": "古树 · 一刻风景", "status": "complete", "created_at": "2026-09-12T05:23:20.220386+00:00", "settings": {"glow": 0.12, "frost": 0.025, "brightness": 1.05, "azimuth": 0.36, "elevation": 0.3, "zoom": 1.0, "designVersion": 2, "contentScale": 1.0, "fit": "cover"}, "photo_url": "./photo.jpg", "model_url": "./model.memorygs", "offline": true}
