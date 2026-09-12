@@ -1,9 +1,9 @@
 import {BokehPass} from './vendor/addons/postprocessing/BokehPass.js';
-import {makeTide} from './tide.js?v=flow-20260913-1';
+import {makeTide} from './tide.js?v=build-20260913-1';
 import * as THREE from './vendor/three.module.js';
-import { MemoryGaussians } from './gaussian.js';
-import { applyBakedLighting } from './baked-lighting.js?v=flow-20260913-1';
-import { buildComputer } from './computer.js?v=flow-20260913-1';
+import { MemoryGaussians } from './gaussian.js?v=build-20260913-1';
+import { applyBakedLighting } from './baked-lighting.js?v=build-20260913-1';
+import { buildComputer } from './computer.js?v=build-20260913-1';
 import { addLogoSticker } from './logo-sticker.js';
 import { createCeremony } from './ceremony.js';
 import { createStudio } from './studio.js';
@@ -130,7 +130,7 @@ floorMaterial.onBeforeCompile=shader=>{
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),floorMaterial);floor.rotation.x=-Math.PI/2;floor.position.y=-1.758;floor.receiveShadow=true;scene.add(floor);
 const tide=makeTide(mobile),demo=tide.mesh;inside.add(demo);
 let tideSwirl=0,tideAlpha=1,filmStart=0,filmRevealed=false,filmDof=null;
-function updateTide(dt=.033){const phase=ceremony.phase,vortex=['generating','revealing'].includes(phase)?1:0;const reveal=memoryMesh?.material.uniforms.reveal.value??0;const opacity=phase==='revealing'?1-THREE.MathUtils.smoothstep(reveal,0,.8):(!memoryMesh||['card','inserting','generating'].includes(phase)?1:0);tideSwirl=THREE.MathUtils.damp(tideSwirl,vortex,2.2,dt);tideAlpha=THREE.MathUtils.damp(tideAlpha,opacity,3,dt);tide.update(time,tideSwirl,tideAlpha,displaySize.y);}
+function updateTide(dt=.033){const phase=ceremony.phase,vortex=['generating','revealing'].includes(phase)?1:0;const reveal=memoryMesh?.material.uniforms.reveal.value??0;const constructing=phase==='revealing';const opacity=(!memoryMesh||['card','inserting','generating','revealing'].includes(phase))?1:0;tideSwirl=THREE.MathUtils.damp(tideSwirl,vortex,2.2,dt);tideAlpha=constructing?1:THREE.MathUtils.damp(tideAlpha,opacity,3,dt);tide.update(time,tideSwirl,tideAlpha,displaySize.y,constructing?reveal:(memoryMesh&&opacity===0?1:-1));}
 // Multisampled linear render -> ground-truth AO -> highlight-preserving display transform.
 const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:mobile?2:4}));
 composer.addPass(new RenderPass(scene,camera));
@@ -166,6 +166,7 @@ function fitContent(){
  memoryMesh.position.copy(center).multiply(memoryMesh.scale).negate().add(new THREE.Vector3(0,.84,-.97));
  memoryMesh.material.uniforms.clipMin.value.set(-1.54,-.53,-2.66);
  memoryMesh.material.uniforms.clipMax.value.set(1.54,2.21,.66);
+ tide.setTarget(memoryMesh);
  memoryMesh.lastDirection=null;
  $('fit-cover').setAttribute('aria-pressed',String(fill==='cover'));$('fit-contain').setAttribute('aria-pressed',String(fill==='contain'));
 }

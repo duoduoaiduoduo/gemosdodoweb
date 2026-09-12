@@ -33,9 +33,8 @@ export class MemoryGaussians extends THREE.Mesh {
         vec4 center=fetchData(base),a=fetchData(base+1),b=fetchData(base+2);
         vColor=vec4(fetchData(base+3).rgb*brightness,center.w);
         vec3 world=(modelMatrix*vec4(center.xyz,1.)).xyz;
-        float tide=mix(clipMin.y-.35,clipMax.y+.35,reveal);
-        float wave=.075*sin(world.x*4.+reveal*13.)+.04*sin(world.z*8.-reveal*17.);
-        float appear=smoothstep(-.16,.12,tide+wave-world.y);
+        float height=(world.y-clipMin.y+.35)/(clipMax.y-clipMin.y+.70);
+        float appear=smoothstep(height+.01,height+.10,reveal);
         vColor.a*=reveal>=1.?1.:appear;
         vColor.rgb*=1.+.14*(1.-appear)*appear;
         if(any(lessThan(world,clipMin))||any(greaterThan(world,clipMax))){gl_Position=vec4(2.,2.,2.,1.);vGaussian=vec2(4.);vColor.a=0.;return;}
@@ -65,7 +64,7 @@ export class MemoryGaussians extends THREE.Mesh {
       void main(){float r=dot(vGaussian,vGaussian);if(r>9.)discard;float alpha=min(.99,vColor.a*exp(-.5*r));if(alpha<.003)discard;gl_FragColor=vec4(vColor.rgb,alpha);}`
     });
     super(geometry,material);
-    this.frustumCulled=false;
+    this.frustumCulled=false;this.renderOrder=2;
     this.rotation.y=0;
     this.texture=texture;
     this.count=count;
