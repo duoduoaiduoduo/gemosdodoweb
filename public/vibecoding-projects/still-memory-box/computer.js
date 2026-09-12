@@ -87,6 +87,7 @@ export function buildComputer(glassMaterial,absHeight=null){
  const lowerShell=add(solid(baseHousingData),ivory);lowerShell.name='Continuous lower housing';
  // Two distinct planes: steep drive fascia, then a gently sloping keyboard deck.
  const fascia=new THREE.Group();fascia.position.set(0,-1.005,.813);fascia.rotation.x=-.14;group.add(fascia);
+ const driveSlot=new THREE.Object3D();driveSlot.name='Card slot alignment';driveSlot.position.set(.98,.047,.018);fascia.add(driveSlot);
  add(box(.957,.241,.065,.007),dark,[.98,0,-.042],null,fascia);
  add(box(.805,.031,.022,.003),seam,[.98,.053,-.003],null,fascia);
  add(box(.806,.022,.024,.002),dark,[.98,.047,.005],null,fascia);
@@ -123,5 +124,5 @@ export function buildComputer(glassMaterial,absHeight=null){
  key(1.203,.304,2,'0',alt);key(1.467,.304,1,'.',keyMat);
  // Thick rounded front lip and low rubber feet, kept separate from the sloping deck.
  for(const x of [-1.46,1.46])for(const z of [-.72,1.66])add(box(.24,.069,.245,.022),dark,[x,-1.718,z]);
- return {group,glass};
+ return {group,glass,driveSlot};
 }
