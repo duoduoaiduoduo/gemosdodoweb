@@ -1,6 +1,6 @@
-import {createFilmScore} from './film-score.js?v=stickers-20260913-1';
+import {createFilmScore} from './film-score.js?v=spread-20260913-1';
 import {drawFilmOutro} from './film-outro.js?v=outro-20260913-1';
-import {memoryBox} from './main.js?v=stickers-20260913-1';
+import {memoryBox} from './main.js?v=spread-20260913-1';
 const ease=t=>t*t*(3-2*t);
 // Continuous, shape-preserving camera velocity through each shot landmark.
 export const FILM_DURATION=40;

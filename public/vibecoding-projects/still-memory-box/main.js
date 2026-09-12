@@ -1,11 +1,11 @@
-import {addRearStickers} from './rear-stickers.js?v=stickers-20260913-1';
-import {createDeskField} from './desk-field.js?v=stickers-20260913-1';
+import {addRearStickers} from './rear-stickers.js?v=spread-20260913-1';
+import {createDeskField} from './desk-field.js?v=spread-20260913-1';
 import {BokehPass} from './vendor/addons/postprocessing/BokehPass.js';
-import {makeTide} from './tide.js?v=stickers-20260913-1';
+import {makeTide} from './tide.js?v=spread-20260913-1';
 import * as THREE from './vendor/three.module.js';
-import { MemoryGaussians } from './gaussian.js?v=stickers-20260913-1';
-import { applyBakedLighting } from './baked-lighting.js?v=stickers-20260913-1';
-import { buildComputer } from './computer.js?v=stickers-20260913-1';
+import { MemoryGaussians } from './gaussian.js?v=spread-20260913-1';
+import { applyBakedLighting } from './baked-lighting.js?v=spread-20260913-1';
+import { buildComputer } from './computer.js?v=spread-20260913-1';
 import { addLogoSticker } from './logo-sticker.js';
 import { createCeremony } from './ceremony.js';
 import { createStudio } from './studio.js';
