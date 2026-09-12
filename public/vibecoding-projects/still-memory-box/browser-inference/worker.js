@@ -1,33 +1,43 @@
-import * as ort from './ort/ort.webgpu.min.js';
+let ort;
 import {prepare,half} from './prepare.js';
-ort.env.wasm.numThreads=1;
-ort.env.wasm.wasmPaths={mjs:new URL('./ort/ort-wasm-simd-threaded.asyncify.js',import.meta.url).href,wasm:new URL('./ort/ort-wasm-simd-threaded.asyncify.wasm',import.meta.url).href};
 let session=null,busy=false;
 const status=(text,phase='loading')=>postMessage({type:'status',text,phase});
+async function bounded(p,ms,message){let timer;try{return await Promise.race([p,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(message)),ms);})]);}finally{clearTimeout(timer);}}
 async function modelFile(config,name,size){
+ status('正在检查本机模型缓存');
  let dir,handle;
  try{dir=await (await navigator.storage.getDirectory()).getDirectoryHandle('still-sharp-'+config.revision,{create:true});handle=await dir.getFileHandle(name,{create:true});const f=await handle.getFile();if(size&&f.size===size){status('正在读取已缓存模型');return new Uint8Array(await f.arrayBuffer());}}catch{}
- const response=await fetch(config.base+name);if(!response.ok)throw Error('模型下载失败，请检查网络后重试');
+ status('正在连接模型下载源（首次约 1.31 GB）');
+ const controller=new AbortController();let stall=setTimeout(()=>controller.abort(),30000);
+ let response;try{response=await fetch(config.base+name,{signal:controller.signal});}catch{throw Error('无法连接模型下载源，请检查网络后重试。照片未上传。');}finally{clearTimeout(stall);}
+ if(!response.ok)throw Error('模型下载失败，请检查网络后重试');
  const expected=size||Number(response.headers.get('content-length')),reader=response.body.getReader();let loaded=0,last=0,writer;
  if(handle)try{writer=await handle.createWritable();}catch{}
  let data=writer?null:new Uint8Array(expected);
- try{while(true){const {value,done}=await reader.read();if(done)break;if(writer)await writer.write(value);else data.set(value,loaded);loaded+=value.length;if(performance.now()-last>250){status(`下载模型 ${Math.round(loaded/1048576)} / ${Math.round(expected/1048576)} MB`);last=performance.now();}}
+ try{while(true){stall=setTimeout(()=>controller.abort(),45000);let chunk;try{chunk=await reader.read();}catch{throw Error('模型下载已中断或长时间无响应，请检查网络后重试。');}finally{clearTimeout(stall);}const {value,done}=chunk;if(done)break;if(writer)await writer.write(value);else data.set(value,loaded);loaded+=value.length;if(performance.now()-last>250){status(`下载模型 ${Math.round(loaded/1048576)} / ${Math.round(expected/1048576)} MB`);last=performance.now();}}
  if(loaded!==expected)throw Error('模型下载不完整，请重试');if(writer){await writer.close();return new Uint8Array(await (await handle.getFile()).arrayBuffer());}return data;
  }catch(e){await writer?.abort().catch(()=>{});throw e;}
 }
 async function load(){
  if(session)return session;
- const adapter=await navigator.gpu?.requestAdapter({powerPreference:'high-performance'});
+ status('正在检测后台 GPU 支持');
+ const adapter=await bounded(navigator.gpu?.requestAdapter({powerPreference:'high-performance'}),15000,'手机浏览器后台 GPU 检测超时，请更新浏览器后重试');
  if(!adapter?.features.has('shader-f16'))throw Error('这台设备不支持所需的 WebGPU 半精度计算，请更新支持 WebGPU 的浏览器');
- const config=await (await fetch(new URL('./model.json',import.meta.url))).json();
+ status('正在读取模型配置');
+ const config=await bounded(fetch(new URL('./model.json',import.meta.url)).then(r=>{if(!r.ok)throw Error('模型配置加载失败');return r.json();}),20000,'模型配置加载超时，请检查网络');
  const graph=await modelFile(config,config.graph,config.graphBytes),weights=await modelFile(config,config.weights,config.weightsBytes);
- status('正在初始化本机 GPU，首次可能需要几分钟');
+ status('正在加载本机推理组件');
+ ort=await bounded(import('./ort/ort.webgpu.min.js'),30000,'推理组件加载超时，请刷新页面后重试');
+ ort.env.wasm.numThreads=1;
+ort.env.wasm.wasmPaths={mjs:new URL('./ort/ort-wasm-simd-threaded.asyncify.js',import.meta.url).href,wasm:new URL('./ort/ort-wasm-simd-threaded.asyncify.wasm',import.meta.url).href};
+ status('正在初始化本机 GPU，首次可能需要几分钟','initializing');
  session=await ort.InferenceSession.create(graph,{executionProviders:[{name:'webgpu',preferredLayout:'NHWC'}],externalData:[{path:config.weights,data:weights}],graphOptimizationLevel:'all',enableMemPattern:false,enableCpuMemArena:false,executionMode:'sequential',extra:{session:{disable_prepacking:'1',use_device_allocator_for_initializers:'0',use_ort_model_bytes_directly:'1',use_ort_model_bytes_for_initializers:'1'}}});
  return session;
 }
 self.onmessage=async({data})=>{
- if(busy)return;busy=true;
+ if(busy)return;busy=true;status('本机任务已启动');
  try{
+ if(data.type==='probe'){const adapter=await bounded(navigator.gpu?.requestAdapter({powerPreference:'high-performance'}),10000,'后台 GPU 检测超时');if(!adapter?.features.has('shader-f16'))throw Error('浏览器后台不支持所需 GPU 计算');postMessage({type:'probe-ready'});return;}
  const s=await load();
  status('正在用你的 GPU 重建照片空间','inference');
  const bitmap=await createImageBitmap(data.photo),width=bitmap.width,height=bitmap.height;
