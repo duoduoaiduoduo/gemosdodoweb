@@ -17,3 +17,9 @@ visitor_stats.json
 tucao-room.json
 !public/vibecoding-projects/gaussian-splatting-viewer-dodo/GaussianSplats3D-src/build/
 !public/vibecoding-projects/gaussian-splatting-viewer-dodo/GaussianSplats3D-src/build/**
+
+# Private deployment state and coordination (server only)
+.deploy-state/
+.deploy.lock
+.autodeploy.lock/
+vibecoding-projects.runtime.json

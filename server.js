@@ -542,7 +542,9 @@ const backfillVisitorRegionStats = () => {
 };
 
 const dataFile = path.join(__dirname, 'data.json');
-const vibecodingProjectsFile = path.join(__dirname, 'vibecoding-projects.json');
+// Keep mutable production data out of the Git-tracked seed file.
+const vibecodingProjectsFile = path.join(__dirname, 'vibecoding-projects.runtime.json');
+const vibecodingProjectsSeedFile = path.join(__dirname, 'vibecoding-projects.json');
 const proposalAnnotationsFile = path.join(__dirname, 'proposal-annotations.json');
 const tucaoRoomFile = path.join(__dirname, 'tucao-room.json');
 const uploadsRoot = path.join(__dirname, 'uploads');
@@ -1190,6 +1192,9 @@ const readVibecodingProjects = () => {
   let seedProjects = [];
   if (fs.existsSync(vibecodingProjectsFile)) {
     const parsed = JSON.parse(fs.readFileSync(vibecodingProjectsFile, 'utf8'));
+    seedProjects = Array.isArray(parsed) ? parsed : [];
+  } else if (fs.existsSync(vibecodingProjectsSeedFile)) {
+    const parsed = JSON.parse(fs.readFileSync(vibecodingProjectsSeedFile, 'utf8'));
     seedProjects = Array.isArray(parsed) ? parsed : [];
   } else if (fs.existsSync(dataFile)) {
     try {

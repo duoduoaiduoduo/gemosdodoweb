@@ -117,12 +117,18 @@ async function handleDeploy(res, body) {
     }
     // 推送成功，轮询线上站点确认自动部署生效
     sse(res, { progress: 85, status: "已推送，服务器自动部署中…" });
-    verifyLive(res);
+    try {
+      const commit = execSync('git rev-parse HEAD', {cwd: ROOT}).toString().trim();
+      verifyLive(res, commit);
+    } catch {
+      sse(res, {progress: 100, status: '无法读取目标版本，尚未确认上线', done: true});
+      res.end();
+    }
   });
 }
 
-async function verifyLive(res) {
-  const deadline = Date.now() + 120000; // 最多等 2 分钟
+async function verifyLive(res, commit) {
+  const deadline = Date.now() + 300000;
   const tick = async () => {
     if (Date.now() > deadline) {
       sse(res, {
@@ -134,8 +140,10 @@ async function verifyLive(res) {
     }
     let ok = false;
     try {
-      const r = await fetch(LIVE_URL, { method: "GET", redirect: "manual" });
-      ok = r.status >= 200 && r.status < 400;
+      const r = await fetch(`${LIVE_URL}deployment.json?verify=${Date.now()}`, {
+        cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10000),
+      });
+      ok = r.ok && (await r.json()).commit === commit;
     } catch {
       ok = false;
     }
