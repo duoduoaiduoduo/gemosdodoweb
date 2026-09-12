@@ -12,7 +12,9 @@ import { OutputPass } from './vendor/addons/postprocessing/OutputPass.js';
 
 const $=id=>document.getElementById(id);
 const stage=$('stage');
-const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+const mobile=matchMedia('(pointer:coarse)').matches;let computing=false,quality=1;
+stage.style.touchAction='none';if(mobile)$('view-hint').textContent='单指旋转 · 双指缩放';
+const renderer=new THREE.WebGLRenderer({antialias:!mobile,preserveDrawingBuffer:true,powerPreference:mobile?'low-power':'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.NeutralToneMapping;renderer.toneMappingExposure=1.0;
@@ -107,7 +109,7 @@ for(let i=0;i<8;i++){
  const a=(i+.5)*2.399963,radius=.85*Math.sqrt((i+.5)/8);
  const light=new THREE.DirectionalLight('#fff6eb',2.65/8);
  light.position.set(-3.8+Math.cos(a)*radius,6+Math.sin(a)*radius,5.2);
- light.castShadow=true;light.shadow.mapSize.set(2048,2048);
+ light.castShadow=true;light.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);
  Object.assign(light.shadow.camera,{left:-4.5,right:4.5,top:4.5,bottom:-4.5,near:.1,far:20});
  light.shadow.normalBias=.003;light.shadow.bias=-.000025;light.shadow.radius=3;
  light.shadow.autoUpdate=false;light.shadow.needsUpdate=true;scene.add(light);
@@ -136,20 +138,28 @@ for(let i=0;i<19;i++){
  const heart=new THREE.Mesh(new THREE.SphereGeometry(.082,14,10),new THREE.MeshStandardMaterial({color:'#806036',roughness:.9}));heart.scale.z=.5;heart.position.z=.04;flower.add(heart);demo.add(flower);
 }
 // Multisampled linear render -> ground-truth AO -> highlight-preserving display transform.
-const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:4}));
+const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:mobile?0:4}));
 composer.addPass(new RenderPass(scene,camera));
-const ao=new GTAOPass(scene,camera,1,1);
+const ao=mobile?null:new GTAOPass(scene,camera,1,1);
+if(ao){
 ao.updateGtaoMaterial({radius:.12,thickness:.12,distanceExponent:1.1,distanceFallOff:1,scale:1,samples:32,screenSpaceRadius:false});
 ao.updatePdMaterial({radius:5,depthPhi:2,normalPhi:4});ao.blendIntensity=.65;
 const originalOverride=ao._overrideVisibility.bind(ao);
 ao._overrideVisibility=()=>{originalOverride();scene.traverse(o=>{if(o.visible&&(o.userData.aoExcluded||o.material?.transparent)){o.visible=false;ao._visibilityCache.push(o);}});};
-composer.addPass(ao);composer.addPass(new OutputPass());
-applyBakedLighting(computer.group,floor).then(result=>{if(!result.pending){ao.blendIntensity=0;stage.dataset.lighting="baked";}}).catch(error=>console.warn("离线光照未加载，使用实时材质",error));
-function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;const ratio=Math.min(2.5,Math.max(devicePixelRatio,1.5),Math.sqrt(5000000/(w*h)));if(renderer.getPixelRatio()!==ratio){renderer.setPixelRatio(ratio);composer.setPixelRatio(ratio);}renderer.setSize(w,h);renderer.getDrawingBufferSize(displaySize);for(const rt of [innerRT,blurA,blurB])rt.setSize(displaySize.x,displaySize.y);composer.setSize(w,h);camera.aspect=w/h;setCamera();}
+composer.addPass(ao);}
+composer.addPass(new OutputPass());
+applyBakedLighting(computer.group,floor).then(result=>{if(!result.pending){if(ao){ao.blendIntensity=0;ao.enabled=false;}stage.dataset.lighting="baked";}}).catch(error=>console.warn("离线光照未加载，使用实时材质",error));
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;const ratio=mobile?Math.min(devicePixelRatio,computing?.75:1.4,Math.sqrt(900000/(w*h)))*quality:Math.min(2.5,Math.max(devicePixelRatio,1.5),Math.sqrt(5000000/(w*h)));if(renderer.getPixelRatio()!==ratio){renderer.setPixelRatio(ratio);composer.setPixelRatio(ratio);}renderer.setSize(w,h);renderer.getDrawingBufferSize(displaySize);innerRT.setSize(displaySize.x,displaySize.y);for(const rt of [blurA,blurB])rt.setSize(Math.max(1,Math.round(displaySize.x*(mobile?.5:1))),Math.max(1,Math.round(displaySize.y*(mobile?.5:1))));composer.setSize(w,h);camera.aspect=w/h;setCamera();}
 new ResizeObserver(resize).observe(stage);window.addEventListener('resize',resize);resize();
-let last=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.04);last=now;updateCamera(now);ceremony.update(now);if(!paused)time+=dt;glassMaterial.uniforms.time.value=time;camera.updateMatrixWorld();glassMaterial.uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);if(memoryMesh)memoryMesh.update(camera,displaySize);renderer.setRenderTarget(innerRT);renderer.clear(true,true,true);renderer.render(inside,camera);blur();renderer.setRenderTarget(null);composer.render();}
+let last=performance.now(),slowFrames=0;function animate(now){requestAnimationFrame(animate);if(document.hidden)return;if(mobile&&now-last<(computing?1000/12:1000/30))return;if(mobile&&now-last>65&&!computing){if(++slowFrames>45&&quality>.65){quality=Math.max(.65,quality-.1);slowFrames=0;resize();}}else slowFrames=Math.max(0,slowFrames-1);const dt=Math.min((now-last)/1000,.04);last=now;updateCamera(now);ceremony.update(now);if(!paused)time+=dt;glassMaterial.uniforms.time.value=time;camera.updateMatrixWorld();glassMaterial.uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);if(memoryMesh)memoryMesh.update(camera,displaySize);renderer.setRenderTarget(innerRT);renderer.clear(true,true,true);renderer.render(inside,camera);blur();renderer.setRenderTarget(null);composer.render();}
 requestAnimationFrame(animate);
-let pointerX=0,pointerY=0;stage.addEventListener('pointerdown',e=>{cameraMove=null;dragging=true;pointerX=e.clientX;pointerY=e.clientY;stage.setPointerCapture(e.pointerId);});stage.addEventListener('pointermove',e=>{if(!dragging)return;azimuth-=(e.clientX-pointerX)*.006;elevation=Math.max(.08,Math.min(1.35,elevation+(e.clientY-pointerY)*.004));pointerX=e.clientX;pointerY=e.clientY;setCamera();});for(const ev of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(ev,()=>dragging=false);stage.addEventListener('wheel',e=>{e.preventDefault();cameraMove=null;zoom=Math.max(.6,Math.min(1.7,zoom*Math.exp(-e.deltaY*.001)));setCamera();},{passive:false});
+const pointers=new Map();let gestureDistance=0;
+function span(){const p=[...pointers.values()];return p.length===2?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0;}
+stage.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;cameraMove=null;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});dragging=true;gestureDistance=span();stage.setPointerCapture(e.pointerId);});
+stage.addEventListener('pointermove',e=>{const old=pointers.get(e.pointerId);if(!old)return;const dx=e.clientX-old.x,dy=e.clientY-old.y;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1){azimuth-=dx*.006;elevation=Math.max(.08,Math.min(1.35,elevation+dy*.004));}else if(pointers.size===2){const d=span();if(gestureDistance>5&&d>5)zoom=Math.max(.6,Math.min(1.7,zoom*d/gestureDistance));gestureDistance=d;}setCamera();});
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(ev,e=>{pointers.delete(e.pointerId);gestureDistance=span();dragging=pointers.size>0;});
+window.addEventListener('blur',()=>{pointers.clear();gestureDistance=0;dragging=false;});
+stage.addEventListener('wheel',e=>{e.preventDefault();cameraMove=null;zoom=Math.max(.6,Math.min(1.7,zoom*Math.exp(-e.deltaY*.001)));setCamera();},{passive:false});
 function fitContent(){
  if(!memoryMesh)return;const b=fill==='contain'?memoryMesh.fullBounds:memoryMesh.contentBounds,size=new THREE.Vector3();b.getSize(size);
  const fitX=3.04/Math.max(size.x,.01),fitY=2.68/Math.max(size.y,.01);
@@ -185,6 +195,7 @@ $('motion').onclick=e=>{paused=!paused;e.target.textContent=paused?'继续流光
 $('reset').onclick=()=>moveCamera(HOME);
 $('front-view').onclick=()=>moveCamera({azimuth:0,elevation:.08,zoom:1});
 export const memoryBox={
+ setComputing(value){computing=!!value;resize();},
  async beginCreation(file,name){loadVersion++;if(memoryMesh)memoryMesh.visible=false;demo.visible=false;try{await ceremony.begin(file,name);}catch(e){this.cancelCreation();throw e;}},
  waiting(message){if(memoryMesh)memoryMesh.visible=false;demo.visible=false;ceremony.wait(message);},
  cancelCreation(){loadVersion++;ceremony.cancel();if(memoryMesh)memoryMesh.visible=true;else demo.visible=true;},

@@ -18,7 +18,7 @@ async function modelFile(config,name,size){
 async function load(){
  if(session)return session;
  const adapter=await navigator.gpu?.requestAdapter({powerPreference:'high-performance'});
- if(!adapter?.features.has('shader-f16'))throw Error('这台设备不支持所需的 WebGPU 半精度计算，请使用支持的桌面 Chrome 或 Edge');
+ if(!adapter?.features.has('shader-f16'))throw Error('这台设备不支持所需的 WebGPU 半精度计算，请更新支持 WebGPU 的浏览器');
  const config=await (await fetch(new URL('./model.json',import.meta.url))).json();
  const graph=await modelFile(config,config.graph,config.graphBytes),weights=await modelFile(config,config.weights,config.weightsBytes);
  status('正在初始化本机 GPU，首次可能需要几分钟');
@@ -33,10 +33,11 @@ self.onmessage=async({data})=>{
  const bitmap=await createImageBitmap(data.photo),width=bitmap.width,height=bitmap.height;
  if(width*height>40000000){bitmap.close();throw Error('请选择小于 4000 万像素的照片');}
  const canvas=new OffscreenCanvas(1536,1536),ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.fillStyle='#fff';ctx.fillRect(0,0,1536,1536);ctx.drawImage(bitmap,0,0,1536,1536);bitmap.close();
- const pixels=ctx.getImageData(0,0,1536,1536).data,N=1536*1536,a=new Float32Array(N*3);for(let i=0;i<N;i++)for(let c=0;c<3;c++)a[c*N+i]=pixels[i*4+c]/255;
+ let pixels=ctx.getImageData(0,0,1536,1536).data;const N=1536*1536,isHalf=s.inputMetadata[0].type==='float16',a=isHalf?new Uint16Array(N*3):new Float32Array(N*3),lut=isHalf?half(Float32Array.from({length:256},(_,i)=>i/255)):null;for(let i=0;i<N;i++)for(let c=0;c<3;c++)a[c*N+i]=isHalf?lut[pixels[i*4+c]]:pixels[i*4+c]/255;pixels=null;canvas.width=canvas.height=1;
  const focal=30*Math.hypot(width,height)/Math.hypot(36,24),feeds={};
- for(const [idx,values,dims]of [[0,a,[1,3,1536,1536]],[1,new Float32Array([focal/width]),[1]]]){const type=s.inputMetadata[idx].type;feeds[s.inputNames[idx]]=new ort.Tensor(type,type==='float16'?half(values):values,dims);}
+ for(const [idx,values,dims]of [[0,a,[1,3,1536,1536]],[1,new Float32Array([focal/width]),[1]]]){const type=s.inputMetadata[idx].type;feeds[s.inputNames[idx]]=new ort.Tensor(type,type==='float16'&&!(values instanceof Uint16Array)?half(values):values,dims);}
  let outputs;try{outputs=await s.run(feeds);}finally{Object.values(feeds).forEach(t=>t.dispose());}
+ await s.release();session=null;
  status('正在整理粒子、构图和空间层次','packing');
  let buffer;try{buffer=prepare(outputs,width,height,focal);}finally{Object.values(outputs).forEach(t=>t.dispose());}
  postMessage({type:'complete',buffer},[buffer]);
