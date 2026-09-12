@@ -25,9 +25,9 @@ export function makeTide(mobile){
  p.y+= (eddy-.5)*.15*sin(layer*3.14159);
  float crest=smoothstep(.74,.99,layer)*smoothstep(.38,.68,n+detail*.12);
  color=mix(vec3(.22,.10,.62),vec3(.53,.31,1.),layer);color=mix(color,vec3(1.,.90,1.),crest);
- strength=(.27+layer*.14+crest*.52)*.48;
+ strength=(.27+layer*.14+crest*.52)*.12;
  vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
- gl_PointSize=clamp(pixels*.026*(.65+s.y*.25)/-mv.z,2.2,7.2);
+ gl_PointSize=clamp(pixels*.052*(.65+s.y*.25)/-mv.z,4.4,14.4);
  }`,fragmentShader:`uniform float fade;varying vec3 color;varying float strength;void main(){float d=length(gl_PointCoord-.5)*2.;if(d>1.)discard;gl_FragColor=vec4(color*2.2,exp(-d*d*3.5)*strength*fade);}`});
  const mesh=new THREE.Points(geometry,material);mesh.frustumCulled=false;
  return {mesh,update(t,vortex,opacity,pixels){material.uniforms.time.value=t;material.uniforms.swirl.value=vortex;material.uniforms.fade.value=opacity;material.uniforms.pixels.value=pixels;mesh.visible=opacity>.001;}};
