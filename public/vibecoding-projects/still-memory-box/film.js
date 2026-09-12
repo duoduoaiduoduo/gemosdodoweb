@@ -1,4 +1,4 @@
-import {memoryBox} from './main.js?v=cinema-20260913-1';
+import {memoryBox} from './main.js?v=macro-20260913-1';
 const ease=t=>t*t*(3-2*t);
 // Continuous, shape-preserving camera velocity through each shot landmark.
 export const FILM_DURATION=32;
@@ -17,7 +17,7 @@ export function filmView(t){
  return Object.fromEntries(['azimuth','elevation','zoom','lift','fov'].map((n,j)=>{const c=j+1;return [n,(2*u**3-3*u*u+1)*a[c]+(u**3-2*u*u+u)*dt*slope(i,c)+(-2*u**3+3*u*u)*b[c]+(u**3-u*u)*dt*slope(i+1,c)];}));
 }
 const button=document.createElement('button');button.textContent='制作展示影片 ↗';button.id='make-film';document.getElementById('memory-actions').append(button);
-const dialog=document.createElement('dialog');dialog.className='local-generation';dialog.innerHTML=`<button id="film-close" class="dialog-close" aria-label="关闭影片制作">×</button><p class="eyebrow">GEMOS STILL / MOTION</p><h2>让记忆，成为影片。</h2><p>32 秒空间运镜 · 风景卡入仓、粒子漩涡、近距离由下而上构筑、越过正面的双侧环绕、俯看玻璃空间、全景收尾。完整显现后，片名与品牌才缓缓出现。</p><label>画幅 <select id="film-format"><option value="wide">横屏 16:9</option><option value="portrait">竖屏 9:16</option></select></label><p id="film-status" role="status">在本机渲染，无需上传。录制期间请保持页面在前台。</p><canvas id="film-canvas" hidden style="width:100%;max-height:45vh;object-fit:contain"></canvas><video id="film-video" controls playsinline hidden style="width:100%;max-height:45vh"></video><button id="film-start" class="primary">生成展示影片</button><a id="film-save" hidden class="primary">保存视频 ↓</a><button id="film-cancel" hidden>取消渲染</button>`;document.body.append(dialog);
+const dialog=document.createElement('dialog');dialog.className='local-generation';dialog.innerHTML=`<button id="film-close" class="dialog-close" aria-label="关闭影片制作">×</button><p class="eyebrow">GEMOS STILL / MOTION</p><h2>让记忆，成为影片。</h2><p>32 秒空间运镜 · 风景卡入仓、粒子漩涡、仓内微距巡游、近距离由下而上构筑、越过正面的双侧环绕、俯看玻璃空间、全景收尾。完整显现后，片名与品牌才缓缓出现。</p><label>画幅 <select id="film-format"><option value="wide">横屏 16:9</option><option value="portrait">竖屏 9:16</option></select></label><p id="film-status" role="status">在本机渲染，无需上传。录制期间请保持页面在前台。</p><canvas id="film-canvas" hidden style="width:100%;max-height:45vh;object-fit:contain"></canvas><video id="film-video" controls playsinline hidden style="width:100%;max-height:45vh"></video><button id="film-start" class="primary">生成展示影片</button><a id="film-save" hidden class="primary">保存视频 ↓</a><button id="film-cancel" hidden>取消渲染</button>`;document.body.append(dialog);
 const $=id=>document.getElementById(id);let running=false,cancel=null,videoURL=null;
 button.onclick=()=>dialog.showModal();
 function close(){if(running){cancel?.();return;}dialog.close();$('film-video').pause();}

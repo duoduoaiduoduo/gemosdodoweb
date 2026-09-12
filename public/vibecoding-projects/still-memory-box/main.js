@@ -1,9 +1,9 @@
 import {BokehPass} from './vendor/addons/postprocessing/BokehPass.js';
-import {makeTide} from './tide.js?v=cinema-20260913-1';
+import {makeTide} from './tide.js?v=macro-20260913-1';
 import * as THREE from './vendor/three.module.js';
-import { MemoryGaussians } from './gaussian.js?v=cinema-20260913-1';
-import { applyBakedLighting } from './baked-lighting.js?v=cinema-20260913-1';
-import { buildComputer } from './computer.js?v=cinema-20260913-1';
+import { MemoryGaussians } from './gaussian.js?v=macro-20260913-1';
+import { applyBakedLighting } from './baked-lighting.js?v=macro-20260913-1';
+import { buildComputer } from './computer.js?v=macro-20260913-1';
 import { addLogoSticker } from './logo-sticker.js';
 import { createCeremony } from './ceremony.js';
 import { createStudio } from './studio.js';
@@ -192,7 +192,15 @@ $('reset').onclick=()=>moveCamera(HOME);
 $('front-view').onclick=()=>moveCamera({azimuth:0,elevation:.08,zoom:1});
 export const memoryBox={
  async beginFilm(w,h){if(filming||computing||ceremony.active||!memoryMesh)throw Error('请等待记忆加载或收藏动画完成后再制作影片');filmSaved={azimuth,elevation,zoom,time,fov:camera.fov};filming=true;cameraMove=null;renderer.setPixelRatio(1);composer.setPixelRatio(1);renderer.setSize(w,h,false);composer.setSize(w,h);displaySize.set(w,h);innerRT.setSize(w,h);blurA.setSize(w,h);blurB.setSize(w,h);camera.aspect=w/h;setCamera();filmDof=new BokehPass(scene,camera,{focus:10,aperture:0,maxblur:.006});filmDof.setSize(w,h);composer.passes.splice(composer.passes.length-1,0,filmDof);filmRevealed=false;memoryMesh.visible=false;tideAlpha=1;tideSwirl=0;const photo=await(await fetch(document.getElementById('photo-preview').src)).blob();await new Promise((resolve,reject)=>{ceremony.begin(photo,document.getElementById('memory-name').textContent,start=>{filmStart=start;resolve();}).catch(reject);});},
- filmFrame(view,t){azimuth=view.azimuth;elevation=view.elevation;zoom=view.zoom;time=filmSaved.time+t;glassMaterial.uniforms.time.value=time;camera.fov=view.fov??29;setCamera();if(view.lift){camera.position.y+=view.lift;camera.lookAt(target.clone().add(new THREE.Vector3(0,view.lift,0)));}if(t>=8&&!filmRevealed){filmRevealed=true;memoryMesh.visible=true;ceremony.reveal(memoryMesh,filmStart+8000);}ceremony.update(filmStart+t*1000);const focusPoint=new THREE.Vector3(0,.65+(view.lift??0),-.35),forward=camera.getWorldDirection(new THREE.Vector3());filmDof.uniforms.focus.value=focusPoint.sub(camera.position).dot(forward);filmDof.uniforms.aperture.value=.00065*THREE.MathUtils.smoothstep(t,7,9)*(1-THREE.MathUtils.smoothstep(t,16,20));renderScene();return renderer.domElement;},
+ filmFrame(view,t){azimuth=view.azimuth;elevation=view.elevation;zoom=view.zoom;time=filmSaved.time+t;glassMaterial.uniforms.time.value=time;camera.fov=view.fov??29;setCamera();if(view.lift){camera.position.y+=view.lift;camera.lookAt(target.clone().add(new THREE.Vector3(0,view.lift,0)));}// Leave the whole-object framing for a physical close-up through the front glass.
+ const macro=THREE.MathUtils.smoothstep(t,8,11)*(1-THREE.MathUtils.smoothstep(t,17,21));
+ const travel=THREE.MathUtils.smoothstep(t,9,18);
+ const macroTarget=new THREE.Vector3(THREE.MathUtils.lerp(-.18,.18,travel),THREE.MathUtils.lerp(.35,1.10,travel),-.8);
+ const wideTarget=target.clone().add(new THREE.Vector3(0,view.lift??0,0));
+ const macroPosition=new THREE.Vector3(THREE.MathUtils.lerp(-.30,.32,travel),macroTarget.y+.06,3.05);
+ camera.position.lerp(macroPosition,macro);camera.lookAt(wideTarget.lerp(macroTarget,macro));
+ camera.fov=THREE.MathUtils.lerp(view.fov??29,27,macro);camera.zoom=THREE.MathUtils.lerp(view.zoom,1,macro);camera.updateProjectionMatrix();
+ if(t>=8&&!filmRevealed){filmRevealed=true;memoryMesh.visible=true;ceremony.reveal(memoryMesh,filmStart+8000);}ceremony.update(filmStart+t*1000);const focusPoint=new THREE.Vector3(0,.65+(view.lift??0),-.35).lerp(macroTarget,macro),forward=camera.getWorldDirection(new THREE.Vector3());filmDof.uniforms.focus.value=focusPoint.sub(camera.position).dot(forward);filmDof.uniforms.aperture.value=.00065*THREE.MathUtils.smoothstep(t,7,9)*(1-THREE.MathUtils.smoothstep(t,16,20));renderScene();return renderer.domElement;},
  endFilm(){if(!filmSaved)return;({azimuth,elevation,zoom,time}=filmSaved);camera.fov=filmSaved.fov;if(filmDof){composer.removePass(filmDof);filmDof.dispose();filmDof=null;}ceremony.cancel();memoryMesh.visible=true;tideAlpha=0;filmSaved=null;filming=false;resize();},
  setComputing(value){computing=!!value;resize();},
  async beginCreation(file,name){loadVersion++;if(memoryMesh)memoryMesh.visible=false;demo.visible=false;try{await ceremony.begin(file,name);}catch(e){this.cancelCreation();throw e;}},
