@@ -37,14 +37,14 @@
     "title": "Still Memory Box",
     "titleZh": "Still 记忆盒子",
     "titleEn": "Still Memory Box",
-    "description": "把一刻风景，收藏在复古电脑里。转动玻璃显示仓，探索高斯空间、细腻材质与光照，体验风景卡入仓和潮汐般的记忆显现。当前为可交互展示版。",
-    "descriptionEn": "A moment kept inside a vintage computer. Explore a Gaussian scene, baked lighting and glass, then replay the photo-card insertion and tidal reveal. Interactive showcase.",
+    "description": "把一刻风景，收藏在复古电脑里。支持在兼容的桌面浏览器中使用自己的 GPU 将照片生成高斯空间，体验风景卡入仓与潮汐显现。照片和记忆保存在本机；首次需下载模型。非商业研究实验。",
+    "descriptionEn": "A moment kept inside a vintage computer. Generate Gaussian memories with your own GPU in a supported desktop browser. Photos and memories stay on your device; the first run downloads the model. Non-commercial research experiment.",
     "coverImage": "/vibecoding-projects/still-memory-box/photo.jpg",
     "entryUrl": "/vibecoding-projects/still-memory-box/index.html",
     "entryRelativePath": "public/vibecoding-projects/still-memory-box/index.html",
     "projectRootRelativePath": "public/vibecoding-projects/still-memory-box",
     "createdAt": "2026-09-12T08:00:00.000Z",
-    "updatedAt": "2026-09-12T08:00:00.000Z",
-    "descriptionZh": "把一刻风景，收藏在复古电脑里。转动玻璃显示仓，探索高斯空间、细腻材质与光照，体验风景卡入仓和潮汐般的记忆显现。当前为可交互展示版。"
+    "updatedAt": "2026-09-12T07:10:00.000Z",
+    "descriptionZh": "把一刻风景，收藏在复古电脑里。支持在兼容的桌面浏览器中使用自己的 GPU 将照片生成高斯空间，体验风景卡入仓与潮汐显现。照片和记忆保存在本机；首次需下载模型。非商业研究实验。"
   }
 ]
