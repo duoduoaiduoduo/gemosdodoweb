@@ -33,10 +33,11 @@ export class MemoryGaussians extends THREE.Mesh {
         vec4 center=fetchData(base),a=fetchData(base+1),b=fetchData(base+2);
         vColor=vec4(fetchData(base+3).rgb*brightness,center.w);
         vec3 world=(modelMatrix*vec4(center.xyz,1.)).xyz;
-        float height=(world.y-clipMin.y+.35)/(clipMax.y-clipMin.y+.70);
-        float appear=smoothstep(height+.01,height+.10,reveal);
+        float height=mix(.035,.745,clamp((world.y-clipMin.y)/(clipMax.y-clipMin.y),0.,1.))+.014*sin(world.x*4.+world.z*3.);
+        float appear=smoothstep(height-.005,height+.12,reveal);
+        float settle=reveal>=1.?1.:smoothstep(height+.025,height+.225,reveal);
         vColor.a*=reveal>=1.?1.:appear;
-        vColor.rgb*=1.+.14*(1.-appear)*appear;
+        vColor.rgb=mix(mix(vColor.rgb,vec3(.63,.46,.88),.24),vColor.rgb,settle);
         if(any(lessThan(world,clipMin))||any(greaterThan(world,clipMax))){gl_Position=vec4(2.,2.,2.,1.);vGaussian=vec2(4.);vColor.a=0.;return;}
         mat3 covariance=mat3(a.x,a.y,a.z,a.y,a.w,b.x,a.z,b.x,b.y);
         mat3 rotation=mat3(modelViewMatrix);
@@ -55,6 +56,16 @@ export class MemoryGaussians extends THREE.Mesh {
         vec2 eigen=abs(xy)>.00001?normalize(vec2(xy,l1-xx)):(xx>=yy?vec2(1.,0.):vec2(0.,1.));
         vec2 major=eigen*min(sqrt(l1),160.);
         vec2 minor=vec2(-eigen.y,eigen.x)*min(sqrt(l2),160.);
+        // A compact seed unfurls into its own covariance ellipse, then settles exactly.
+        float seed=fract(sin(splatIndex*12.9898)*43758.5453);
+        float seedRadius=clamp(pow(l1*l2,.25),1.1,3.2);
+        float turn=(1.-settle)*(seed-.5)*1.8;
+        mat2 twist=mat2(cos(turn),sin(turn),-sin(turn),cos(turn));
+        major=twist*eigen*mix(seedRadius,min(sqrt(l1),160.),settle);
+        minor=twist*vec2(-eigen.y,eigen.x)*mix(seedRadius,min(sqrt(l2),160.),settle);
+        float breath=1.+.10*sin(settle*3.14159);
+        major*=breath;minor*=breath;
+        vColor.a*=mix(min(1.,sqrt(l1*l2)/max(length(major)*length(minor),.001)),1.,settle);
         vGaussian=position.xy*3.;
         vec4 clip=projectionMatrix*modelViewMatrix*vec4(center.xyz,1.);
         clip.xy+=(major*vGaussian.x+minor*vGaussian.y)*2./viewport*clip.w;

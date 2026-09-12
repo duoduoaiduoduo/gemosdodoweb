@@ -5,7 +5,7 @@ export function makeTide(mobile){
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(a,3));
  geometry.setAttribute('destination',new THREE.BufferAttribute(new Float32Array(count*3),3));geometry.setAttribute('destinationColor',new THREE.BufferAttribute(new Float32Array(count*3),3));
  const material=new THREE.ShaderMaterial({transparent:true,depthWrite:true,blending:THREE.NormalBlending,uniforms:{time:{value:0},swirl:{value:0},fade:{value:1},pixels:{value:700},build:{value:-1},low:{value:-.53},high:{value:2.21}},vertexShader:`
- attribute vec3 destination,destinationColor;uniform float time,swirl,pixels,build,low,high;varying float handoff;varying vec3 color;varying vec3 sphereCenter;varying float sphereRadius;
+ attribute vec3 destination,destinationColor;uniform float time,swirl,pixels,build,low,high;varying float handoff;varying float forming;varying vec2 flowDirection;varying vec3 color;varying vec3 sphereCenter;varying float sphereRadius;
  float hash(vec3 p){p=fract(p*.3183099+vec3(.17,.31,.73));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
  float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
  float field(vec3 p){return noise(p)*.60+noise(p*2.07+13.1)*.28+noise(p*4.19+7.7)*.12;}
@@ -47,26 +47,30 @@ export function makeTide(mobile){
  // Only the moving upper skin becomes pale: keep submerged colors saturated.
  color=mix(submerged,vec3(.62,.43,.96),smoothstep(.82,.98,layer));
  color=mix(color,vec3(1.,.90,1.),crest);
- float height=(destination.y-low+.35)/(high-low+.70);
- float travel=build<0.?0.:smoothstep(height-.22,height+.04,build);
- handoff=build<0.?0.:smoothstep(height+.01,height+.10,build);
+ float height=mix(.035,.745,clamp((destination.y-low)/(high-low),0.,1.))+.014*sin(destination.x*4.+destination.z*3.);
+ float travel=build<0.?0.:smoothstep(height-.20,height+.025,build);
+ handoff=build<0.?0.:smoothstep(height+.065,height+.225,build);
+ forming=travel;
+ vec3 direction=(modelViewMatrix*vec4(destination-p,0.)).xyz;flowDirection=normalize(direction.xy+vec2(.00001));
  p=mix(p,destination,travel);
  color=mix(color,destinationColor,travel);
  vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
  gl_PointSize=clamp(pixels*.156*(.65+s.y*.25)/-mv.z,13.2,43.2);
- gl_PointSize=mix(gl_PointSize,2.,travel*travel);
+ gl_PointSize=mix(gl_PointSize,4.5,travel*travel);
  sphereCenter=mv.xyz;sphereRadius=gl_PointSize*(-mv.z)/(pixels*projectionMatrix[1][1]);
  }`,fragmentShader:`
- uniform float fade;uniform mat4 projectionMatrix;varying float handoff;
+ uniform float fade;uniform mat4 projectionMatrix;varying float handoff;varying float forming;varying vec2 flowDirection;
  varying vec3 color,sphereCenter;varying float sphereRadius;
  void main(){
   if(handoff>=.999)discard;
-  vec2 q=gl_PointCoord*2.-1.;q.y=-q.y;float r2=dot(q,q);if(r2>=1.)discard;
+  vec2 q=gl_PointCoord*2.-1.;q.y=-q.y;
+  q=vec2(dot(q,flowDirection),dot(q,vec2(-flowDirection.y,flowDirection.x)));
+  q.y/=1.-.48*sin(forming*3.14159);float r2=dot(q,q);if(r2>=1.)discard;
   // Analytic sphere surface, with per-fragment depth and a solid unlit color.
   vec3 N=vec3(q,sqrt(1.-r2)),surface=sphereCenter+N*sphereRadius;
   vec4 clip=projectionMatrix*vec4(surface,1.);gl_FragDepth=clip.z/clip.w*.5+.5;
   float edge=1.-smoothstep(1.-fwidth(r2),1.,r2);
-  gl_FragColor=vec4(color,fade*edge*(1.-handoff));
+  gl_FragColor=vec4(color,fade*edge*mix(1.,exp(-r2*2.),smoothstep(.75,1.,forming))*(1.-handoff));
  }`});
  const mesh=new THREE.Points(geometry,material);mesh.frustumCulled=false;mesh.renderOrder=1;
  // Pair angular neighborhoods, then depth, to limit paths crossing the whole tank.
