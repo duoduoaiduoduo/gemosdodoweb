@@ -1,12 +1,12 @@
-import {memoryBox} from '../main.js?v=cube-20260912-2';
+import {memoryBox} from '../main.js?v=idle-20260913-1';
 import {save,list,pack,unpack} from './library.js';
 const $=id=>document.getElementById(id);let records=[],current=null,worker=null,busy=false,epoch=0,urls=[],operation=null,cancelJob=null;
 function notice(text=''){ $('notice').textContent=text;$('notice').hidden=!text;}
 function sidebar(open){document.body.classList.toggle('sidebar-open',open);$('toggle-sidebar').textContent=open?'关闭':'调整';$('toggle-sidebar').setAttribute('aria-expanded',String(open));$('close-sidebar').hidden=!open;}
-function lock(on){busy=on;$('library').disabled=on;$('replay-creation').disabled=on;$('choose-photo').textContent=on?'取消制作':'＋ 新建记忆';$('import-memory').disabled=on;}
+function lock(on){busy=on;$('library').disabled=on;$('replay-creation').disabled=on;$('choose-photo').textContent=on?'取消制作':'＋ 新建记忆';$('import-memory').disabled=on;$('view-example').disabled=on;}
 function stop(){memoryBox.setComputing(false);epoch++;operation=null;cancelJob?.(Error('已取消'));cancelJob=null;worker?.terminate();worker=null;memoryBox.cancelCreation();lock(false);status('制作已取消 · 已有记忆保留');notice('制作已取消，已有记忆保留。');}
 function status(text){$('job-message').textContent=text;$('connection').textContent=text;}
-async function refresh(){try{records=await list();}catch{notice('浏览器存储不可用，生成后请立即导出记忆。');}const select=$('library');select.replaceChildren();for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;select.append(o);}$('library-section').hidden=!records.length;$('memory-count').textContent=records.length;if(current)select.value=current.id;}
+async function refresh(){try{records=await list();}catch{notice('浏览器存储不可用，生成后请立即导出记忆。');}const select=$('library');select.replaceChildren();const placeholder=new Option('选择一份记忆…','');select.append(placeholder);for(const r of records){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;select.append(o);}$('library-section').hidden=!records.length;$('memory-count').textContent=records.length;if(current)select.value=current.id;}
 async function show(record,reveal=false){
  const token=++epoch;if(!reveal)memoryBox.cancelCreation();current=record;
  urls.forEach(URL.revokeObjectURL);urls=[];
@@ -51,4 +51,5 @@ $('replay-creation').onclick=async()=>{if(busy||!current)return;lock(true);const
 $('toggle-sidebar').onclick=()=>sidebar(!document.body.classList.contains('sidebar-open'));$('close-sidebar').onclick=()=>sidebar(false);
 window.addEventListener('beforeunload',e=>{if(busy){e.preventDefault();e.returnValue='';}});
 for(const type of ['dragover','drop'])document.addEventListener(type,e=>e.preventDefault());document.addEventListener('drop',e=>{if(!busy){notice('请点击「新建记忆」检查设备后选择照片。');sidebar(true);}});
-async function boot(){document.querySelector('.format-note').textContent='照片留在本机 · JPG / PNG / WebP';$('connection').textContent='浏览器本地生成 · 无需上传照片';$('creation').hidden=false;await refresh();if(records.length)await show(records[0]);else{const demo=await(await fetch('./memory.json')).json();try{demo.settings=JSON.parse(localStorage.getItem('still-demo-settings'))||demo.settings;}catch{}await show(demo);}}boot().catch(e=>{notice(e.message);sidebar(true);});
+const example=document.createElement('button');example.id='view-example';example.className='quiet';example.textContent='查看示例';$('library-section').before(example);example.onclick=async()=>{if(busy)return;try{const demo=await(await fetch('./memory.json')).json();try{demo.settings=JSON.parse(localStorage.getItem('still-demo-settings'))||demo.settings;}catch{}await show(demo);}catch(e){notice(e.message);sidebar(true);}};
+async function boot(){document.querySelector('.format-note').textContent='照片留在本机 · JPG / PNG / WebP';$('creation').hidden=false;await refresh();status('等待收藏 · 新建记忆或打开已有记忆');}boot().catch(e=>{notice(e.message);sidebar(true);});
