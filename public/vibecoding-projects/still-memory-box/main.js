@@ -1,9 +1,9 @@
 import {BokehPass} from './vendor/addons/postprocessing/BokehPass.js';
-import {makeTide} from './tide.js?v=station-20260913-1';
+import {makeTide} from './tide.js?v=scale65-20260913-1';
 import * as THREE from './vendor/three.module.js';
-import { MemoryGaussians } from './gaussian.js?v=station-20260913-1';
-import { applyBakedLighting } from './baked-lighting.js?v=station-20260913-1';
-import { buildComputer } from './computer.js?v=station-20260913-1';
+import { MemoryGaussians } from './gaussian.js?v=scale65-20260913-1';
+import { applyBakedLighting } from './baked-lighting.js?v=scale65-20260913-1';
+import { buildComputer } from './computer.js?v=scale65-20260913-1';
 import { addLogoSticker } from './logo-sticker.js';
 import { createCeremony } from './ceremony.js';
 import { createStudio } from './studio.js';
@@ -42,7 +42,7 @@ function updateCamera(now){
  azimuth=THREE.MathUtils.lerp(m.from.azimuth,m.to.azimuth,k);elevation=THREE.MathUtils.lerp(m.from.elevation,m.to.elevation,k);zoom=THREE.MathUtils.lerp(m.from.zoom,m.to.zoom,k);setCamera();
  if(t===1)cameraMove=null;
 }
-let memoryMesh=null,loadVersion=0,fill='cover',contentScale=1,depthVolume=1;
+let memoryMesh=null,loadVersion=0,fill='cover',contentScale=.65,depthVolume=1;
 const displaySize=new THREE.Vector2();
 let modelBounds=new THREE.Box3(new THREE.Vector3(-1.9,-1.76,-1.15),new THREE.Vector3(1.9,2.5,2.1));
 function setCamera(){
@@ -177,7 +177,7 @@ function applySettings(settings={},keepCamera=false){
  $(id).value=value;$(id+'Value').textContent=value.toFixed(2);
  if(id==='brightness'){if(memoryMesh)memoryMesh.material.uniforms.brightness.value=value;}else glassMaterial.uniforms[id].value=value;
  }
- fill=modern?(settings.fit??'cover'):'cover';contentScale=modern?(settings.contentScale??1):1;
+ fill=modern?(settings.fit??'cover'):'cover';contentScale=modern?(settings.contentScale??.65):.65;
  depthVolume=settings.depthVolume??1;$('depth-volume').value=depthVolume;$('depth-volumeValue').textContent=Math.round(depthVolume*100)+'%';
  $('content-scale').value=contentScale;$('content-scaleValue').textContent=Math.round(contentScale*100)+'%';fitContent();
  if(keepCamera)return;cameraMove=null;
