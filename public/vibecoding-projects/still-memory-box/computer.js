@@ -103,13 +103,13 @@ export function buildComputer(glassMaterial,absHeight=null){
  // Small independent blue function button above the numeric block.
  add(box(.145,.025,.072,.008),blue,[1.437,.042,-.542],null,deck);
  // Staggered vintage layout: separate numeric block and individually dished keycaps.
- const pitch=.176,depth=.166,height=.133,cache=new Map();
+ const pitch=.176,depth=.166,height=.133,cache=new Map(),keys=[];
  function key(x,z,u,label,material=keyMat){const w=u*pitch-.018,k=String(u);if(!cache.has(k))cache.set(k,keycap(w,height,.151));
-  add(cache.get(k),material,[x,.027,z],null,deck);
+  const cap=add(cache.get(k),material,[x,.027,z],null,deck);const entry={cap,rest:.027,print:null};keys.push(entry);
   if(!label)return;
   const cv=document.createElement('canvas');cv.width=128;cv.height=64;const c=cv.getContext('2d');c.fillStyle='#655e50';c.font=label.length>3?'14px monospace':'20px monospace';c.textAlign='left';c.fillText(label,16,29);
   const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;
-  const print=add(new THREE.PlaneGeometry(Math.min(w*.73,.16),.064),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}),[x,.084,z-.014],[-Math.PI/2,0,0],deck);print.castShadow=false;
+  const print=add(new THREE.PlaneGeometry(Math.min(w*.73,.16),.064),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}),[x,.084,z-.014],[-Math.PI/2,0,0],deck);print.castShadow=false;entry.print=print;
  }
  const rows=[
   [[1,'esc'],[1,'1'],[1,'2'],[1,'3'],[1,'4'],[1,'5'],[1,'6'],[1,'7'],[1,'8'],[1,'9'],[1,'0'],[1,'−'],[1,'='],[1.5,'←']],
@@ -143,5 +143,5 @@ export function buildComputer(glassMaterial,absHeight=null){
   }
   mesh.geometry.computeBoundingBox();mesh.geometry.computeBoundingSphere();
  });
- return {group,glass,driveSlot};
+ return {group,glass,driveSlot,keys};
 }
