@@ -1,3 +1,5 @@
+import {BokehPass} from './vendor/addons/postprocessing/BokehPass.js';
+import {makeTide} from './tide.js';
 import * as THREE from './vendor/three.module.js';
 import { MemoryGaussians } from './gaussian.js';
 import { applyBakedLighting } from './baked-lighting.js';
@@ -126,18 +128,9 @@ floorMaterial.onBeforeCompile=shader=>{
  shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','outgoingLight *= 1.0-smoothstep(4.5,23.0,length(vGroundWorld.xz));\n#include <opaque_fragment>');
 };
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),floorMaterial);floor.rotation.x=-Math.PI/2;floor.position.y=-1.758;floor.receiveShadow=true;scene.add(floor);
-// Quiet botanical placeholder before the first personal memory is made.
-const demo=new THREE.Group();demo.position.y=.2;inside.add(demo);
-const stemMat=new THREE.MeshStandardMaterial({color:'#647452',roughness:.8});inside.add(new THREE.HemisphereLight('#ffffff','#7c765b',2));const demoLight=new THREE.DirectionalLight('#fff5dc',2);demoLight.position.set(-2,4,4);inside.add(demoLight);
-let seed=21;function random(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}
-for(let i=0;i<19;i++){
- const x=(random()-.5)*2.65,h=.8+random()*1.7,z=(random()-.5)*.8;
- const stem=new THREE.Mesh(new THREE.CylinderGeometry(.012,.015,h,6),stemMat);stem.position.set(x,-.70+h/2,z);demo.add(stem);
- for(let j=0;j<4;j++){const leaf=new THREE.Mesh(new THREE.SphereGeometry(1,12,6),stemMat);leaf.scale.set(.19,.065,.075);leaf.position.set(x+(j%2?-.10:.10),-.55+h*j/5,z);leaf.rotation.z=(j%2?-.6:.6);demo.add(leaf);}
- const flower=new THREE.Group();flower.position.set(x,-.70+h,z);const petalMat=new THREE.MeshStandardMaterial({color:['#e2b946','#eee7d4','#b87365','#d2a79a'][i%4],roughness:.8});
- for(let j=0;j<10;j++){const a=j*Math.PI/5,p=new THREE.Mesh(new THREE.SphereGeometry(1,12,8),petalMat);p.scale.set(.075,.16,.04);p.position.set(Math.sin(a)*.13,Math.cos(a)*.13,0);p.rotation.z=-a;flower.add(p);}
- const heart=new THREE.Mesh(new THREE.SphereGeometry(.082,14,10),new THREE.MeshStandardMaterial({color:'#806036',roughness:.9}));heart.scale.z=.5;heart.position.z=.04;flower.add(heart);demo.add(flower);
-}
+const tide=makeTide(mobile),demo=tide.mesh;inside.add(demo);
+let tideSwirl=0,tideAlpha=1,filmStart=0,filmRevealed=false,filmDof=null;
+function updateTide(dt=.033){const phase=ceremony.phase,vortex=['generating','revealing'].includes(phase)?1:0;const reveal=memoryMesh?.material.uniforms.reveal.value??0;const opacity=phase==='revealing'?1-THREE.MathUtils.smoothstep(reveal,0,.8):(!memoryMesh||['card','inserting','generating'].includes(phase)?1:0);tideSwirl=THREE.MathUtils.damp(tideSwirl,vortex,2.2,dt);tideAlpha=THREE.MathUtils.damp(tideAlpha,opacity,3,dt);tide.update(time,tideSwirl,tideAlpha,displaySize.y);}
 // Multisampled linear render -> ground-truth AO -> highlight-preserving display transform.
 const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:mobile?0:4}));
 composer.addPass(new RenderPass(scene,camera));
@@ -152,7 +145,7 @@ composer.addPass(new OutputPass());
 applyBakedLighting(computer.group,floor).then(result=>{if(!result.pending){if(ao){ao.blendIntensity=0;ao.enabled=false;}stage.dataset.lighting="baked";}}).catch(error=>console.warn("离线光照未加载，使用实时材质",error));
 function resize(){if(filming)return;const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;const ratio=mobile?Math.min(devicePixelRatio,computing?.75:1.4,Math.sqrt(900000/(w*h)))*quality:Math.min(2.5,Math.max(devicePixelRatio,1.5),Math.sqrt(5000000/(w*h)));if(renderer.getPixelRatio()!==ratio){renderer.setPixelRatio(ratio);composer.setPixelRatio(ratio);}renderer.setSize(w,h);renderer.getDrawingBufferSize(displaySize);innerRT.setSize(displaySize.x,displaySize.y);for(const rt of [blurA,blurB])rt.setSize(Math.max(1,Math.round(displaySize.x*(mobile?.5:1))),Math.max(1,Math.round(displaySize.y*(mobile?.5:1))));composer.setSize(w,h);camera.aspect=w/h;setCamera();}
 new ResizeObserver(resize).observe(stage);window.addEventListener('resize',resize);resize();
-function renderScene(){camera.updateMatrixWorld();glassMaterial.uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);if(memoryMesh)memoryMesh.update(camera,displaySize);renderer.setRenderTarget(innerRT);renderer.clear(true,true,true);renderer.render(inside,camera);blur();renderer.setRenderTarget(null);composer.render();}
+function renderScene(){updateTide();camera.updateMatrixWorld();glassMaterial.uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);if(memoryMesh)memoryMesh.update(camera,displaySize);renderer.setRenderTarget(innerRT);renderer.clear(true,true,true);renderer.render(inside,camera);blur();renderer.setRenderTarget(null);composer.render();}
 let last=performance.now(),slowFrames=0;function animate(now){requestAnimationFrame(animate);if(document.hidden||filming)return;if(mobile&&now-last<(computing?1000/12:1000/30))return;if(mobile&&now-last>65&&!computing){if(++slowFrames>45&&quality>.65){quality=Math.max(.65,quality-.1);slowFrames=0;resize();}}else slowFrames=Math.max(0,slowFrames-1);const dt=Math.min((now-last)/1000,.04);last=now;updateCamera(now);ceremony.update(now);if(!paused)time+=dt;glassMaterial.uniforms.time.value=time;renderScene();}
 requestAnimationFrame(animate);
 const pointers=new Map();let gestureDistance=0;
@@ -197,9 +190,9 @@ $('motion').onclick=e=>{paused=!paused;e.target.textContent=paused?'继续流光
 $('reset').onclick=()=>moveCamera(HOME);
 $('front-view').onclick=()=>moveCamera({azimuth:0,elevation:.08,zoom:1});
 export const memoryBox={
- beginFilm(w,h){if(filming||computing||ceremony.active||!memoryMesh)throw Error('请等待记忆加载或收藏动画完成后再制作影片');filmSaved={azimuth,elevation,zoom,time};filming=true;cameraMove=null;renderer.setPixelRatio(1);composer.setPixelRatio(1);renderer.setSize(w,h,false);composer.setSize(w,h);displaySize.set(w,h);innerRT.setSize(w,h);blurA.setSize(w,h);blurB.setSize(w,h);camera.aspect=w/h;},
- filmFrame(view,t){azimuth=view.azimuth;elevation=view.elevation;zoom=view.zoom;time=filmSaved.time+t;glassMaterial.uniforms.time.value=time;setCamera();renderScene();return renderer.domElement;},
- endFilm(){if(!filmSaved)return;({azimuth,elevation,zoom,time}=filmSaved);filmSaved=null;filming=false;resize();},
+ async beginFilm(w,h){if(filming||computing||ceremony.active||!memoryMesh)throw Error('请等待记忆加载或收藏动画完成后再制作影片');filmSaved={azimuth,elevation,zoom,time,fov:camera.fov};filming=true;cameraMove=null;renderer.setPixelRatio(1);composer.setPixelRatio(1);renderer.setSize(w,h,false);composer.setSize(w,h);displaySize.set(w,h);innerRT.setSize(w,h);blurA.setSize(w,h);blurB.setSize(w,h);camera.aspect=w/h;setCamera();filmDof=new BokehPass(scene,camera,{focus:10,aperture:0,maxblur:.006});filmDof.setSize(w,h);composer.passes.splice(composer.passes.length-1,0,filmDof);filmRevealed=false;memoryMesh.visible=false;tideAlpha=1;tideSwirl=0;const photo=await(await fetch(document.getElementById('photo-preview').src)).blob();await new Promise((resolve,reject)=>{ceremony.begin(photo,document.getElementById('memory-name').textContent,start=>{filmStart=start;resolve();}).catch(reject);});},
+ filmFrame(view,t){azimuth=view.azimuth;elevation=view.elevation;zoom=view.zoom;time=filmSaved.time+t;glassMaterial.uniforms.time.value=time;camera.fov=view.fov??29;setCamera();if(view.lift){camera.position.y+=view.lift;camera.lookAt(target.clone().add(new THREE.Vector3(0,view.lift,0)));}if(t>=8&&!filmRevealed){filmRevealed=true;memoryMesh.visible=true;ceremony.reveal(memoryMesh,filmStart+8000);}ceremony.update(filmStart+t*1000);const focusPoint=new THREE.Vector3(0,.65+(view.lift??0),.7),forward=camera.getWorldDirection(new THREE.Vector3());filmDof.uniforms.focus.value=focusPoint.sub(camera.position).dot(forward);filmDof.uniforms.aperture.value=.0015*THREE.MathUtils.smoothstep(t,7,9)*(1-THREE.MathUtils.smoothstep(t,16,20));renderScene();return renderer.domElement;},
+ endFilm(){if(!filmSaved)return;({azimuth,elevation,zoom,time}=filmSaved);camera.fov=filmSaved.fov;if(filmDof){composer.removePass(filmDof);filmDof.dispose();filmDof=null;}ceremony.cancel();memoryMesh.visible=true;tideAlpha=0;filmSaved=null;filming=false;resize();},
  setComputing(value){computing=!!value;resize();},
  async beginCreation(file,name){loadVersion++;if(memoryMesh)memoryMesh.visible=false;demo.visible=false;try{await ceremony.begin(file,name);}catch(e){this.cancelCreation();throw e;}},
  waiting(message){if(memoryMesh)memoryMesh.visible=false;demo.visible=false;ceremony.wait(message);},

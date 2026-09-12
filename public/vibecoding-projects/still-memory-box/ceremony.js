@@ -19,7 +19,7 @@ export function createCeremony(scene,inside,camera,stage,driveSlot){
  function state(value,text){if(phase===value&&label.textContent===text)return;phase=value;stage.dataset.creation=value;label.textContent=text;label.hidden=!text;}
  function cancel(){epoch++;active=false;fadeTarget=0;disposeCard();if(revealing)revealing.material.uniforms.reveal.value=1;revealing=null;resolveArrival?.();resolveArrival=null;state('idle','');}
  function wait(text='正在重建这一刻'){active=true;fadeTarget=1;state('generating',text);}
- async function begin(file,name){
+ async function begin(file,name,onReady){
   cancel();alignSlot();const ticket=epoch;active=true;state('card','将这一刻，装入记忆');const url=URL.createObjectURL(file);
   let photo,logo;try{[photo,logo]=await Promise.all([image(url),image('./avatar.png')]);}finally{URL.revokeObjectURL(url);}
   if(ticket!==epoch)return;
@@ -36,14 +36,14 @@ export function createCeremony(scene,inside,camera,stage,driveSlot){
   material.onBeforeCompile=shader=>{shader.uniforms.swallow={value:0};shader.uniforms.slotPoint={value:slotPoint};shader.uniforms.slotNormal={value:slotNormal};material.userData.shader=shader;shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 cardWorld;').replace('#include <begin_vertex>','#include <begin_vertex>\ncardWorld=(modelMatrix*vec4(position,1.)).xyz;');shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 cardWorld;uniform float swallow;uniform vec3 slotPoint,slotNormal;').replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif(swallow>.5 && dot(cardWorld-slotPoint,slotNormal)<0.)discard;');};
   card=new THREE.Mesh(new THREE.PlaneGeometry(1,1.24),material);scene.add(card);camera.updateMatrixWorld();initial.set(0,0,-4).applyMatrix4(camera.matrixWorld);initialQ.copy(camera.quaternion);
   initialScale=Math.min(1.7,2*4*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2)*Math.min(camera.aspect*.8,.66));
-  card.position.copy(initial);card.quaternion.copy(initialQ);card.scale.setScalar(initialScale*.92);start=performance.now();
+  card.position.copy(initial);card.quaternion.copy(initialQ);card.scale.setScalar(initialScale*.92);start=performance.now();onReady?.(start);
   return new Promise(resolve=>{resolveArrival=resolve;});
  }
- function reveal(mesh){fadeTarget=0;revealing=mesh;revealStart=performance.now();mesh.material.uniforms.reveal.value=0;state('revealing','记忆，正在浮现');active=true;}
+ function reveal(mesh,now=performance.now()){fadeTarget=0;revealing=mesh;revealStart=now;mesh.material.uniforms.reveal.value=0;state('revealing','记忆，正在浮现');active=true;}
  function update(now){
   const dt=previousTime?Math.min((now-previousTime)/1000,.1):0;previousTime=now;
   mat.uniforms.fade.value=THREE.MathUtils.damp(mat.uniforms.fade.value,fadeTarget,4.5,dt);
-  waiting.visible=mat.uniforms.fade.value>.002;
+  waiting.visible=false; // The particle tank is the loading visual.
   mat.uniforms.time.value=reduced?0:now/1000;
   if(card){const t=(now-start)/1000,hold=reduced?.3:2.4,travel=reduced?.25:1.65,approach=reduced?.2:.65,insert=reduced?.25:1.25;
    if(t<hold){camera.updateMatrixWorld();initial.set(0,0,-4).applyMatrix4(camera.matrixWorld);initialQ.copy(camera.quaternion);card.position.copy(initial);card.quaternion.copy(initialQ);card.scale.setScalar(initialScale*(.92+.08*smooth(t/.65)));}
