@@ -26,6 +26,17 @@ let cameraDistance=10;
 const target=new THREE.Vector3(0,.15,.1);
 const HOME={azimuth:.56,elevation:.28,zoom:1};
 let azimuth=HOME.azimuth,elevation=HOME.elevation,zoom=1,time=0,paused=false,dragging=false;
+let cameraMove=null;
+function moveCamera(view){
+ const turn=Math.atan2(Math.sin(view.azimuth-azimuth),Math.cos(view.azimuth-azimuth));
+ cameraMove={start:performance.now(),duration:matchMedia('(prefers-reduced-motion: reduce)').matches?120:850,from:{azimuth,elevation,zoom},to:{...view,azimuth:azimuth+turn}};
+}
+function updateCamera(now){
+ if(!cameraMove)return;
+ const m=cameraMove,t=Math.min(1,Math.max(0,(now-m.start)/m.duration)),k=t*t*t*(t*(t*6-15)+10);
+ azimuth=THREE.MathUtils.lerp(m.from.azimuth,m.to.azimuth,k);elevation=THREE.MathUtils.lerp(m.from.elevation,m.to.elevation,k);zoom=THREE.MathUtils.lerp(m.from.zoom,m.to.zoom,k);setCamera();
+ if(t===1)cameraMove=null;
+}
 let memoryMesh=null,loadVersion=0,fill='cover',contentScale=1,depthVolume=1;
 const displaySize=new THREE.Vector2();
 let modelBounds=new THREE.Box3(new THREE.Vector3(-1.9,-1.76,-1.15),new THREE.Vector3(1.9,2.5,2.1));
@@ -136,9 +147,9 @@ composer.addPass(ao);composer.addPass(new OutputPass());
 applyBakedLighting(computer.group,floor).then(result=>{if(!result.pending){ao.blendIntensity=0;stage.dataset.lighting="baked";}}).catch(error=>console.warn("离线光照未加载，使用实时材质",error));
 function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;const ratio=Math.min(2.5,Math.max(devicePixelRatio,1.5),Math.sqrt(5000000/(w*h)));if(renderer.getPixelRatio()!==ratio){renderer.setPixelRatio(ratio);composer.setPixelRatio(ratio);}renderer.setSize(w,h);renderer.getDrawingBufferSize(displaySize);for(const rt of [innerRT,blurA,blurB])rt.setSize(displaySize.x,displaySize.y);composer.setSize(w,h);camera.aspect=w/h;setCamera();}
 new ResizeObserver(resize).observe(stage);window.addEventListener('resize',resize);resize();
-let last=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.04);last=now;ceremony.update(now);if(!paused)time+=dt;glassMaterial.uniforms.time.value=time;camera.updateMatrixWorld();glassMaterial.uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);if(memoryMesh)memoryMesh.update(camera,displaySize);renderer.setRenderTarget(innerRT);renderer.clear(true,true,true);renderer.render(inside,camera);blur();renderer.setRenderTarget(null);composer.render();}
+let last=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.04);last=now;updateCamera(now);ceremony.update(now);if(!paused)time+=dt;glassMaterial.uniforms.time.value=time;camera.updateMatrixWorld();glassMaterial.uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);if(memoryMesh)memoryMesh.update(camera,displaySize);renderer.setRenderTarget(innerRT);renderer.clear(true,true,true);renderer.render(inside,camera);blur();renderer.setRenderTarget(null);composer.render();}
 requestAnimationFrame(animate);
-let pointerX=0,pointerY=0;stage.addEventListener('pointerdown',e=>{if(ceremony.active)return;dragging=true;pointerX=e.clientX;pointerY=e.clientY;stage.setPointerCapture(e.pointerId);});stage.addEventListener('pointermove',e=>{if(!dragging)return;azimuth-=(e.clientX-pointerX)*.006;elevation=Math.max(.08,Math.min(1.35,elevation+(e.clientY-pointerY)*.004));pointerX=e.clientX;pointerY=e.clientY;setCamera();});for(const ev of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(ev,()=>dragging=false);stage.addEventListener('wheel',e=>{e.preventDefault();if(ceremony.active)return;zoom=Math.max(.6,Math.min(1.7,zoom*Math.exp(-e.deltaY*.001)));setCamera();},{passive:false});
+let pointerX=0,pointerY=0;stage.addEventListener('pointerdown',e=>{cameraMove=null;dragging=true;pointerX=e.clientX;pointerY=e.clientY;stage.setPointerCapture(e.pointerId);});stage.addEventListener('pointermove',e=>{if(!dragging)return;azimuth-=(e.clientX-pointerX)*.006;elevation=Math.max(.08,Math.min(1.35,elevation+(e.clientY-pointerY)*.004));pointerX=e.clientX;pointerY=e.clientY;setCamera();});for(const ev of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(ev,()=>dragging=false);stage.addEventListener('wheel',e=>{e.preventDefault();cameraMove=null;zoom=Math.max(.6,Math.min(1.7,zoom*Math.exp(-e.deltaY*.001)));setCamera();},{passive:false});
 function fitContent(){
  if(!memoryMesh)return;const b=fill==='contain'?memoryMesh.fullBounds:memoryMesh.contentBounds,size=new THREE.Vector3();b.getSize(size);
  const fitX=3.04/Math.max(size.x,.01),fitY=2.68/Math.max(size.y,.01);
@@ -153,7 +164,7 @@ function fitContent(){
  memoryMesh.lastDirection=null;
  $('fit-cover').setAttribute('aria-pressed',String(fill==='cover'));$('fit-contain').setAttribute('aria-pressed',String(fill==='contain'));
 }
-function applySettings(settings={}){
+function applySettings(settings={},keepCamera=false){
  const modern=settings.designVersion===2;
  for(const id of ['glow','frost','brightness']){
  const value=modern?(settings[id]??{glow:.12,frost:.025,brightness:1.05}[id]):{glow:.12,frost:.025,brightness:1.05}[id];
@@ -163,6 +174,7 @@ function applySettings(settings={}){
  fill=modern?(settings.fit??'cover'):'cover';contentScale=modern?(settings.contentScale??1):1;
  depthVolume=settings.depthVolume??1;$('depth-volume').value=depthVolume;$('depth-volumeValue').textContent=Math.round(depthVolume*100)+'%';
  $('content-scale').value=contentScale;$('content-scaleValue').textContent=Math.round(contentScale*100)+'%';fitContent();
+ if(keepCamera)return;cameraMove=null;
  const savedCamera=settings.renderVersion===2;azimuth=savedCamera?(settings.azimuth??HOME.azimuth):HOME.azimuth;elevation=savedCamera?(settings.elevation??HOME.elevation):HOME.elevation;zoom=savedCamera?(settings.zoom??1):1;setCamera();
 }
 for(const id of ['glow','frost','brightness'])$(id).addEventListener('input',e=>{const n=Number(e.target.value);$(id+'Value').textContent=n.toFixed(2);if(id==='brightness'){if(memoryMesh)memoryMesh.material.uniforms.brightness.value=n;}else glassMaterial.uniforms[id].value=n;});
@@ -170,14 +182,14 @@ $('content-scale').oninput=e=>{contentScale=Number(e.target.value);$('content-sc
 $('depth-volume').oninput=e=>{depthVolume=Number(e.target.value);$('depth-volumeValue').textContent=Math.round(depthVolume*100)+'%';fitContent();};
 $('fit-cover').onclick=()=>{fill='cover';fitContent();};$('fit-contain').onclick=()=>{fill='contain';fitContent();};
 $('motion').onclick=e=>{paused=!paused;e.target.textContent=paused?'继续流光':'暂停流光';e.target.setAttribute('aria-pressed',String(!paused));};
-$('reset').onclick=()=>{if(ceremony.active)return;({azimuth,elevation,zoom}=HOME);setCamera();};
-$('front-view').onclick=()=>{if(ceremony.active)return;azimuth=0;elevation=.08;zoom=1;setCamera();};
+$('reset').onclick=()=>moveCamera(HOME);
+$('front-view').onclick=()=>moveCamera({azimuth:0,elevation:.08,zoom:1});
 export const memoryBox={
- async beginCreation(file,name){loadVersion++;({azimuth,elevation,zoom}=HOME);setCamera();if(memoryMesh)memoryMesh.visible=false;demo.visible=false;try{await ceremony.begin(file,name);}catch(e){this.cancelCreation();throw e;}},
+ async beginCreation(file,name){loadVersion++;if(memoryMesh)memoryMesh.visible=false;demo.visible=false;try{await ceremony.begin(file,name);}catch(e){this.cancelCreation();throw e;}},
  waiting(message){if(memoryMesh)memoryMesh.visible=false;demo.visible=false;ceremony.wait(message);},
  cancelCreation(){loadVersion++;ceremony.cancel();if(memoryMesh)memoryMesh.visible=true;else demo.visible=true;},
 
- async load(url,settings,reveal=false){const version=++loadVersion;const response=await fetch(url);if(!response.ok)throw new Error('无法读取 3D 记忆，请重试。');const buffer=await response.arrayBuffer();if(version!==loadVersion)return;const next=new MemoryGaussians(buffer);if(memoryMesh){inside.remove(memoryMesh);memoryMesh.dispose();}memoryMesh=next;inside.add(next);demo.visible=false;applySettings(settings);if(reveal)ceremony.reveal(next);},
+ async load(url,settings,reveal=false){const version=++loadVersion;const response=await fetch(url);if(!response.ok)throw new Error('无法读取 3D 记忆，请重试。');const buffer=await response.arrayBuffer();if(version!==loadVersion)return;const next=new MemoryGaussians(buffer);if(memoryMesh){inside.remove(memoryMesh);memoryMesh.dispose();}memoryMesh=next;inside.add(next);demo.visible=false;applySettings(settings,reveal);if(reveal)ceremony.reveal(next);},
  getSettings(){return {designVersion:2,renderVersion:2,fit:fill,contentScale,depthVolume,glow:glassMaterial.uniforms.glow.value,frost:glassMaterial.uniforms.frost.value,brightness:Number($('brightness').value),azimuth,elevation,zoom};},
  capture(){return renderer.domElement.toDataURL('image/png');}
 };

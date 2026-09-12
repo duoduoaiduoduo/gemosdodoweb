@@ -46,7 +46,7 @@ export function createCeremony(scene,inside,camera,stage,driveSlot){
   waiting.visible=mat.uniforms.fade.value>.002;
   mat.uniforms.time.value=reduced?0:now/1000;
   if(card){const t=(now-start)/1000,hold=reduced?.3:2.4,travel=reduced?.25:1.65,approach=reduced?.2:.65,insert=reduced?.25:1.25;
-   if(t<hold){card.scale.setScalar(initialScale*(.92+.08*smooth(t/.65)));}
+   if(t<hold){camera.updateMatrixWorld();initial.set(0,0,-4).applyMatrix4(camera.matrixWorld);initialQ.copy(camera.quaternion);card.position.copy(initial);card.quaternion.copy(initialQ);card.scale.setScalar(initialScale*(.92+.08*smooth(t/.65)));}
    else if(t<hold+travel){const k=smooth((t-hold)/travel);card.position.lerpVectors(initial,atSlot(1.92),k);card.quaternion.slerpQuaternions(initialQ,slotQ,k);card.scale.setScalar(THREE.MathUtils.lerp(initialScale,cardWidth,smooth(k*1.7)));state('inserting','正在存入这一刻');}
    else if(t<hold+travel+approach){const k=smooth((t-hold-travel)/approach);card.quaternion.copy(slotQ);card.scale.setScalar(cardWidth);card.position.copy(atSlot(THREE.MathUtils.lerp(1.92,halfLength+.035,k)));}
    else {const k=smooth((t-hold-travel-approach)/insert);card.position.copy(atSlot(THREE.MathUtils.lerp(halfLength+.035,-halfLength-.025,k)));if(card.material.userData.shader)card.material.userData.shader.uniforms.swallow.value=1;if(k===1){disposeCard();wait();resolveArrival?.();resolveArrival=null;}}
