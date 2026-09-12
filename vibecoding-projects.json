@@ -40,7 +40,7 @@
     "description": "把一刻风景，收藏在复古电脑里。支持在兼容的桌面浏览器中使用自己的 GPU 将照片生成高斯空间，体验风景卡入仓与潮汐显现。照片和记忆保存在本机；首次需下载模型。非商业研究实验。",
     "descriptionEn": "A moment kept inside a vintage computer. Generate Gaussian memories with your own GPU in a supported desktop browser. Photos and memories stay on your device; the first run downloads the model. Non-commercial research experiment.",
     "coverImage": "/vibecoding-projects/still-memory-box/gemos-still-cover.svg",
-    "entryUrl": "/vibecoding-projects/still-memory-box/index.html",
+    "entryUrl": "/vibecoding-projects/still-memory-box/index.html?v=cube-20260912-2",
     "entryRelativePath": "public/vibecoding-projects/still-memory-box/index.html",
     "projectRootRelativePath": "public/vibecoding-projects/still-memory-box",
     "createdAt": "2026-09-12T08:00:00.000Z",
