@@ -28,6 +28,7 @@ let cameraDistance=10;
 const target=new THREE.Vector3(0,.15,.1);
 const HOME={azimuth:.56,elevation:.28,zoom:1};
 let azimuth=HOME.azimuth,elevation=HOME.elevation,zoom=1,time=0,paused=false,dragging=false;
+let filming=false,filmSaved=null;
 let cameraMove=null;
 function moveCamera(view){
  const turn=Math.atan2(Math.sin(view.azimuth-azimuth),Math.cos(view.azimuth-azimuth));
@@ -149,9 +150,10 @@ ao._overrideVisibility=()=>{originalOverride();scene.traverse(o=>{if(o.visible&&
 composer.addPass(ao);}
 composer.addPass(new OutputPass());
 applyBakedLighting(computer.group,floor).then(result=>{if(!result.pending){if(ao){ao.blendIntensity=0;ao.enabled=false;}stage.dataset.lighting="baked";}}).catch(error=>console.warn("离线光照未加载，使用实时材质",error));
-function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;const ratio=mobile?Math.min(devicePixelRatio,computing?.75:1.4,Math.sqrt(900000/(w*h)))*quality:Math.min(2.5,Math.max(devicePixelRatio,1.5),Math.sqrt(5000000/(w*h)));if(renderer.getPixelRatio()!==ratio){renderer.setPixelRatio(ratio);composer.setPixelRatio(ratio);}renderer.setSize(w,h);renderer.getDrawingBufferSize(displaySize);innerRT.setSize(displaySize.x,displaySize.y);for(const rt of [blurA,blurB])rt.setSize(Math.max(1,Math.round(displaySize.x*(mobile?.5:1))),Math.max(1,Math.round(displaySize.y*(mobile?.5:1))));composer.setSize(w,h);camera.aspect=w/h;setCamera();}
+function resize(){if(filming)return;const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;const ratio=mobile?Math.min(devicePixelRatio,computing?.75:1.4,Math.sqrt(900000/(w*h)))*quality:Math.min(2.5,Math.max(devicePixelRatio,1.5),Math.sqrt(5000000/(w*h)));if(renderer.getPixelRatio()!==ratio){renderer.setPixelRatio(ratio);composer.setPixelRatio(ratio);}renderer.setSize(w,h);renderer.getDrawingBufferSize(displaySize);innerRT.setSize(displaySize.x,displaySize.y);for(const rt of [blurA,blurB])rt.setSize(Math.max(1,Math.round(displaySize.x*(mobile?.5:1))),Math.max(1,Math.round(displaySize.y*(mobile?.5:1))));composer.setSize(w,h);camera.aspect=w/h;setCamera();}
 new ResizeObserver(resize).observe(stage);window.addEventListener('resize',resize);resize();
-let last=performance.now(),slowFrames=0;function animate(now){requestAnimationFrame(animate);if(document.hidden)return;if(mobile&&now-last<(computing?1000/12:1000/30))return;if(mobile&&now-last>65&&!computing){if(++slowFrames>45&&quality>.65){quality=Math.max(.65,quality-.1);slowFrames=0;resize();}}else slowFrames=Math.max(0,slowFrames-1);const dt=Math.min((now-last)/1000,.04);last=now;updateCamera(now);ceremony.update(now);if(!paused)time+=dt;glassMaterial.uniforms.time.value=time;camera.updateMatrixWorld();glassMaterial.uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);if(memoryMesh)memoryMesh.update(camera,displaySize);renderer.setRenderTarget(innerRT);renderer.clear(true,true,true);renderer.render(inside,camera);blur();renderer.setRenderTarget(null);composer.render();}
+function renderScene(){camera.updateMatrixWorld();glassMaterial.uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);if(memoryMesh)memoryMesh.update(camera,displaySize);renderer.setRenderTarget(innerRT);renderer.clear(true,true,true);renderer.render(inside,camera);blur();renderer.setRenderTarget(null);composer.render();}
+let last=performance.now(),slowFrames=0;function animate(now){requestAnimationFrame(animate);if(document.hidden||filming)return;if(mobile&&now-last<(computing?1000/12:1000/30))return;if(mobile&&now-last>65&&!computing){if(++slowFrames>45&&quality>.65){quality=Math.max(.65,quality-.1);slowFrames=0;resize();}}else slowFrames=Math.max(0,slowFrames-1);const dt=Math.min((now-last)/1000,.04);last=now;updateCamera(now);ceremony.update(now);if(!paused)time+=dt;glassMaterial.uniforms.time.value=time;renderScene();}
 requestAnimationFrame(animate);
 const pointers=new Map();let gestureDistance=0;
 function span(){const p=[...pointers.values()];return p.length===2?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0;}
@@ -195,6 +197,9 @@ $('motion').onclick=e=>{paused=!paused;e.target.textContent=paused?'继续流光
 $('reset').onclick=()=>moveCamera(HOME);
 $('front-view').onclick=()=>moveCamera({azimuth:0,elevation:.08,zoom:1});
 export const memoryBox={
+ beginFilm(w,h){if(filming||computing||ceremony.active||!memoryMesh)throw Error('请等待记忆加载或收藏动画完成后再制作影片');filmSaved={azimuth,elevation,zoom,time};filming=true;cameraMove=null;renderer.setPixelRatio(1);composer.setPixelRatio(1);renderer.setSize(w,h,false);composer.setSize(w,h);displaySize.set(w,h);innerRT.setSize(w,h);blurA.setSize(w,h);blurB.setSize(w,h);camera.aspect=w/h;},
+ filmFrame(view,t){azimuth=view.azimuth;elevation=view.elevation;zoom=view.zoom;time=filmSaved.time+t;glassMaterial.uniforms.time.value=time;setCamera();renderScene();return renderer.domElement;},
+ endFilm(){if(!filmSaved)return;({azimuth,elevation,zoom,time}=filmSaved);filmSaved=null;filming=false;resize();},
  setComputing(value){computing=!!value;resize();},
  async beginCreation(file,name){loadVersion++;if(memoryMesh)memoryMesh.visible=false;demo.visible=false;try{await ceremony.begin(file,name);}catch(e){this.cancelCreation();throw e;}},
  waiting(message){if(memoryMesh)memoryMesh.visible=false;demo.visible=false;ceremony.wait(message);},
