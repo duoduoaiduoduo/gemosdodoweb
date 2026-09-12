@@ -1,24 +1,31 @@
 import * as THREE from './vendor/three.module.js';
-// Dense, correlated sheets of grains form rolling fluid and bright foam crests.
+// A filled particle bed with non-periodic, multi-scale turbulent surface motion.
 export function makeTide(mobile){
- const count=mobile?34000:105000,a=new Float32Array(count*3);let seed=42;const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};for(let i=0;i<count*3;i++)a[i]=rand();
+ const count=mobile?62000:135000,a=new Float32Array(count*3);let seed=42;const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};for(let i=0;i<count*3;i++)a[i]=rand();
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(a,3));
  const material=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{time:{value:0},swirl:{value:0},fade:{value:1},pixels:{value:700}},vertexShader:`
  uniform float time,swirl,pixels;varying vec3 color;varying float strength;
- float wave(vec2 p,float t){return sin(p.x*2.8+t)*.42+sin(p.y*4.8-p.x*1.6-t*.82)*.24+sin(p.x*6.+p.y*5.+t*.7)*.095;}
- void main(){vec3 s=position;float t=time*.67;vec2 uv=(s.xz-.5)*vec2(2.84,1.15);
- // Domain warping bends the wave ridges into a connected, moving flow field.
- vec2 q=uv+vec2(sin(uv.y*4.+t*.8),cos(uv.x*2.4-t*.7))*.19;
- float h=wave(q,t),curl=sin(q.x*3.3+q.y*4.-t*1.3);float layer=mix(s.y*3.,.92+s.y*.08,step(.18,s.y));
- vec3 water=vec3(uv.x+.055*sin(q.y*8.+t),-.36+layer*(.92+h)+.05*sin(q.y*9.+q.x*5.+t),uv.y+.035*cos(q.x*7.-t));
- float theta=s.x*6.283185+t*(.9+swirl*.8)+s.y*2.6+.30*sin(s.z*9.-t);
- float r=.18+1.23*sqrt(s.z),ridge=sin(theta*2.+s.z*5.-t);
- vec3 vortex=vec3(cos(theta)*r,-.38+layer*(1.42+.50*ridge)+.16*sin(theta+s.z*8.+t),sin(theta)*r*.41);
- vec3 p=mix(water,vortex,swirl);p.x=clamp(p.x,-1.46,1.46);p.z=clamp(p.z,-.63,.63);p.y=clamp(p.y,-.45,2.08);
- float crest=smoothstep(.40,.96,s.y)*smoothstep(-.25,.62,mix(h+curl*.17,ridge,swirl));
- float glints=pow(max(0.,sin(s.x*193.+s.z*127.)),10.);
- color=mix(vec3(.065,.027,.23),vec3(.53,.31,1.),smoothstep(.20,.92,s.y));color=mix(color,vec3(1.0,.88,1.0),crest);
- strength=mix(.12,.48,smoothstep(.15,.95,s.y))+crest*.55+glints*.14;
+ float hash(vec3 p){p=fract(p*.3183099+vec3(.17,.31,.73));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+ float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
+ float field(vec3 p){return noise(p)*.60+noise(p*2.07+13.1)*.28+noise(p*4.19+7.7)*.12;}
+ void main(){vec3 s=position;float t=time*.36;vec2 uv=s.xz*2.-1.;
+ // Rotate a filled square cross-section: the bed remains full, including corners.
+ float r=max(abs(uv.x),abs(uv.y)),angle=atan(uv.y,uv.x)+swirl*t*(1.2+s.y*.8);
+ vec2 rot=vec2(cos(angle),sin(angle));rot=rot/max(abs(rot.x),abs(rot.y))*r;
+ uv=mix(uv,rot,swirl);vec3 domain=vec3(uv.x*1.7,uv.y*1.6,t);
+ float n=field(domain+vec3(field(domain+8.),field(domain+19.),0.)*.85);
+ float detail=field(domain*1.8+vec3(6.,3.,-t*.7));
+ float level=1.25+(n-.5)*1.4+(detail-.5)*.40+swirl*.2;
+ // Most grains occupy the entire column; a small fraction emphasizes surface foam.
+ float layer=s.y<.88?s.y/.88: .91+(s.y-.88)*.75;
+ float eddy=field(vec3(uv*2.3,s.y*3.+t*.8));
+ vec3 p=vec3(uv.x*1.44,-.50+layer*level,uv.y*.61);
+ p.x+= (field(vec3(uv*2.,s.y*4.-t))-.5)*.18*(1.-abs(uv.x));
+ p.z+= (eddy-.5)*.14*(1.-abs(uv.y));
+ p.y+= (eddy-.5)*.15*sin(layer*3.14159);
+ float crest=smoothstep(.74,.99,layer)*smoothstep(.38,.68,n+detail*.12);
+ color=mix(vec3(.22,.10,.62),vec3(.53,.31,1.),layer);color=mix(color,vec3(1.,.90,1.),crest);
+ strength=.27+layer*.14+crest*.52;
  vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
  gl_PointSize=clamp(pixels*.011*(.65+s.y*.25)/-mv.z,1.,3.0);
  }`,fragmentShader:`uniform float fade;varying vec3 color;varying float strength;void main(){float d=length(gl_PointCoord-.5)*2.;if(d>1.)discard;gl_FragColor=vec4(color*2.2,exp(-d*d*3.5)*strength*fade);}`});
