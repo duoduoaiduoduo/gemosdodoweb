@@ -1,10 +1,11 @@
-import {createDeskField} from './desk-field.js?v=field-20260913-1';
+import {addRearStickers} from './rear-stickers.js?v=stickers-20260913-1';
+import {createDeskField} from './desk-field.js?v=stickers-20260913-1';
 import {BokehPass} from './vendor/addons/postprocessing/BokehPass.js';
-import {makeTide} from './tide.js?v=field-20260913-1';
+import {makeTide} from './tide.js?v=stickers-20260913-1';
 import * as THREE from './vendor/three.module.js';
-import { MemoryGaussians } from './gaussian.js?v=field-20260913-1';
-import { applyBakedLighting } from './baked-lighting.js?v=field-20260913-1';
-import { buildComputer } from './computer.js?v=field-20260913-1';
+import { MemoryGaussians } from './gaussian.js?v=stickers-20260913-1';
+import { applyBakedLighting } from './baked-lighting.js?v=stickers-20260913-1';
+import { buildComputer } from './computer.js?v=stickers-20260913-1';
 import { addLogoSticker } from './logo-sticker.js';
 import { createCeremony } from './ceremony.js';
 import { createStudio } from './studio.js';
@@ -106,7 +107,7 @@ const glassMaterial=new THREE.ShaderMaterial({uniforms:{sharp:{value:innerRT.tex
 const absHeight=new THREE.TextureLoader().load('./baked/abs-height.png');absHeight.colorSpace=THREE.NoColorSpace;absHeight.wrapS=absHeight.wrapT=THREE.RepeatWrapping;absHeight.anisotropy=8;
 const computer=buildComputer(glassMaterial,absHeight);scene.add(computer.group);const deskField=createDeskField(scene,computer.keys);modelBounds.setFromObject(computer.group);modelBounds.union(new THREE.Box3().setFromObject(deskField.group));setCamera();
 const ceremony=createCeremony(scene,inside,camera,stage,computer.driveSlot);
-addLogoSticker(computer.group);
+addLogoSticker(computer.group);addRearStickers(computer.group);
 // Retain the established studio look independently of reflection cards.
 scene.add(new THREE.HemisphereLight('#ffffff','#6c665c',.10));
 for(let i=0;i<8;i++){
