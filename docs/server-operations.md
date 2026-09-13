@@ -17,3 +17,9 @@
 回归检查：`python3 tests/deploy.test.py` 验证构建失败重试、fetch 失败、锁争用/旧锁、磁盘不足和数据不变；`node --test tests/runtime-data.test.mjs` 验证种子不被写回、现有与空的运行列表均保留。
 
 现场执行记录：旧自动部署停止且确认无部署/复制子进程后，才移除空的旧锁目录。迁移快照保存在服务器 `.deploy-state/migration-20260913-005331`，原始实验列表与运行文件逐字节一致；uploads 的文件路径、大小和修改时间清单一致，Nginx 配置哈希一致。修复提交 `eb212ab` 已完成 npm ci、独立构建、PM2 重启及本机/公开部署标记校验。公开记忆盒子的 index.html、ui.js、tide.js 与仓库源文件逐字节一致，版本 idle-20260913-2，启动不调用旧记忆或示例，粒子公式为 `clamp(pixels*.026*(.65+s.y*.25)/-mv.z,2.2,7.2)`。
+
+## 手机轻量模型静态托管（2026-09-13）
+
+手机新建记忆自动从同域 `/models/gemos-still-lite-v1/` 下载 `lite256int8.onnx`（9,033,925 字节）和 `.onnx.data`（799,551,232 字节），校验 SHA-256 后缓存在用户 OPFS；桌面仍使用原 1536 FP16 WebGPU 路径。照片和生成场景不上传。
+
+固定模型目录 `/www/wwwroot/gemos-still-models/lite-v1/` 独立于 dist，不放入 Git 或每次构建。Nginx server 扩展 `/www/server/panel/vhost/nginx/extension/8.147.65.3/gemos-still-lite.conf` 仅映射该下载前缀，支持 Range、Content-Length 和 immutable 缓存。模型版本路径必须保持不可变；更新模型需新路径和前端哈希。模型来自用户已授权公开的 gemos-still android-v0.4.0-lite 衍生包，仍遵循 Apple SHARP 研究许可。
