@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowDown, ArrowUpRight, Pause, Play } from 'lucide-react';
 import './still-promo.css';
 
 const seenKey = 'gemos-still-intro-v1';
@@ -102,18 +103,20 @@ export default function StillPromo({ lang, direct }: { lang: 'zh' | 'en'; direct
     </aside>
     {open && <dialog ref={dialog} className="still-intro" aria-labelledby="still-intro-title" onCancel={e => { e.preventDefault(); void enter(); }}>
       <div className="still-intro-surface" ref={surface}>
-        <header className="still-intro-top"><a href="/gemos-still/">Gemos Still <span>for Mac</span></a><button autoFocus onClick={() => void enter()}>{t('进入主页', 'Enter homepage')} <span aria-hidden="true">↗</span></button></header>
-        <div className="still-intro-copy"><p>{t('多多 GemosDodo 的新作品', 'A NEW CREATION BY GEMOSDODO')}</p><h1 id="still-intro-title">{t('把照片，收藏成空间。', 'A moment. A little world.')}</h1><p className="still-intro-description">{t('一张照片，一台复古电脑。一个属于你的 3D 记忆盒。', 'Your photos, reimagined in a little 3D memory terminal.')}</p></div>
+        <header className="still-intro-top">
+          <div className="still-intro-brand"><img src="/avatar.png" alt="" width="28" height="28" /><span>Gemos<span className="still-brand-dot">.</span></span><small>{t('新作发布', 'NEW RELEASE')}</small></div>
+          <button autoFocus onClick={() => void enter()}>{t('进入主页', 'Enter homepage')} <ArrowDown size={16} aria-hidden="true" /></button>
+        </header>
+        <div className="still-intro-copy"><p>GEMOS STILL <span aria-hidden="true">/</span> FOR MAC</p><h1 id="still-intro-title">{t('把照片，收藏成空间。', 'A moment. A little world.')}</h1><p className="still-intro-description">{t('一张照片，一台复古电脑。一个属于你的 3D 记忆盒。', 'Your photos, reimagined in a little 3D memory terminal.')}</p></div>
         <div className="still-intro-film">
           <video ref={video} src={failed ? undefined : '/gemos-still/assets/intro.mp4'} poster="/gemos-still/assets/hero.jpg" muted={muted} playsInline preload="metadata" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} onError={() => setFailed(true)} aria-label={t('Gemos Still 产品展示影片', 'Gemos Still product film')} />
-          {!failed && <div className="still-intro-controls"><button aria-label={t(playing ? '暂停影片' : '播放影片', playing ? 'Pause film' : 'Play film')} onClick={() => { if (playing) video.current?.pause(); else void video.current?.play().catch(() => setFailed(true)); }}>{playing ? 'Ⅱ' : '▷'}</button><button onClick={() => setMuted(!muted)} aria-pressed={!muted}>{t(muted ? '开启声音' : '静音', muted ? 'Sound on' : 'Mute')}</button></div>}
+          {!failed && <div className="still-intro-controls"><button aria-label={t(playing ? '暂停影片' : '播放影片', playing ? 'Pause film' : 'Play film')} onClick={() => { if (playing) video.current?.pause(); else void video.current?.play().catch(() => setFailed(true)); }}>{playing ? <Pause size={15} aria-hidden="true" /> : <Play size={15} aria-hidden="true" />}</button><button onClick={() => setMuted(!muted)} aria-pressed={!muted}>{t(muted ? '开启声音' : '静音', muted ? 'Sound on' : 'Mute')}</button></div>}
         </div>
-        <div className="still-intro-entry">
-          <button onClick={() => void enter()}>{t('进入多多的主页', 'Enter GemosDodo’s homepage')} <span aria-hidden="true">↓</span></button>
-          <span className="still-entry-desktop">{t('也可以向下滚动，继续浏览主页', 'Or scroll down to continue to the homepage')}</span>
-          <span className="still-entry-touch">{t('也可以向上滑动，进入主页', 'Or swipe up to enter the homepage')}</span>
-        </div>
-        <footer className="still-intro-bottom"><span>{t('照片留在本机 · 为 Apple 芯片而作', 'Private by design · Made for Apple silicon')}</span><a href="/gemos-still/">{t('认识 Gemos Still', 'Explore Gemos Still')} ↗</a></footer>
+        <footer className="still-intro-bottom">
+          <span className="still-intro-note">{t('照片留在本机', 'Your photos stay yours')}</span>
+          <div className="still-intro-scroll" aria-hidden="true"><ArrowDown size={16} /><span className="still-entry-desktop">{t('向下滚动，继续浏览', 'Scroll down to continue')}</span><span className="still-entry-touch">{t('向上滑动，继续浏览', 'Swipe up to continue')}</span></div>
+          <a href="/gemos-still/">{t('探索 Gemos Still', 'Explore Gemos Still')} <ArrowUpRight size={14} aria-hidden="true" /></a>
+        </footer>
       </div>
     </dialog>}
   </>;
