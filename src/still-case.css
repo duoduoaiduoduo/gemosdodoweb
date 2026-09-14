@@ -67,3 +67,5 @@
 .mi-detail:has(.mi-still-case) .mi-detail-cover{display:none}
 .mi-detail:has(.mi-still-case) .mi-detail-intro .mi-lead{display:none}
 .mi-detail:has(.mi-still-case) .mi-detail-intro h1{font-size:28px;font-weight:500}
+/* Keep the portfolio's ambient characters outside this reading experience. */
+body:has(#detailModal.still-work-detail.active) :is(.cow-entity,.particle-backdrop){visibility:hidden;pointer-events:none}
