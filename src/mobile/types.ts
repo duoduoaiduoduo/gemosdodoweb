@@ -17,6 +17,7 @@ export type Work = {
   contentMode?: 'flow' | 'whiteboard';
   layout?: CanvasLayout;
   blocks?: Array<{type: string; content?: string; contentEn?: string; url?: string; urls?: string[]; caption?: string; captionEn?: string}>;
+  projectUrl?: string;
   videoUrl?: string;
   videoSources?: Array<{url: string; label?: string; height?: number}>;
 };

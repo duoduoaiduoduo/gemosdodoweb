@@ -647,6 +647,14 @@ export function initApp() {
         detailImageQueueToken += 1;
         contentContainer.innerHTML = ''; // Clear previous
         renderDetailVideo(item, contentContainer);
+        if (typeof item.projectUrl === 'string' && item.projectUrl.startsWith('/') && !item.projectUrl.startsWith('//')) {
+            const link = document.createElement('a');
+            link.href = item.projectUrl;
+            link.className = 'detail-project-link';
+            link.textContent = window.currentLang === 'en' ? 'Explore and download for Mac ↗' : '了解并下载 Mac 版 ↗';
+            contentContainer.appendChild(link);
+        }
+
 
         if (item.contentMode === 'flow') {
             if (!renderFlowContent(item.blocks, contentContainer)) {

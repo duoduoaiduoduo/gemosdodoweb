@@ -108,6 +108,7 @@ export function MobileWorkContent({work, lang, onImage}: {work: Work; lang: Lang
   const video = videoTarget(source);
   const hasCanvas = work.contentMode !== 'flow' && !!work.layout?.elements?.length;
   return <div className="mi-work-content">
+    {work.projectUrl?.startsWith('/') && !work.projectUrl.startsWith('//') && <a className="mi-primary" href={work.projectUrl}>{localized(lang, '了解并下载 Mac 版', 'Explore and download for Mac')}<ExternalLink size={17}/></a>}
     {video?.kind === 'video' && <div className="mi-video">
       <video src={video.src} controls playsInline preload="metadata" poster={work.image} />
       {!!work.videoSources?.length && <label>{localized(lang, '画质', 'Quality')}<select value={source} onChange={(e) => setSource(e.target.value)}>{work.videoSources.map((item) => <option key={item.url} value={item.url}>{item.label || `${item.height || ''}p`}</option>)}</select></label>}
