@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import {createElement} from 'react';
+import {STILL_WORK_ID, stillCaseMarkup} from './still-case';
 import {createRoot} from 'react-dom/client';
 import {Cow as CowIllustration} from './pasture/Cow';
 
@@ -646,6 +647,14 @@ export function initApp() {
         const contentContainer = document.getElementById('detailRichContent');
         detailImageQueueToken += 1;
         contentContainer.innerHTML = ''; // Clear previous
+        const isStillCase = item.id === STILL_WORK_ID;
+        document.getElementById(DETAIL_MODAL_ID)?.classList.toggle('still-work-detail', isStillCase);
+        if (isStillCase) {
+            contentContainer.innerHTML = stillCaseMarkup(window.currentLang);
+            markDetailMotionUnits(contentContainer);
+            window.openModal(DETAIL_MODAL_ID);
+            return;
+        }
         renderDetailVideo(item, contentContainer);
         if (typeof item.projectUrl === 'string' && item.projectUrl.startsWith('/') && !item.projectUrl.startsWith('//')) {
             const link = document.createElement('a');
@@ -1271,6 +1280,7 @@ export function initApp() {
     function closeModal(id) {
         const modal = document.getElementById(id);
         if (!modal) return;
+        if (modal.classList.contains('still-work-detail')) modal.querySelectorAll('video').forEach(video => video.pause());
 
         if (id === DETAIL_MODAL_ID) {
             clearTimeout(detailModalOpenTimer);

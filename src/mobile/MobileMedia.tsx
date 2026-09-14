@@ -1,5 +1,6 @@
 import {useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode} from 'react';
 import {ExternalLink, Image as ImageIcon, Maximize2, Minus, Plus, X} from 'lucide-react';
+import {STILL_WORK_ID, stillCaseMarkup} from '../still-case';
 import type {CanvasLayout, Language, Work} from './types';
 import {localized} from './types';
 
@@ -107,6 +108,7 @@ export function MobileWorkContent({work, lang, onImage}: {work: Work; lang: Lang
   const [source, setSource] = useState(work.videoUrl || work.videoSources?.[0]?.url || '');
   const video = videoTarget(source);
   const hasCanvas = work.contentMode !== 'flow' && !!work.layout?.elements?.length;
+  if (work.id === STILL_WORK_ID) return <div className="mi-work-content mi-still-case" dangerouslySetInnerHTML={{__html: stillCaseMarkup(lang)}} />;
   return <div className="mi-work-content">
     {work.projectUrl?.startsWith('/') && !work.projectUrl.startsWith('//') && <a className="mi-primary" href={work.projectUrl}>{localized(lang, '了解并下载 Mac 版', 'Explore and download for Mac')}<ExternalLink size={17}/></a>}
     {video?.kind === 'video' && <div className="mi-video">
