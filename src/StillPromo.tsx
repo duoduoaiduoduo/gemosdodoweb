@@ -1,0 +1,71 @@
+import { useEffect, useRef, useState } from 'react';
+import './still-promo.css';
+
+const seenKey = 'gemos-still-intro-v1';
+export default function StillPromo({ lang, direct }: { lang: 'zh' | 'en'; direct: boolean }) {
+  const t = (zh: string, en: string) => lang === 'zh' ? zh : en;
+  const [open, setOpen] = useState(() => {
+    try { return !direct && !sessionStorage.getItem(seenKey); } catch { return !direct; }
+  });
+  const [muted, setMuted] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const surface = useRef<HTMLDivElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
+  const bar = useRef<HTMLAnchorElement>(null);
+  const closing = useRef(false);
+  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  useEffect(() => {
+    if (!open) return;
+    dialog.current?.showModal();
+    dialog.current?.querySelector<HTMLButtonElement>('.still-intro-top button')?.focus();
+    const old = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    if (!reduced()) void video.current?.play().catch(() => setPlaying(false));
+    const pause = () => { if (document.hidden) video.current?.pause(); };
+    document.addEventListener('visibilitychange', pause);
+    return () => { document.body.style.overflow = old; document.removeEventListener('visibilitychange', pause); };
+  }, [open]);
+  async function enter() {
+    if (closing.current) return;
+    closing.current = true;
+    try { sessionStorage.setItem(seenKey, '1'); } catch { /* Private browsing still works. */ }
+    video.current?.pause();
+    const from = surface.current?.getBoundingClientRect();
+    const to = bar.current?.querySelector('img')?.getBoundingClientRect();
+    if (from && to && !reduced()) {
+      dialog.current?.classList.add('is-folding');
+      const animation = surface.current?.animate([
+        { transform: 'translate(0,0) scale(1)', borderRadius: '0px', opacity: 1 },
+        { transform: `translate(${to.left - from.left}px,${to.top - from.top}px) scale(${Math.min(to.width / from.width, to.height / from.height)})`, borderRadius: '24px', opacity: 0.1 },
+      ], { duration: 850, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' });
+      await animation?.finished.catch(() => {});
+    }
+    dialog.current?.close();
+    setOpen(false);
+    closing.current = false;
+    bar.current?.focus({ preventScroll: true });
+  }
+  return <>
+    <aside className="still-promo-bar" aria-label={t('新作品', 'New release')}>
+      <a ref={bar} href="/gemos-still/" className="still-promo-link">
+        <img src="/gemos-still/assets/icon.png" alt="" width="32" height="32" />
+        <span><strong>Gemos Still</strong><span className="still-promo-tagline">{t('把照片，收藏成空间。', 'A photo. A little world.')}</span></span>
+        <span className="still-promo-cta">{t('探索 Mac 版', 'Discover for Mac')} <span aria-hidden="true">↗</span></span>
+      </a>
+      <button className="still-promo-replay" onClick={() => { setFailed(false); setOpen(true); }} aria-label={t('重看宣传片', 'Replay film')}>▷</button>
+    </aside>
+    {open && <dialog ref={dialog} className="still-intro" aria-labelledby="still-intro-title" onCancel={e => { e.preventDefault(); void enter(); }}>
+      <div className="still-intro-surface" ref={surface}>
+        <header className="still-intro-top"><a href="/gemos-still/">Gemos Still <span>for Mac</span></a><button autoFocus onClick={() => void enter()}>{t('进入主页', 'Enter homepage')} <span aria-hidden="true">↗</span></button></header>
+        <div className="still-intro-copy"><p>INTRODUCING GEMOS STILL</p><h1 id="still-intro-title">{t('把照片，收藏成空间。', 'A moment. A little world.')}</h1><p className="still-intro-description">{t('一张照片，一台复古电脑。一个属于你的 3D 记忆盒。', 'Your photos, reimagined in a little 3D memory terminal.')}</p></div>
+        <div className="still-intro-film">
+          <video ref={video} src={failed ? undefined : '/gemos-still/assets/intro.mp4'} poster="/gemos-still/assets/hero.jpg" muted={muted} playsInline preload="metadata" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} onError={() => setFailed(true)} aria-label={t('Gemos Still 产品展示影片', 'Gemos Still product film')} />
+          {!failed && <div className="still-intro-controls"><button aria-label={t(playing ? '暂停影片' : '播放影片', playing ? 'Pause film' : 'Play film')} onClick={() => { if (playing) video.current?.pause(); else void video.current?.play().catch(() => setFailed(true)); }}>{playing ? 'Ⅱ' : '▷'}</button><button onClick={() => setMuted(!muted)} aria-pressed={!muted}>{t(muted ? '开启声音' : '静音', muted ? 'Sound on' : 'Mute')}</button></div>}
+        </div>
+        <footer className="still-intro-bottom"><span>{t('照片留在本机 · 为 Apple 芯片而作', 'Private by design · Made for Apple silicon')}</span><a href="/gemos-still/">{t('认识 Gemos Still', 'Explore Gemos Still')} ↗</a></footer>
+      </div>
+    </dialog>}
+  </>;
+}

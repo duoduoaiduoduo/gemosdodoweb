@@ -14,6 +14,7 @@ import { getAppBridge } from './appBridge';
 import { runLanguageErosionTransition } from './langErosion';
 import { detectLayoutMode, type LayoutMode } from './layoutMode';
 import ParticleBackdrop from './ParticleBackdrop';
+import StillPromo from './StillPromo';
 
 const MobileSite = lazy(() => import('./mobile/MobileSite'));
 
@@ -723,6 +724,7 @@ export default function App() {
 
   return (
     <>
+      {showHome && <StillPromo lang={lang} direct={!!location.search || !!location.hash} />}
       <ParticleBackdrop enabled={showHome && layoutMode === 'desktop'} />
       {isMobileContent && <Suspense fallback={<div style={{minHeight: '100svh'}} />}><MobileSite lang={lang} onToggleLang={handleToggleLang} onAvatarTap={onAvatarTap} showAdminEntry={showAdminEntry} /></Suspense>}
       <div style={{ display: showHome && !isMobileContent ? undefined : 'none' }} aria-hidden={!showHome || isMobileContent}>
