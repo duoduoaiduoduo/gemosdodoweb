@@ -1,1 +1,1 @@
-be03453c3256015a068b5c6304067fa3d69a422b638b945bb1d50940e17207a3  Gemos-Still-0.4.1-Apple-Silicon.zip
+d6c59d7b4a969238627d9e7ecaf3fc48259362576d6dc8fd6ef5fc94a1a54c93  Gemos-Still-0.4.2-Apple-Silicon.zip
