@@ -15,3 +15,17 @@
 /* The existing desktop navigation is positioned against the page, outside normal flow. */
 .still-promo-bar ~ div .home-nav{top:80px}
 @media(prefers-color-scheme:dark){.still-promo-bar{background:#20251f;color:#e7ebe3;border-color:#343b30}.still-promo-tagline{color:#aab3a3}.still-promo-replay{border-color:#4a5344}}
+
+/* Clear homepage escape, with the same action available by scroll or swipe. */
+.still-intro-top button{background:#eef2e8;border-color:#eef2e8;color:#20271d;font-weight:500;min-height:48px;padding:11px 25px}
+.still-intro-top button:hover{background:#fff}
+.still-intro-entry{display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;text-align:center}
+.still-intro-entry button{display:flex;align-items:center;justify-content:center;gap:20px;border:0;border-radius:30px;background:#eef2e8;color:#20271d;font-size:15px;font-weight:500;padding:12px 26px;min-height:48px;transition:background .2s,transform .2s}
+.still-intro-entry button:hover{background:#fff;transform:translateY(-2px)}
+.still-intro-entry button span{font-size:20px}
+.still-intro-entry>span{font-size:11px;color:#afb6a8;letter-spacing:.02em}
+.still-entry-touch{display:none}
+.still-intro.is-folding .still-intro-entry{opacity:0;transition:opacity 140ms}
+@media(max-width:600px){.still-intro-top button{font-size:13px;min-height:46px;padding:10px 19px}.still-intro-copy{padding-top:clamp(12px,3vh,28px)}.still-intro-entry button{width:min(100%,270px)}.still-intro-bottom{gap:0}.still-intro-surface{gap:14px}}
+@media(pointer:coarse){.still-entry-desktop{display:none}.still-entry-touch{display:inline}}
+@media(max-height:650px){.still-intro-surface{gap:10px;padding-top:12px;padding-bottom:12px}.still-intro-copy{padding-top:0}.still-intro-copy p{margin-bottom:8px}.still-intro-copy h1{font-size:28px}.still-intro-copy .still-intro-description{margin-top:8px}.still-intro-film video{min-height:100px}.still-intro-bottom{display:none}}

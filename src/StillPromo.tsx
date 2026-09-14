@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './still-promo.css';
 
 const seenKey = 'gemos-still-intro-v1';
@@ -27,7 +27,7 @@ export default function StillPromo({ lang, direct }: { lang: 'zh' | 'en'; direct
     document.addEventListener('visibilitychange', pause);
     return () => { document.body.style.overflow = old; document.removeEventListener('visibilitychange', pause); };
   }, [open]);
-  async function enter() {
+  const enter = useCallback(async () => {
     if (closing.current) return;
     closing.current = true;
     try { sessionStorage.setItem(seenKey, '1'); } catch { /* Private browsing still works. */ }
@@ -46,7 +46,51 @@ export default function StillPromo({ lang, direct }: { lang: 'zh' | 'en'; direct
     setOpen(false);
     closing.current = false;
     bar.current?.focus({ preventScroll: true });
-  }
+  }, []);
+  useEffect(() => {
+    const element = dialog.current;
+    if (!open || !element) return;
+    let accumulated = 0;
+    let lastWheel = 0;
+    let touch: { x: number; y: number } | null = null;
+    const wheel = (event: WheelEvent) => {
+      // Keep browser zoom and horizontal gestures intact.
+      if (event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+      if (event.cancelable) event.preventDefault();
+      if (closing.current) return;
+      const now = performance.now();
+      if (now - lastWheel > 200 || event.deltaY <= 0) accumulated = 0;
+      lastWheel = now;
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerHeight : 1;
+      accumulated += Math.max(0, event.deltaY) * unit;
+      if (accumulated >= 64) void enter();
+    };
+    const start = (event: TouchEvent) => {
+      touch = event.touches.length === 1 ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null;
+    };
+    const move = (event: TouchEvent) => {
+      if (!touch || event.touches.length !== 1) { touch = null; return; }
+      const dy = touch.y - event.touches[0].clientY;
+      const dx = touch.x - event.touches[0].clientX;
+      if (dy > 10 && dy > Math.abs(dx) * 1.3) {
+        if (event.cancelable) event.preventDefault();
+        if (dy >= 56) { touch = null; void enter(); }
+      }
+    };
+    const end = () => { touch = null; };
+    element.addEventListener('wheel', wheel, { passive: false });
+    element.addEventListener('touchstart', start, { passive: true });
+    element.addEventListener('touchmove', move, { passive: false });
+    element.addEventListener('touchend', end);
+    element.addEventListener('touchcancel', end);
+    return () => {
+      element.removeEventListener('wheel', wheel);
+      element.removeEventListener('touchstart', start);
+      element.removeEventListener('touchmove', move);
+      element.removeEventListener('touchend', end);
+      element.removeEventListener('touchcancel', end);
+    };
+  }, [open, enter]);
   return <>
     <aside className="still-promo-bar" aria-label={t('新作品', 'New release')}>
       <a ref={bar} href="/gemos-still/" className="still-promo-link">
@@ -59,10 +103,15 @@ export default function StillPromo({ lang, direct }: { lang: 'zh' | 'en'; direct
     {open && <dialog ref={dialog} className="still-intro" aria-labelledby="still-intro-title" onCancel={e => { e.preventDefault(); void enter(); }}>
       <div className="still-intro-surface" ref={surface}>
         <header className="still-intro-top"><a href="/gemos-still/">Gemos Still <span>for Mac</span></a><button autoFocus onClick={() => void enter()}>{t('进入主页', 'Enter homepage')} <span aria-hidden="true">↗</span></button></header>
-        <div className="still-intro-copy"><p>INTRODUCING GEMOS STILL</p><h1 id="still-intro-title">{t('把照片，收藏成空间。', 'A moment. A little world.')}</h1><p className="still-intro-description">{t('一张照片，一台复古电脑。一个属于你的 3D 记忆盒。', 'Your photos, reimagined in a little 3D memory terminal.')}</p></div>
+        <div className="still-intro-copy"><p>{t('多多 GemosDodo 的新作品', 'A NEW CREATION BY GEMOSDODO')}</p><h1 id="still-intro-title">{t('把照片，收藏成空间。', 'A moment. A little world.')}</h1><p className="still-intro-description">{t('一张照片，一台复古电脑。一个属于你的 3D 记忆盒。', 'Your photos, reimagined in a little 3D memory terminal.')}</p></div>
         <div className="still-intro-film">
           <video ref={video} src={failed ? undefined : '/gemos-still/assets/intro.mp4'} poster="/gemos-still/assets/hero.jpg" muted={muted} playsInline preload="metadata" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} onError={() => setFailed(true)} aria-label={t('Gemos Still 产品展示影片', 'Gemos Still product film')} />
           {!failed && <div className="still-intro-controls"><button aria-label={t(playing ? '暂停影片' : '播放影片', playing ? 'Pause film' : 'Play film')} onClick={() => { if (playing) video.current?.pause(); else void video.current?.play().catch(() => setFailed(true)); }}>{playing ? 'Ⅱ' : '▷'}</button><button onClick={() => setMuted(!muted)} aria-pressed={!muted}>{t(muted ? '开启声音' : '静音', muted ? 'Sound on' : 'Mute')}</button></div>}
+        </div>
+        <div className="still-intro-entry">
+          <button onClick={() => void enter()}>{t('进入多多的主页', 'Enter GemosDodo’s homepage')} <span aria-hidden="true">↓</span></button>
+          <span className="still-entry-desktop">{t('也可以向下滚动，继续浏览主页', 'Or scroll down to continue to the homepage')}</span>
+          <span className="still-entry-touch">{t('也可以向上滑动，进入主页', 'Or swipe up to enter the homepage')}</span>
         </div>
         <footer className="still-intro-bottom"><span>{t('照片留在本机 · 为 Apple 芯片而作', 'Private by design · Made for Apple silicon')}</span><a href="/gemos-still/">{t('认识 Gemos Still', 'Explore Gemos Still')} ↗</a></footer>
       </div>
