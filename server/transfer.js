@@ -6,7 +6,7 @@ export const RETENTION_MS=5*24*60*60*1000;
 export const CHUNK_SIZE=8*1024*1024;
 const MAX_FILE=1024**3,QUOTA=2*1024**3,RESERVE=1024**3;
 const ID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-export function createTransfer({root,secret,now=Date.now,intervalMs=60000,checkDisk=true}){
+export function createTransfer({root,secret,now=Date.now,intervalMs=60000,checkDisk=true,secureCookies=true}){
  fs.mkdirSync(root,{recursive:true,mode:0o700});
  const router=express.Router(),attempts=new Map();
  const dir=id=>{if(!ID.test(id))throw Object.assign(Error('文件不存在'),{status:404});return path.join(root,id);};
@@ -17,7 +17,7 @@ export function createTransfer({root,secret,now=Date.now,intervalMs=60000,checkD
  const timer=setInterval(()=>{try{cleanup();}catch(e){console.error('[transfer cleanup]',e.message);}},intervalMs);timer.unref();cleanup();
  const sign=value=>crypto.createHmac('sha256',secret||'disabled').update(value).digest('hex');
  const equal=(a,b)=>{const aa=Buffer.from(a),bb=Buffer.from(b);return aa.length===bb.length&&crypto.timingSafeEqual(aa,bb);};
- const cookie=(req,res,value,age)=>res.setHeader('Set-Cookie',`gemos_transfer=${value}; Path=/api/transfer; HttpOnly; SameSite=Strict; Max-Age=${age}${req.secure?'; Secure':''}`);
+ const cookie=(req,res,value,age)=>res.setHeader('Set-Cookie',`gemos_transfer=${value}; Path=/api/transfer; HttpOnly; SameSite=Strict; Max-Age=${age}${secureCookies?'; Secure':''}`);
  router.use((req,res,next)=>{res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');if(!['GET','HEAD'].includes(req.method)&&req.headers.origin){try{if(new URL(req.headers.origin).host!==req.headers.host)return res.status(403).json({error:'请从本站操作'});}catch{return res.status(403).json({error:'无效来源'});}}next();});
  router.post('/session',express.json({limit:'2kb'}),(req,res)=>{
   if(!secret)return res.status(503).json({error:'尚未配置后台口令'});

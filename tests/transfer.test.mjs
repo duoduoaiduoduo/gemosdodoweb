@@ -9,7 +9,7 @@ test('private cross-device transfer, expiry boundary, persistence, quota and iso
  const base=fs.mkdtempSync(path.join(os.tmpdir(),'gemos-transfer-')),root=path.join(base,'transfer');fs.mkdirSync(path.join(base,'uploads'));fs.writeFileSync(path.join(base,'uploads','permanent'),'keep');let clock=Date.now();const secret='test-only-password';let service=createTransfer({root,secret,now:()=>clock,checkDisk:false});const app=express();app.use('/api/transfer',(req,res,next)=>service.router(req,res,next));const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const url=`http://127.0.0.1:${server.address().port}/api/transfer`;let cookie='';
  const request=(p,o={})=>fetch(url+p,{...o,headers:{Cookie:cookie,...o.headers}});
  const json=(method,body)=>({method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
- const login=async()=>{const r=await request('/session',json('POST',{secret}));assert.equal(r.status,200);cookie=r.headers.get('set-cookie').split(';')[0];};
+ const login=async()=>{const r=await request('/session',json('POST',{secret}));assert.equal(r.status,200);assert.match(r.headers.get('set-cookie'),/; Secure/);cookie=r.headers.get('set-cookie').split(';')[0];};
  try {
   assert.equal((await request('/files')).status,401);
   assert.equal((await request('/session',json('POST',{secret:'wrong'}))).status,401);await login();
