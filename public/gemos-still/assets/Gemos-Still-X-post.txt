@@ -1,0 +1,6 @@
+What if your photos had a place to live?
+
+Meet Gemos Still: turn a photo into a 3D memory, keep it in a tiny retro computer, and share it as a film. Runs locally on your Mac.
+
+Try it: https://gemosdodo.art/gemos-still/
+Source: https://github.com/duoduoaiduoduo/gemos-still
