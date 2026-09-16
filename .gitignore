@@ -23,3 +23,5 @@ tucao-room.json
 .deploy.lock
 .autodeploy.lock/
 vibecoding-projects.runtime.json
+
+.transfer-storage/

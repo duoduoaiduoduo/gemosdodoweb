@@ -1,4 +1,5 @@
 import express from 'express';
+import {createTransfer} from './server/transfer.js';
 import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
@@ -36,6 +37,7 @@ const maxRequestMb = Number(process.env.MAX_REQUEST_MB || 400);
 
 const app = express();
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1) || 1);
+app.use('/api/transfer', createTransfer({root: path.join(__dirname, '.transfer-storage'), secret: RESOLVED_ADMIN_SECRET}).router);
 app.use(express.json({limit: `${Math.max(50, maxRequestMb)}mb`}));
 
 const visitorStatsFile = path.join(__dirname, 'visitor_stats.json');
