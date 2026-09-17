@@ -1,19 +1,19 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
-import {reportPages, reportRevision} from './reviewDocument';
+import type {ReportPage} from './reviewDocument';
 import './advisor-review.css';
 
 type Point = {x:number;y:number};
 type Note = {id:string;page:number;type:'pen'|'text';points?:Point[];x?:number;y?:number;text?:string;createdAt?:string};
 type Operation = {method:'POST'|'DELETE';note:Note};
 type Tool = 'read'|'pen'|'text';
-const endpoint = `/api/graduation-review/${reportRevision}`;
 const ownerStorage = 'gemos-review-owner';
-const ownStorage = `gemos-review-own-${reportRevision}`;
-function readOwn(): string[] {try {const v=JSON.parse(localStorage.getItem(ownStorage)||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string'):[];}catch{return [];}}
+function readOwn(ownStorage:string): string[] {try {const v=JSON.parse(localStorage.getItem(ownStorage)||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string'):[];}catch{return [];}}
 function getOwner() {try {const previous=localStorage.getItem(ownerStorage);if(previous)return previous;const key=crypto.randomUUID();localStorage.setItem(ownerStorage,key);return key;}catch{return crypto.randomUUID();}}
 
-export default function AdvisorReviewPage() {
+export default function AdvisorReviewPage({reportPages,reportRevision,versionLabel,onPendingChange}:{reportPages:ReportPage[];reportRevision:string;versionLabel:string;onPendingChange:(pending:boolean)=>void}) {
+  const endpoint = `/api/graduation-review/${reportRevision}`;
+  const ownStorage = `gemos-review-own-${reportRevision}`;
   const [tool,setTool]=useState<Tool>('read');
   const [notes,setNotes]=useState<Note[]>([]);
   const [draft,setDraft]=useState<Note|null>(null);
@@ -27,7 +27,7 @@ export default function AdvisorReviewPage() {
   const busyRef=useRef(false);
   const pendingRef=useRef<Operation|null>(null);
   const owner=useRef(getOwner());
-  const [own,setOwn]=useState<string[]>(readOwn);
+  const [own,setOwn]=useState<string[]>(()=>readOwn(ownStorage));
   const [zoom,setZoom]=useState('fit');
   const [scale,setScale]=useState(1);
   const viewportRef=useRef<HTMLDivElement>(null);
@@ -35,6 +35,8 @@ export default function AdvisorReviewPage() {
   const [selected,setSelected]=useState<string|null>(null);
   const interactionRef=useRef(false);
   const blocked = busy || failed || !ready;
+  useEffect(()=>{onPendingChange(!!(pendingRef.current||draft||textDraft||busy));},[busy,failed,draft,textDraft,onPendingChange]);
+  useEffect(()=>()=>onPendingChange(false),[onPendingChange]);
 
   const rememberOwn = (ids:string[]) => {setOwn(ids);try{localStorage.setItem(ownStorage,JSON.stringify(ids));}catch{/* Session undo remains available. */}};
   const load=useCallback(async()=>{
@@ -43,7 +45,7 @@ export default function AdvisorReviewPage() {
       if(busyRef.current || pendingRef.current || interactionRef.current)return;
       if(!Array.isArray(data.annotations))throw Error();setNotes(data.annotations);setReady(true);setFailed(false);setStatus('批注已同步');
     }catch{if(!busyRef.current&&!pendingRef.current){setFailed(true);setStatus('批注加载失败，请重试');}}
-  },[]);
+  },[endpoint]);
   useEffect(()=>{void load();const timer=window.setInterval(()=>void load(),10000);return()=>clearInterval(timer);},[load]);
   useEffect(()=>{
     const title=document.title;document.title='开题报告 · 导师阅览';
@@ -91,7 +93,7 @@ export default function AdvisorReviewPage() {
     if(!cancel&&note.points!.length>1)add(note);
   };
   const undo=()=>{const note=[...own].reverse().map(id=>notes.find(n=>n.id===id)).find(Boolean);if(note)void save({method:'DELETE',note});};
-  const copyLink=async()=>{try{await navigator.clipboard.writeText(`${location.origin}/graduation/review`);setShareStatus('链接已复制');}catch{setShareStatus('请复制浏览器地址分享');}};
+  const copyLink=async()=>{try{await navigator.clipboard.writeText(`${location.origin}/graduation/review?version=${encodeURIComponent(reportRevision)}`);setShareStatus('链接已复制');}catch{setShareStatus('请复制浏览器地址分享');}};
   const selectTool=(next:Tool)=>{setTool(next);setVisible(true);setSelected(null);};
   return <main className="advisor-reader">
     <header className="advisor-toolbar" aria-label="报告阅读与批注工具">
@@ -100,11 +102,11 @@ export default function AdvisorReviewPage() {
       <div className="advisor-tools"><label className="advisor-check"><input type="checkbox" checked={visible} onChange={e=>{setVisible(e.target.checked);setTool('read');}}/>显示批注</label><label><span className="advisor-sr">页面缩放</span><select aria-label="页面缩放" value={zoom} onChange={e=>setZoom(e.target.value)}><option value="fit">适合屏幕</option><option value="1">100%</option><option value="1.25">125%</option></select></label><button onClick={()=>window.print()}>打印</button><button onClick={()=>void copyLink()}>分享链接</button></div>
       <span className={`advisor-save ${failed?'is-error':''}`} role="status">{status}{shareStatus ? ` · ${shareStatus}` : ''}</span>{failed&&<button disabled={busy} onClick={()=>pendingRef.current?void save(pendingRef.current):void load()}>重试</button>}
     </header>
-    <div className="advisor-instructions">{tool==='read'?'可直接阅读正文。需要圈画时选择“画笔”，文字意见可点“文字批注”后落在页面上。':tool==='pen'?'在纸面上拖动画线或圈画；触屏上下翻页请先切回“阅读”。':'点击纸面上的位置，填写文字意见。'}<span>批注保存在服务器 · 持链接可阅读和批注</span></div>
+    <div className="advisor-instructions">{tool==='read'?'可直接阅读正文。需要圈画时选择“画笔”，文字意见可点“文字批注”后落在页面上。':tool==='pen'?'在纸面上拖动画线或圈画；触屏上下翻页请先切回“阅读”。':'点击纸面上的位置，填写文字意见。'}<span>批注保存在服务器 · 持链接可阅读、批注和修改正文</span></div>
     <div className="advisor-document" ref={viewportRef}>
       {reportPages.map((page,index)=><section className="advisor-sheet-wrap" key={index} style={{width:760*scale,height:980*scale}} aria-label={`第 ${index+1} 页：${page.title}`}>
         <article className="advisor-sheet" style={{transform:`scale(${scale})`}}>
-          <div className="advisor-running">信息与交互设计 · 硕士<span>讨论稿 v1 · 2026.09.17</span></div>
+          <div className="advisor-running">信息与交互设计 · 硕士<span>{versionLabel}</span></div>
           {index===0&&<><h1>新污染物科普方向<br/>开题报告</h1><p className="advisor-draft-label">研究讨论稿，非正式定稿 · 开题日期：2026年11月13日</p></>}
           <h2>{page.title}</h2>
           {page.paragraphs.map((p,i)=><p className="advisor-paragraph" key={i}>{p}</p>)}

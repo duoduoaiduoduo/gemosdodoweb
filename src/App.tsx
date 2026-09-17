@@ -16,7 +16,7 @@ import { detectLayoutMode, type LayoutMode } from './layoutMode';
 import ParticleBackdrop from './ParticleBackdrop';
 import StillPromo from './StillPromo';
 
-const AdvisorReviewPage = lazy(() => import('./research/AdvisorReviewPage'));
+const AdvisorReviewPage = lazy(() => import('./research/ReviewDocumentManager'));
 
 const GraduationPage = lazy(() => import('./research/GraduationPage'));
 
