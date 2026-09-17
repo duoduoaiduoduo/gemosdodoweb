@@ -19,6 +19,8 @@ import GraduationEntryDialog from './research/GraduationEntryDialog';
 
 const AdvisorReviewPage = lazy(() => import('./research/ReviewDocumentManager'));
 
+const ResearchLibrary = lazy(() => import('./research/ResearchLibrary'));
+
 const GraduationPage = lazy(() => import('./research/GraduationPage'));
 
 const MobileSite = lazy(() => import('./mobile/MobileSite'));
@@ -470,6 +472,7 @@ export default function App() {
   const isJournalRoute = pathname === '/journal';
   const isVibecodingRoute = pathname === '/vibecoding';
   const isProposalRoute = pathname === '/proposal';
+  const isResearchLibraryRoute = pathname === '/graduation/research';
   const isGraduationRoute = pathname === '/graduation';
   const isAdvisorReviewRoute = pathname === '/graduation/review';
   const isPastureRoute = pathname === '/pasture';
@@ -488,6 +491,7 @@ export default function App() {
     !isJournalRoute &&
     !isProposalRoute &&
     !isGraduationRoute &&
+    !isResearchLibraryRoute &&
     !isAdvisorReviewRoute &&
     !isVibecodingRoute &&
     !isVibecodingLaunchRoute &&
@@ -765,6 +769,7 @@ export default function App() {
 
       {graduationEntryOpen && <GraduationEntryDialog lang={lang} onClose={() => setGraduationEntryOpen(false)} onVerified={() => {setGraduationEntryOpen(false);navigateToPath('/graduation');}} />}
       {isAdvisorReviewRoute ? <Suspense fallback={<div role="status">正在加载开题报告…</div>}><AdvisorReviewPage /></Suspense> : null}
+      {isResearchLibraryRoute ? <Suspense fallback={<div role="status">正在加载研究资料库…</div>}><ResearchLibrary /></Suspense> : null}
       {isGraduationRoute ? <Suspense fallback={<div role="status">正在加载研究工作台…</div>}><GraduationPage /></Suspense> : null}
       {isAdminRoute ? <AdminStudio lang={lang} onBack={goHome} /> : null}
       {isAwardsRoute && !isMobileContent ? <AwardsPage lang={lang} focusAwardId={awardsFocusId} onBack={goHome} onOpenWork={openHomeDetail} /> : null}
