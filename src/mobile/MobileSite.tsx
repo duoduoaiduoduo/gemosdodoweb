@@ -15,6 +15,7 @@ const sections = [
   {path: '/pdfs', zh: '作品集', en: 'Portfolio'},
   {path: '/vibecoding', zh: '实验', en: 'Experiments'},
   {path: '/journal', zh: '手账', en: 'Journal'},
+  {path: '/graduation', zh: '毕业设计', en: 'Research'},
 ];
 const emptyData: SiteData = {timeline: [], awards: [], pdfs: [], journals: [], vibecodingProjects: []};
 

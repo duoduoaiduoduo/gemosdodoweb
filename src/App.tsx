@@ -16,6 +16,8 @@ import { detectLayoutMode, type LayoutMode } from './layoutMode';
 import ParticleBackdrop from './ParticleBackdrop';
 import StillPromo from './StillPromo';
 
+const GraduationPage = lazy(() => import('./research/GraduationPage'));
+
 const MobileSite = lazy(() => import('./mobile/MobileSite'));
 
 const ProposalPdfPage = lazy(() => import('./ProposalPdfPage'));
@@ -363,6 +365,7 @@ function DesktopHome({
   onOpenPdfs,
   onOpenVibecoding,
   onOpenJournal,
+  onOpenGraduation,
   onOpenAdmin,
   onOpenPasture,
   onScrollArchive,
@@ -378,6 +381,7 @@ function DesktopHome({
   onOpenPdfs: () => void;
   onOpenVibecoding: () => void;
   onOpenJournal: () => void;
+  onOpenGraduation: () => void;
   onOpenAdmin: () => void;
   onOpenPasture: () => void;
   onScrollArchive: () => void;
@@ -393,6 +397,7 @@ function DesktopHome({
           <button onClick={onOpenPdfs}>{t('作品集', 'Portfolio')}</button>
           <button onClick={onOpenVibecoding}>{t('实验', 'Experiments')}</button>
           <button onClick={onOpenJournal}>{t('手账', 'Journal')}</button>
+          <button onClick={onOpenGraduation}>{t('毕业设计', 'Research')}</button>
           <button onClick={onOpenPasture}>{t('牧场', 'Pasture')}<ArrowUpRight size={13}/></button>
         </nav>
         <button className="home-language" onClick={onToggleLang} disabled={isLangTransitioning} aria-label={t('切换语言', 'Toggle language')}>{lang === 'zh' ? 'EN' : '中'}</button>
@@ -461,6 +466,7 @@ export default function App() {
   const isJournalRoute = pathname === '/journal';
   const isVibecodingRoute = pathname === '/vibecoding';
   const isProposalRoute = pathname === '/proposal';
+  const isGraduationRoute = pathname === '/graduation';
   const isPastureRoute = pathname === '/pasture';
   /** 隐藏页：主页不放任何入口，只能靠网址进来 */
   const isPingPongRoute = pathname === '/pingpong';
@@ -476,6 +482,7 @@ export default function App() {
     !isPdfsRoute &&
     !isJournalRoute &&
     !isProposalRoute &&
+    !isGraduationRoute &&
     !isVibecodingRoute &&
     !isVibecodingLaunchRoute &&
     !isPastureRoute &&
@@ -691,7 +698,7 @@ export default function App() {
     navigate(`/?work=${encodeURIComponent(entryId)}`);
   };
 
-  const navigateToPath = (path: '/awards' | '/pdfs' | '/vibecoding' | '/journal' | '/admin' | '/pasture') => {
+  const navigateToPath = (path: '/awards' | '/pdfs' | '/vibecoding' | '/journal' | '/admin' | '/pasture' | '/graduation') => {
     window.scrollTo({ top: 0, behavior: 'auto' });
     navigate(path);
   };
@@ -740,6 +747,7 @@ export default function App() {
             onOpenPdfs={() => navigateToPath('/pdfs')}
             onOpenVibecoding={() => navigateToPath('/vibecoding')}
             onOpenJournal={() => navigateToPath('/journal')}
+            onOpenGraduation={() => navigateToPath('/graduation')}
             onOpenAdmin={() => navigateToPath('/admin')}
             onOpenPasture={() => navigateToPath('/pasture')}
             onScrollArchive={() => {
@@ -749,6 +757,7 @@ export default function App() {
         <CommonModals lang={lang} t={t} bridge={bridge} onCopyCurrentLink={copyCurrentLink} />
       </div>
 
+      {isGraduationRoute ? <Suspense fallback={<div role="status">正在加载研究工作台…</div>}><GraduationPage /></Suspense> : null}
       {isAdminRoute ? <AdminStudio lang={lang} onBack={goHome} /> : null}
       {isAwardsRoute && !isMobileContent ? <AwardsPage lang={lang} focusAwardId={awardsFocusId} onBack={goHome} onOpenWork={openHomeDetail} /> : null}
       {isPdfsRoute ? <CollectionPage kind="pdfs" lang={lang} onToggleLang={handleToggleLang} /> : null}
