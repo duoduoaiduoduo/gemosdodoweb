@@ -1,4 +1,6 @@
 import express from 'express';
+import {createGraduationEntry} from './server/graduation-entry.js';
+import {graduationEntryConfig} from './server/graduation-entry-config.js';
 import {createGraduationReview} from './server/graduation-review.js';
 import {createTransfer} from './server/transfer.js';
 import fs from 'fs';
@@ -39,6 +41,7 @@ const maxRequestMb = Number(process.env.MAX_REQUEST_MB || 400);
 const app = express();
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1) || 1);
 app.use('/api/transfer', createTransfer({root: path.join(__dirname, '.transfer-storage'), secret: RESOLVED_ADMIN_SECRET}).router);
+app.use('/api/graduation-entry', createGraduationEntry(graduationEntryConfig));
 app.use('/api/graduation-review', createGraduationReview(path.join(__dirname, '.graduation-review', 'annotations.json')));
 app.use(express.json({limit: `${Math.max(50, maxRequestMb)}mb`}));
 

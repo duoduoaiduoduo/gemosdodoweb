@@ -15,6 +15,7 @@ import { runLanguageErosionTransition } from './langErosion';
 import { detectLayoutMode, type LayoutMode } from './layoutMode';
 import ParticleBackdrop from './ParticleBackdrop';
 import StillPromo from './StillPromo';
+import GraduationEntryDialog from './research/GraduationEntryDialog';
 
 const AdvisorReviewPage = lazy(() => import('./research/ReviewDocumentManager'));
 
@@ -452,6 +453,7 @@ export default function App() {
   const [journalFocusId, setJournalFocusId] = useState<string | null>(null);
   const [homeDetailId, setHomeDetailId] = useState<string | null>(null);
   const [showAdminEntry, setShowAdminEntry] = useState(false);
+  const [graduationEntryOpen,setGraduationEntryOpen] = useState(false);
   const [isLangTransitioning, setIsLangTransitioning] = useState(false);
   const langTransitionLockRef = useRef(false);
   const avatarUnlockRef = useRef<{ count: number; lastAt: number }>({ count: 0, lastAt: 0 });
@@ -737,7 +739,7 @@ export default function App() {
     <>
       {showHome && <StillPromo lang={lang} direct={!!location.search || !!location.hash} />}
       <ParticleBackdrop enabled={showHome && layoutMode === 'desktop'} />
-      {isMobileContent && <Suspense fallback={<div style={{minHeight: '100svh'}} />}><MobileSite lang={lang} onToggleLang={handleToggleLang} onAvatarTap={onAvatarTap} showAdminEntry={showAdminEntry} /></Suspense>}
+      {isMobileContent && <Suspense fallback={<div style={{minHeight: '100svh'}} />}><MobileSite lang={lang} onToggleLang={handleToggleLang} onAvatarTap={onAvatarTap} showAdminEntry={showAdminEntry} onOpenGraduation={() => setGraduationEntryOpen(true)} /></Suspense>}
       <div style={{ display: showHome && !isMobileContent ? undefined : 'none' }} aria-hidden={!showHome || isMobileContent}>
           <DesktopHome
             lang={lang}
@@ -751,7 +753,7 @@ export default function App() {
             onOpenPdfs={() => navigateToPath('/pdfs')}
             onOpenVibecoding={() => navigateToPath('/vibecoding')}
             onOpenJournal={() => navigateToPath('/journal')}
-            onOpenGraduation={() => navigateToPath('/graduation')}
+            onOpenGraduation={() => setGraduationEntryOpen(true)}
             onOpenAdmin={() => navigateToPath('/admin')}
             onOpenPasture={() => navigateToPath('/pasture')}
             onScrollArchive={() => {
@@ -761,6 +763,7 @@ export default function App() {
         <CommonModals lang={lang} t={t} bridge={bridge} onCopyCurrentLink={copyCurrentLink} />
       </div>
 
+      {graduationEntryOpen && <GraduationEntryDialog lang={lang} onClose={() => setGraduationEntryOpen(false)} onVerified={() => {setGraduationEntryOpen(false);navigateToPath('/graduation');}} />}
       {isAdvisorReviewRoute ? <Suspense fallback={<div role="status">正在加载开题报告…</div>}><AdvisorReviewPage /></Suspense> : null}
       {isGraduationRoute ? <Suspense fallback={<div role="status">正在加载研究工作台…</div>}><GraduationPage /></Suspense> : null}
       {isAdminRoute ? <AdminStudio lang={lang} onBack={goHome} /> : null}

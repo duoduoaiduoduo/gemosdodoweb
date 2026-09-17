@@ -19,8 +19,8 @@ const sections = [
 ];
 const emptyData: SiteData = {timeline: [], awards: [], pdfs: [], journals: [], vibecodingProjects: []};
 
-export default function MobileSite({lang, onToggleLang, onAvatarTap, showAdminEntry}: {
-  lang: Language; onToggleLang: () => void; onAvatarTap: () => void; showAdminEntry: boolean;
+export default function MobileSite({lang, onToggleLang, onAvatarTap, showAdminEntry, onOpenGraduation}: {
+  lang: Language; onToggleLang: () => void; onAvatarTap: () => void; showAdminEntry: boolean; onOpenGraduation: () => void;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -170,7 +170,7 @@ export default function MobileSite({lang, onToggleLang, onAvatarTap, showAdminEn
               <header className="mi-home-intro"><p className="mi-eyebrow">{t('多多 GemosDodo', 'GemosDodo')}</p><h1>{t('一些创作。', 'Made with curiosity.')}<br /><span>{t('一些日常。', 'Collected along the way.')}</span></h1><p className="mi-intro-note">{t('设计、影像，还有生活里的灵光一现。', 'Design, moving images, and moments in between.')}</p></header>
               <HomeCompanion lang={lang} />
               <MobileArchive works={data.timeline} lang={lang} state={archive} onChange={setArchive} onOpen={openDetail} />
-              <section className="mi-explore"><h2>{t('继续看看', 'Keep exploring')}</h2>{sections.slice(1).map((section) => <Link to={section.path} key={section.path} className="mi-link-row"><span>{t(section.zh, section.en)}</span><ChevronRight size={18} /></Link>)}</section>
+              <section className="mi-explore"><h2>{t('继续看看', 'Keep exploring')}</h2>{sections.slice(1).map((section) => section.path === '/graduation' ? <button type="button" key={section.path} className="mi-link-row" onClick={onOpenGraduation}><span>{t(section.zh, section.en)}</span><ChevronRight size={18} /></button> : <Link to={section.path} key={section.path} className="mi-link-row"><span>{t(section.zh, section.en)}</span><ChevronRight size={18} /></Link>)}</section>
             </>}
             {path === '/awards' && <>
               {pageHead(t('奖状', 'Awards'), data.awards.length, '份记录', 'recognitions')}
@@ -213,7 +213,7 @@ export default function MobileSite({lang, onToggleLang, onAvatarTap, showAdminEn
 
     {menuOpen && <MobileDialog label={t('网站导航', 'Site navigation')} onClose={() => setMenuOpen(false)} className="mi-menu">
       <div className="mi-menu-top"><span className="mi-wordmark">Gemos<span>.</span></span><button className="mi-icon" onClick={() => setMenuOpen(false)} aria-label={t('关闭导航', 'Close navigation')}><X size={22} strokeWidth={1.6} /></button></div>
-      <nav aria-label={t('栏目', 'Sections')}>{sections.map((section, i) => <Link key={section.path} to={section.path} aria-current={path === section.path ? 'page' : undefined} onClick={() => setMenuOpen(false)}><span>{t(section.zh, section.en)}</span><span>{String(i + 1).padStart(2, '0')}</span></Link>)}</nav>
+      <nav aria-label={t('栏目', 'Sections')}>{sections.map((section, i) => section.path === '/graduation' ? <button type="button" key={section.path} className="mi-graduation-entry" onClick={() => {setMenuOpen(false);onOpenGraduation();}}><span>{t(section.zh, section.en)}</span><span>{String(i + 1).padStart(2, '0')}</span></button> : <Link key={section.path} to={section.path} aria-current={path === section.path ? 'page' : undefined} onClick={() => setMenuOpen(false)}><span>{t(section.zh, section.en)}</span><span>{String(i + 1).padStart(2, '0')}</span></Link>)}</nav>
       <div className="mi-menu-bottom"><div className="mi-menu-profile"><button onClick={onAvatarTap} aria-label={t('多多头像', 'Dodo avatar')}><img src="/avatar.png" alt="" /></button><span>{t('多多 GemosDodo', 'GemosDodo')}<small>{t('一直在创作，也一直在感受。', 'Always making. Always noticing.')}</small></span></div>
         <div className="mi-menu-links"><Link to="/pasture">{t('牛牛牧场', 'Pasture')}<ArrowUpRight size={14} /></Link><a href="https://github.com/duoduoaiduoduo" target="_blank" rel="noopener noreferrer">GitHub<ArrowUpRight size={14} /></a>{showAdminEntry && <Link to="/admin">{t('管理', 'Admin')}</Link>}</div>
         <button className="mi-language" onClick={onToggleLang}><span>中文 <span>/</span> English</span><span>{lang === 'zh' ? 'EN' : '中'}<ChevronRight size={16} /></span></button>
