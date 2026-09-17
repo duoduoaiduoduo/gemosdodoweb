@@ -1,4 +1,5 @@
 import express from 'express';
+import {createGraduationReview} from './server/graduation-review.js';
 import {createTransfer} from './server/transfer.js';
 import fs from 'fs';
 import path from 'path';
@@ -38,6 +39,7 @@ const maxRequestMb = Number(process.env.MAX_REQUEST_MB || 400);
 const app = express();
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1) || 1);
 app.use('/api/transfer', createTransfer({root: path.join(__dirname, '.transfer-storage'), secret: RESOLVED_ADMIN_SECRET}).router);
+app.use('/api/graduation-review', createGraduationReview(path.join(__dirname, '.graduation-review', 'annotations.json')));
 app.use(express.json({limit: `${Math.max(50, maxRequestMb)}mb`}));
 
 const visitorStatsFile = path.join(__dirname, 'visitor_stats.json');
@@ -3437,7 +3439,7 @@ app.get('/api/tucao/room', (req, res) => {
 if (fs.existsSync(distRoot)) {
 
   app.use(express.static(distRoot));
-  app.get(['/', /^\/(?:awards|pdfs|journal|admin|proposal|pasture|pingpong|tucao|vibecoding(?:\/[^/]+)?)$/], (req, res) => {
+  app.get(['/', /^\/(?:awards|pdfs|journal|admin|proposal|graduation(?:\/review)?|pasture|pingpong|tucao|vibecoding(?:\/[^/]+)?)$/], (req, res) => {
     res.sendFile(path.join(distRoot, 'index.html'));
   });
 }

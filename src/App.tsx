@@ -16,6 +16,8 @@ import { detectLayoutMode, type LayoutMode } from './layoutMode';
 import ParticleBackdrop from './ParticleBackdrop';
 import StillPromo from './StillPromo';
 
+const AdvisorReviewPage = lazy(() => import('./research/AdvisorReviewPage'));
+
 const GraduationPage = lazy(() => import('./research/GraduationPage'));
 
 const MobileSite = lazy(() => import('./mobile/MobileSite'));
@@ -467,6 +469,7 @@ export default function App() {
   const isVibecodingRoute = pathname === '/vibecoding';
   const isProposalRoute = pathname === '/proposal';
   const isGraduationRoute = pathname === '/graduation';
+  const isAdvisorReviewRoute = pathname === '/graduation/review';
   const isPastureRoute = pathname === '/pasture';
   /** 隐藏页：主页不放任何入口，只能靠网址进来 */
   const isPingPongRoute = pathname === '/pingpong';
@@ -483,6 +486,7 @@ export default function App() {
     !isJournalRoute &&
     !isProposalRoute &&
     !isGraduationRoute &&
+    !isAdvisorReviewRoute &&
     !isVibecodingRoute &&
     !isVibecodingLaunchRoute &&
     !isPastureRoute &&
@@ -757,6 +761,7 @@ export default function App() {
         <CommonModals lang={lang} t={t} bridge={bridge} onCopyCurrentLink={copyCurrentLink} />
       </div>
 
+      {isAdvisorReviewRoute ? <Suspense fallback={<div role="status">正在加载开题报告…</div>}><AdvisorReviewPage /></Suspense> : null}
       {isGraduationRoute ? <Suspense fallback={<div role="status">正在加载研究工作台…</div>}><GraduationPage /></Suspense> : null}
       {isAdminRoute ? <AdminStudio lang={lang} onBack={goHome} /> : null}
       {isAwardsRoute && !isMobileContent ? <AwardsPage lang={lang} focusAwardId={awardsFocusId} onBack={goHome} onOpenWork={openHomeDetail} /> : null}

@@ -65,6 +65,7 @@ export default function GraduationPage() {
         <div><p className="grad-eyebrow"><span /> 信息与交互设计 · 硕士毕业设计</p><h1>从一个问题，<br />走向有依据的设计<span>。</span></h1><p className="grad-intro">新污染物科普研究工作台。<br />把每一次阅读、观察与设计决定，连接成清晰的论证。</p><a className="grad-start" href="#grad-workspace">开始梳理论证 <ArrowRight size={17} /></a></div>
         <aside className="grad-milestone"><div className="grad-tag">下一站 / 开题</div><p className="grad-date">11<span>/</span>13</p><p className="grad-year">2026 · 研究准备阶段</p><div className="grad-milestone-bottom"><span>当前重点</span><strong>选题必要性论证</strong><p>具体污染物、目标人群与作品形式<br />将在证据积累后确定。</p></div></aside>
       </section>
+      <div className="grad-advisor-link"><Link to="/graduation/review">导师阅览版 · 阅读开题报告与批注 <ArrowUpRight size={16} /></Link></div>
       <div className="grad-principle"><span>研究主线</span><p>因为什么，<strong>所以才做什么。</strong></p><span>每一个设计决定，都有来处。</span></div>
       <section id="grad-workspace" className="grad-workspace">
         <nav className="grad-tabs" aria-label="研究工作台栏目">{[['logic', '01', '论证链'], ['sources', '02', '资料起点'], ['plan', '03', '开题计划'], ['outline', '04', '报告框架']].map(([id, n, title]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)} className={tab === id ? 'active' : ''}><span>{n}</span>{title}</button>)}</nav>
