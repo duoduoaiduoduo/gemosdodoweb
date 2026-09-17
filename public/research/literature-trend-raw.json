@@ -1,0 +1,1034 @@
+[
+  {
+    "year": 2010,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2010",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2010&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:43.254347+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 824350,
+      "nextCursorMark": "AoIIPwRyiygyNTM4MDgzNQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2010&cursorMark=AoIIPwRyiygyNTM4MDgzNQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2010",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "20467316",
+            "source": "MED",
+            "pmid": "20467316"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2010,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2010 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2010+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:43.059543+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 61,
+      "nextCursorMark": "AoIIPxHu7SgyNTMwOTc2Ng==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2010 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIPxHu7SgyNTMwOTc2Ng==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2010 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "20397691",
+            "source": "MED",
+            "pmid": "20397691"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2011,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2011",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2011&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:43.212929+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 877269,
+      "nextCursorMark": "AoIIPwS+0CgyOTI0NzEzMQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2011&cursorMark=AoIIPwS+0CgyOTI0NzEzMQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2011",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "22089271",
+            "source": "MED",
+            "pmid": "22089271"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2011,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2011 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2011+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:45.040556+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 60,
+      "nextCursorMark": "AoIIP1nNqCgyNzY2MDcwMA==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2011 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIP1nNqCgyNzY2MDcwMA==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2011 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "21034762",
+            "source": "MED",
+            "pmid": "21034762"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2012,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2012",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2012&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:44.776732+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 943573,
+      "nextCursorMark": "AoIIPwZ4DSg1NjM3Mzk5NA==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2012&cursorMark=AoIIPwZ4DSg1NjM3Mzk5NA==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2012",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "42709929",
+            "source": "MED",
+            "pmid": "42709929"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2012,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2012 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2012+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:44.737874+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 96,
+      "nextCursorMark": "AoIIP1rraigyOTU1MzE4Nw==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2012 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIP1rraigyOTU1MzE4Nw==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2012 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "22307229",
+            "source": "MED",
+            "pmid": "22307229"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2013,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2013",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2013&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:45.835468+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 997274,
+      "nextCursorMark": "AoIIPhfRFygzMTE0MzczMw==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2013&cursorMark=AoIIPhfRFygzMTE0MzczMw==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2013",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "23625706",
+            "source": "MED",
+            "pmid": "23625706"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2013,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2013 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2013+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:45.879320+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 106,
+      "nextCursorMark": "AoIIP1uk7SgzMTQzOTg3Ng==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2013 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIP1uk7SgzMTQzOTg3Ng==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2013 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "23886480",
+            "source": "MED",
+            "pmid": "23886480"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2014,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2014",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2014&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:45.994173+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1045032,
+      "nextCursorMark": "AoIIPwRtHigzMTkxMjQ5MQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2014&cursorMark=AoIIPwRtHigzMTkxMjQ5MQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2014",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "24307254",
+            "source": "MED",
+            "pmid": "24307254",
+            "pmcid": "PMC4154587",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC4154587"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2014,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2014 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2014+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:46.745544+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 141,
+      "nextCursorMark": "AoIIP+DvRCgzMjIyNzI2Ng==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2014 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIP+DvRCgzMjIyNzI2Ng==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2014 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "24572188",
+            "source": "MED",
+            "pmid": "24572188",
+            "pmcid": "PMC3938815",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC3938815"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2015,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2015",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2015&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:46.864453+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1090507,
+      "nextCursorMark": "AoIIPwTnQSgzNDAxMjA0OA==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2015&cursorMark=AoIIPwTnQSgzNDAxMjA0OA==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2015",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "26136606",
+            "source": "MED",
+            "pmid": "26136606",
+            "pmcid": "PMC4486984",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC4486984"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2015,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2015 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2015+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:46.908573+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 196,
+      "nextCursorMark": "AoIIP6djUCgzNDM1MjE3MQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2015 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIP6djUCgzNDM1MjE3MQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2015 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "26420107",
+            "source": "MED",
+            "pmid": "26420107"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2016,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2016",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2016&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:47.719241+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1117440,
+      "nextCursorMark": "AoIIPgTUWSgzNDgwMjU1Nw==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2016&cursorMark=AoIIPgTUWSgzNDgwMjU1Nw==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2016",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "26829126",
+            "source": "MED",
+            "pmid": "26829126",
+            "pmcid": "PMC4735121",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC4735121"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2016,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2016 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2016+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:47.832708+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 252,
+      "nextCursorMark": "AoIIP/uIligzNTExMzE4Nw==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2016 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIP/uIligzNTExMzE4Nw==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2016 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "27077534",
+            "source": "MED",
+            "pmid": "27077534"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2017,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2017",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2017&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:48.123447+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1128649,
+      "nextCursorMark": "AoIIPqBHpigzNjA1ODI5MQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2017&cursorMark=AoIIPqBHpigzNjA1ODI5MQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2017",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "27922285",
+            "source": "MED",
+            "pmid": "27922285"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2017,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2017 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2017+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:48.793082+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 281,
+      "nextCursorMark": "AoIIP7o8DigzNzI0NTAzOQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2017 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIP7o8DigzNzI0NTAzOQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2017 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "28954684",
+            "source": "MED",
+            "pmid": "28954684"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2018,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2018",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2018&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:48.829043+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1173557,
+      "nextCursorMark": "AoIIPwa46CgzODA5MTgzMg==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2018&cursorMark=AoIIPwa46CgzODA5MTgzMg==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2018",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "29663930",
+            "source": "MED",
+            "pmid": "29663930"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2018,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2018 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2018+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:49.163868+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 344,
+      "nextCursorMark": "AoIIP/tyHCgzODA5NDg2MQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2018 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIP/tyHCgzODA5NDg2MQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2018 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "29666946",
+            "source": "MED",
+            "pmid": "29666946"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2019,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2019",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2019&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:49.805446+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1230876,
+      "nextCursorMark": "AoIIPwRckCgzOTc5NTU2MQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2019&cursorMark=AoIIPwRckCgzOTc5NTU2MQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2019",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "31000566",
+            "source": "MED",
+            "pmid": "31000566",
+            "pmcid": "PMC6493975",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC6493975"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2019,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2019 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2019+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:49.764213+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 461,
+      "nextCursorMark": "AoIIP9SEvCg0MDg0MzIyNg==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2019 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIP9SEvCg0MDg0MzIyNg==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2019 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "31858059",
+            "source": "MED",
+            "pmid": "31858059",
+            "pmcid": "PMC6906940",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC6906940"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2020,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2020",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2020&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:50.116876+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1404449,
+      "nextCursorMark": "AoIIPwa7Nyg0MTQ5Nzk3Nw==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2020&cursorMark=AoIIPwa7Nyg0MTQ5Nzk3Nw==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2020",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "32356874",
+            "source": "MED",
+            "pmid": "32356874",
+            "pmcid": "PMC7261179",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC7261179"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2020,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2020 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2020+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:50.725751+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 513,
+      "nextCursorMark": "AoIIP/gPgCg0MDk1MjA5OA==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2020 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIP/gPgCg0MDk1MjA5OA==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2020 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "31954935",
+            "source": "MED",
+            "pmid": "31954935"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2021,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2021",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2021&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:50.826955+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1559789,
+      "nextCursorMark": "AoIIPwUeUCg0MzU1MzE1NQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2021&cursorMark=AoIIPwUeUCg0MzU1MzE1NQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2021",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "33867042",
+            "source": "MED",
+            "pmid": "33867042"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2021,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2021 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2021+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:51.023232+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 683,
+      "nextCursorMark": "AoIIQBNSNCg0NDkwOTAyNA==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2021 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIQBNSNCg0NDkwOTAyNA==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2021 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "34775504",
+            "source": "MED",
+            "pmid": "34775504"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2022,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2022",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2022&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:51.697821+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1576340,
+      "nextCursorMark": "AoIIPwSkNSg0NDk0MTg0MQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2022&cursorMark=AoIIPwSkNSg0NDk0MTg0MQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2022",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "34800482",
+            "source": "MED",
+            "pmid": "34800482",
+            "pmcid": "PMC8596650",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC8596650"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2022,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2022 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2022+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:51.722397+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 888,
+      "nextCursorMark": "AoIIQDNhFCg0NzA3OTQ5OA==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2022 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIQDNhFCg0NzA3OTQ5OA==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2022 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "36274317",
+            "source": "MED",
+            "pmid": "36274317"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2023,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2023",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2023&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:52.017741+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1493367,
+      "nextCursorMark": "AoIIPwSmhyg0OTYzMjk1MQ==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2023&cursorMark=AoIIPwSmhyg0OTYzMjk1MQ==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2023",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "38020691",
+            "source": "MED",
+            "pmid": "38020691",
+            "pmcid": "PMC10667604",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC10667604"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2023,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2023 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2023+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:52.796194+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1103,
+      "nextCursorMark": "AoIIQEwYoyg0OTc0NjE0MA==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2023 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIQEwYoyg0OTc0NjE0MA==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2023 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "38085701",
+            "source": "MED",
+            "pmid": "38085701"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2024,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2024",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2024&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:52.724502+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1536896,
+      "nextCursorMark": "AoIIPwR85yg1MDE0NDA4NA==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2024&cursorMark=AoIIPwR85yg1MDE0NDA4NA==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2024",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "38366636",
+            "source": "MED",
+            "pmid": "38366636"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2024,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2024 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2024+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:52.992039+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1252,
+      "nextCursorMark": "AoIIQJeNwSg1MTQzNTY4Mw==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2024 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIQJeNwSg1MTQzNTY4Mw==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2024 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "39195669",
+            "source": "MED",
+            "pmid": "39195669",
+            "pmcid": "PMC11360707",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC11360707"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2025,
+    "kind": "all",
+    "query": "SRC:MED AND PUB_YEAR:2025",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2025&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:53.659395+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1677178,
+      "nextCursorMark": "AoIIPwcwEig1NjQxODY4Mg==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2025&cursorMark=AoIIPwcwEig1NjQxODY4Mg==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2025",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "42741254",
+            "source": "MED",
+            "pmid": "42741254",
+            "pmcid": "PMC13572593",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC13572593"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "year": 2025,
+    "kind": "mentions",
+    "query": "SRC:MED AND PUB_YEAR:2025 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+    "apiUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC%3AMED+AND+PUB_YEAR%3A2025+AND+%28TITLE_ABS%3A%22emerging+contaminant%22+OR+TITLE_ABS%3A%22emerging+contaminants%22+OR+TITLE_ABS%3A%22emerging+pollutant%22+OR+TITLE_ABS%3A%22emerging+pollutants%22+OR+TITLE_ABS%3A%22contaminant+of+emerging+concern%22+OR+TITLE_ABS%3A%22contaminants+of+emerging+concern%22%29&format=json&pageSize=1&resultType=idlist&synonym=false",
+    "retrievedAt": "2026-09-17T08:12:53.670257+00:00",
+    "response": {
+      "version": "6.9",
+      "hitCount": 1274,
+      "nextCursorMark": "AoIIQJmbpSg1NDQyMDI2OA==",
+      "nextPageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:MED AND PUB_YEAR:2025 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")&cursorMark=AoIIQJmbpSg1NDQyMDI2OA==&resultType=idlist&pageSize=1&format=json",
+      "request": {
+        "queryString": "SRC:MED AND PUB_YEAR:2025 AND (TITLE_ABS:\"emerging contaminant\" OR TITLE_ABS:\"emerging contaminants\" OR TITLE_ABS:\"emerging pollutant\" OR TITLE_ABS:\"emerging pollutants\" OR TITLE_ABS:\"contaminant of emerging concern\" OR TITLE_ABS:\"contaminants of emerging concern\")",
+        "resultType": "idlist",
+        "cursorMark": "*",
+        "pageSize": 1,
+        "sort": "",
+        "synonym": false
+      },
+      "resultList": {
+        "result": [
+          {
+            "id": "41368606",
+            "source": "MED",
+            "pmid": "41368606",
+            "pmcid": "PMC12683636",
+            "fullTextIdList": {
+              "fullTextId": [
+                "PMC12683636"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+]

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import ResearchHistory from './ResearchHistory';
 import { ArrowLeft, ArrowUpRight, Download, Search, BookOpen } from 'lucide-react';
 import { sources, topics, kinds, researchedOn } from './researchData';
 import './research-library.css';
@@ -25,7 +26,7 @@ function exportLibrary() {
   const url=URL.createObjectURL(new Blob([text],{type:'text/markdown;charset=utf-8'})); const a=document.createElement('a');a.href=url;a.download=`新污染物研究资料库-${researchedOn}.md`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 export default function ResearchLibrary(){
- const [section,setSection]=useState('start'); const [path,setPath]=useState(0); const [query,setQuery]=useState(''); const [topic,setTopic]=useState('全部'); const [kind,setKind]=useState('全部'); const [priority,setPriority]=useState(false); const [selected,setSelected]=useState('');
+ const [params,setParams]=useSearchParams(); const section=['start','argument','cases','library','history'].includes(params.get('view')||'')?params.get('view')!:'start'; const setSection=(value:string)=>setParams(value==='start'?{}:{view:value},{replace:true}); const [path,setPath]=useState(0); const [query,setQuery]=useState(''); const [topic,setTopic]=useState('全部'); const [kind,setKind]=useState('全部'); const [priority,setPriority]=useState(false); const [selected,setSelected]=useState('');
  useEffect(()=>{document.documentElement.classList.add('research-library-mode');document.body.classList.add('research-library-mode');const old=document.title;document.title='新污染物 · 研究资料库 | GemosDodo';window.scrollTo(0,0);return()=>{document.title=old;document.documentElement.classList.remove('research-library-mode');document.body.classList.remove('research-library-mode');};},[]);
  useEffect(()=>{if(section==='library'&&selected){requestAnimationFrame(()=>document.getElementById('source-'+selected)?.scrollIntoView({block:'center',behavior:'auto'}));}},[section,selected]);
  const filtered=useMemo(()=>sources.filter(s=>(topic==='全部'||s.topics.includes(topic))&&(kind==='全部'||s.kind===kind)&&(!priority||s.priority)&&`${s.id} ${s.title} ${s.original} ${s.publisher} ${s.finding} ${s.topics.join(' ')} ${s.doi||''}`.toLowerCase().includes(query.trim().toLowerCase())),[topic,kind,priority,query]);
@@ -34,7 +35,8 @@ export default function ResearchLibrary(){
  const navigate=(id:string)=>{setSection(id);setSelected('');window.scrollTo(0,0);};
  return <div className="rl-page no-grass" lang="zh-CN"><header className="rl-header"><Link to="/graduation"><ArrowLeft size={16}/>研究工作台</Link><span>毕业设计 / 阅读档案</span><Link to="/graduation/review">导师阅览版<ArrowUpRight size={15}/></Link></header>
  <main className="rl-main"><section className="rl-hero"><div><p className="rl-kicker">RESEARCH NOTES · 01</p><h1>先看懂新污染物，<br/>再找到设计的理由。</h1><p>从科学事实到理解问题。把资料读成一条有依据的研究线索。</p></div><aside><strong>{sources.length}<small>份资料与阅读线索</small></strong><span>中文导读 · 原文可追溯</span><span>整理于 {researchedOn}</span><button onClick={exportLibrary}><Download size={15}/>导出全部阅读笔记</button></aside></section>
- <nav className="rl-nav" aria-label="资料库栏目">{[['start','01','先看懂'],['argument','02','选题怎么立'],['cases','03','看已有实践'],['library','04','全部资料']].map(([id,n,label])=><button key={id} onClick={()=>navigate(id)} aria-pressed={section===id} className={section===id?'active':''}><small>{n}</small>{label}</button>)}</nav>
+ <nav className="rl-nav" aria-label="资料库栏目">{[['start','01','先看懂'],['argument','02','选题怎么立'],['cases','03','看已有实践'],['history','04','时间线与趋势'],['library','05','全部资料']].map(([id,n,label])=><button key={id} onClick={()=>navigate(id)} aria-pressed={section===id} className={section===id?'active':''}><small>{n}</small>{label}</button>)}</nav>
+ {section==='history'&&<ResearchHistory/>}
  {section==='start'&&<div className="rl-content"><section className="rl-lede"><span className="rl-label">先抓住这件事</span><h2>“新”，更多关乎认识与管理的变化。</h2><p>一些物质已使用多年，但其环境风险逐渐受到关注，现有管理仍需完善。你的科普对象可以是其中一种物质、某条环境路径，或人们理解这些信息时遇到的具体问题。</p>{refs(['P02','S01'])}</section>
  <div className="rl-grid three">{[['不是一张互斥分类表','微塑料按颗粒特征讨论，内分泌干扰物按作用机制讨论，POPs强调持久性等特征。它们的分类角度不同，部分范围会交叠。',['P04','S07','S08']],['检出，不等于已确定个人风险','检测回答是否发现及发现多少；风险判断还涉及物质性质、接触途径、剂量、时间和证据。不应直接从“存在”跳到“必然伤害”。',['S05','S06']],['“尚不确定”也不是“可以不管”','科学边界和治理行动可以同时说明。准确科普应告诉读者证据支持到哪里，以及还缺什么，而不是在恐慌和无害之间二选一。',['S02','P01']]].map(([title,body,ids])=><article className="rl-card" key={title as string}><h3>{title as string}</h3><p>{body as string}</p>{refs(ids as string[])}</article>)}</div>
  <section className="rl-section"><div className="rl-section-title"><div><span className="rl-label">把知识连起来</span><h2>从来源，到环境，再到影响</h2></div><span>概念示意 · 非风险计算</span></div><div className="rl-pills" aria-label="切换污染物路径">{pathways.map((p,i)=><button key={p.name} aria-pressed={path===i} onClick={()=>setPath(i)}>{p.name}</button>)}</div><div className="rl-pathway"><h3>{pathways[path].question}</h3><ol>{pathways[path].stages.map((s,i)=><li key={s}><span>0{i+1}</span><p>{s}</p></li>)}</ol><p className="rl-muted">{pathways[path].note}</p>{refs(pathways[path].refs)}</div></section>
