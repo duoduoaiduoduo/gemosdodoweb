@@ -69,3 +69,7 @@
 .mi-detail:has(.mi-still-case) .mi-detail-intro h1{font-size:28px;font-weight:500}
 /* Keep the portfolio's ambient characters outside this reading experience. */
 body:has(#detailModal.still-work-detail.active) :is(.cow-entity,.particle-backdrop){visibility:hidden;pointer-events:none}
+
+/* Keep the complete terminal visible in the new studio photographs. */
+.sc-ritual img{aspect-ratio:5/4;object-fit:contain}
+.sc-gallery .sc-comparison img{aspect-ratio:5/4;object-fit:contain}

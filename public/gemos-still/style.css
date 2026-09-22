@@ -60,3 +60,19 @@
 @keyframes photo-in{from{opacity:.45}to{opacity:1}}
 @media(max-width:360px){.wrap{width:calc(100% - 32px)}.nav{padding-inline:16px}.hero{padding-top:24px}.hero-copy{font-size:13px}.hero .actions{gap:8px}.hero .actions>a{font-size:11px}.hero-visual figcaption{font-size:7px}.specs strong{font-size:22px}}
 @media(prefers-reduced-motion:reduce){.comparison figure{animation:none}.js .reveal{transform:none;transition:none}.comparison-switch button{transition:none}}
+
+/* Show the entire terminal, consistently across desktop and mobile. */
+.detail-grid img{width:100%;height:auto;aspect-ratio:5/4;object-fit:contain;background:#000}
+
+/* Day and night: quieter framing, with room around the complete object. */
+#ritual .ritual-heading{display:grid;grid-template-columns:1.25fr 1fr;gap:64px;align-items:end}
+#ritual .ritual-heading .body-copy{margin:0 0 5px;justify-self:end;font-size:16px;line-height:1.9}
+#ritual .detail-grid{gap:28px;margin-top:52px}
+#ritual .detail-grid figure{overflow:hidden;border-radius:16px;background:#080907}
+#ritual .detail-grid img{border-radius:0}
+#ritual .detail-grid figcaption{margin:0;padding:8px 28px 30px}
+#ritual .scene-label{display:block;font-size:10px;line-height:1.6;letter-spacing:.15em;color:#93988a;margin-bottom:10px}
+#ritual .detail-grid strong{font-weight:400;font-size:24px}
+#ritual .caption{color:#9d9f95;font-size:11px;line-height:1.85}
+@media(max-width:800px){#ritual .ritual-heading{grid-template-columns:1fr;gap:24px}#ritual .ritual-heading .body-copy{justify-self:start;margin:0;font-size:14px}#ritual .detail-grid{margin-top:32px;gap:20px}#ritual .detail-grid figcaption{padding:4px 22px 24px}#ritual .detail-grid strong{font-size:21px}}
+@media(max-width:600px){#ritual .detail-grid{gap:24px}#ritual .ritual-heading{gap:20px}#ritual .detail-grid strong{font-size:20px}#ritual .detail-grid p{font-size:13px}#ritual .scene-label{font-size:9px}}
