@@ -84,7 +84,7 @@
 /* The photo-to-memory chapter follows native scroll; static content is the default. */
 .scroll-story [hidden]{display:none!important}
 .scroll-story.scroll-enhanced{background:#000;color:#f3f3ed}
-.journey-track{height:260svh;position:relative}
+.journey-track{height:300svh;position:relative}
 .journey-sticky{position:sticky;top:80px;height:calc(100svh - 80px);max-height:900px;display:grid;grid-template-columns:.86fr 1.24fr;align-items:center;gap:28px;padding-block:36px}
 .journey-copy{position:relative;z-index:1;min-width:0}
 .journey-copy .eyebrow{color:#91998b;font-size:10px;letter-spacing:.16em;margin-bottom:24px}
@@ -110,10 +110,10 @@
 .journey-photo img{width:100%;height:100%;object-fit:cover}
 .journey-visual figcaption{display:flex;justify-content:space-between;gap:12px;margin:12px 20px 0;color:#949d89;font-size:10px;line-height:1.6;letter-spacing:.045em}
 .journey-caption{color:#8e9786;padding-bottom:48px;margin-top:0;font-size:11px}
-@media(min-width:1600px){.journey-track{height:240svh}}
+@media(min-width:1600px){.journey-track{height:280svh}}
 @media(max-width:1000px){.journey-sticky{gap:12px;grid-template-columns:.9fr 1.1fr}.journey-copy h2{font-size:36px}.journey-notes p{font-size:14px}.journey-controls button{padding-inline:12px}.journey-visual figcaption{margin-inline:0;font-size:9px}}
 @media(max-width:800px){
- .journey-track{height:240svh}
+ .journey-track{height:280svh}
  .journey-sticky{top:66px;height:calc(100svh - 66px);max-height:none;display:flex;flex-direction:column;justify-content:center;gap:12px;padding-block:24px}
  .journey-copy{width:100%;flex:none}
  .journey-copy .eyebrow{margin-bottom:12px;font-size:9px}

@@ -24,11 +24,17 @@
   const notes = [...root.querySelectorAll('[data-journey-note]')];
   const buttons = [...root.querySelectorAll('[data-journey-go]')];
   const labels = [...root.querySelectorAll('[data-journey-label]')];
-  const frameCount = Math.min(180, Math.max(2, Number(root.dataset.frameCount) || 40));
+  const frameCount = Math.min(180, Math.max(2, Number(root.dataset.frameCount) || 91));
   // Choose once per visit so rotating a phone never downloads a second sequence.
   const compactFrames = window.innerWidth <= 800;
-  const assetBase = new URL(root.dataset.frameBase || 'assets/scroll-coast-v1/', document.baseURI);
+  const assetBase = new URL(root.dataset.frameBase || 'assets/scroll-coast-v2/', document.baseURI);
   const frameBase = compactFrames ? new URL('mobile/', assetBase) : assetBase;
+  // Mobile keeps the complete orbit with a two-degree sampling interval, not
+  // twice the decoded image memory. Interpolation still follows every scroll.
+  const frameStep = compactFrames ? 2 : 1;
+  const sampledFrames = [];
+  for (let index = 0; index < frameCount; index += frameStep) sampledFrames.push(index);
+  if (sampledFrames[sampledFrames.length - 1] !== frameCount - 1) sampledFrames.push(frameCount - 1);
   const frames = Array(frameCount).fill(null);
   const requested = new Set();
   const failed = new Set();
@@ -36,7 +42,7 @@
     '--journey-photo-opacity', '--journey-photo-scale', '--journey-photo-y',
     '--journey-scene-opacity', '--journey-scene-clip', '--journey-progress',
   ];
-  const stops = [0.06, 0.5, 0.93];
+  const stops = [0.06, 0.5, 1];
   let prepared = false;
   let preparing = false;
   let initialFailed = false;
@@ -207,11 +213,11 @@
   }
 
   function drawFrame(frame) {
-    const lower = Math.floor(frame);
-    const upper = Math.min(frameCount - 1, lower + 1);
+    const lower = Math.floor(frame / frameStep) * frameStep;
+    const upper = Math.min(frameCount - 1, lower + frameStep);
     let first = lower;
     let second = upper;
-    let mix = frame - lower;
+    let mix = upper > lower ? (frame - lower) / (upper - lower) : 0;
     if (!frames[lower] || !frames[upper]) {
       let nearest = 0;
       let distance = Infinity;
@@ -255,7 +261,7 @@
   function nextFrame() {
     let best = -1;
     let distance = Infinity;
-    for (let i = 1; i < frameCount; i += 1) {
+    for (const i of sampledFrames) {
       if (requested.has(i) || failed.has(i)) continue;
       const score = Math.abs(i - targetFrame);
       if (score < distance) { best = i; distance = score; }
