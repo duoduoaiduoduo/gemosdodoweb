@@ -1,9 +1,8 @@
 import { ReactNode, Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowUpRight, Plus } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, Film, GraduationCap, Layers, Lock, Palette, Plus } from 'lucide-react';
 import { initApp } from './script';
-import AdminStudio from './AdminStudio';
 import AwardsPage from './AwardsPage';
 import CollectionPage from './collections/CollectionPage';
 import VibecodingLaunchPage from './VibecodingLaunchPage';
@@ -16,6 +15,8 @@ import { detectLayoutMode, type LayoutMode } from './layoutMode';
 import ParticleBackdrop from './ParticleBackdrop';
 import StillPromo from './StillPromo';
 import GraduationEntryDialog from './research/GraduationEntryDialog';
+
+const AdminStudio = lazy(() => import('./AdminStudio'));
 
 const AdvisorReviewPage = lazy(() => import('./research/ReviewDocumentManager'));
 
@@ -336,12 +337,12 @@ function DesktopFilterSidebar({
     <div className="filter-sidebar no-grass animate-item">
       {(
         [
-          { code: 'all' as const, icon: 'layers', zh: '全部', en: 'All' },
-          { code: 'project' as const, icon: 'palette', zh: '作品', en: 'Project' },
-          { code: 'video' as const, icon: 'film', zh: '视频', en: 'Video' },
-          { code: 'edu' as const, icon: 'graduation-cap', zh: '教育', en: 'Edu' },
+          { code: 'all' as const, icon: Layers, zh: '全部', en: 'All' },
+          { code: 'project' as const, icon: Palette, zh: '作品', en: 'Project' },
+          { code: 'video' as const, icon: Film, zh: '视频', en: 'Video' },
+          { code: 'edu' as const, icon: GraduationCap, zh: '教育', en: 'Edu' },
         ] as const
-      ).map(({ code, icon, zh, en }) => (
+      ).map(({ code, icon: Icon, zh, en }) => (
         <button
           type="button"
           key={code}
@@ -349,7 +350,7 @@ function DesktopFilterSidebar({
           aria-pressed={activeFilter === code}
           onClick={(e) => handleFilter(code, e.currentTarget as HTMLElement)}
         >
-          <div className="filter-icon"><i data-lucide={icon}></i></div>
+          <div className="filter-icon"><Icon aria-hidden="true" /></div>
           <div className="filter-text">{t(zh, en)}</div>
         </button>
       ))}
@@ -438,7 +439,7 @@ function DesktopHome({
 
       {showAdminEntry ? (
         <div className="admin-trigger admin-entry-gate no-grass animate-item" onClick={onOpenAdmin} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onOpenAdmin()} aria-label={t('后台', 'Admin')}>
-          <i data-lucide="lock"></i>
+          <Lock aria-hidden="true" />
         </div>
       ) : null}
     </div>
@@ -742,7 +743,7 @@ export default function App() {
   return (
     <>
       {showHome && <StillPromo lang={lang} direct={!!location.search || !!location.hash} />}
-      <ParticleBackdrop enabled={showHome && layoutMode === 'desktop'} />
+      {showHome && layoutMode === 'desktop' && <ParticleBackdrop enabled />}
       {isMobileContent && <Suspense fallback={<div style={{minHeight: '100svh'}} />}><MobileSite lang={lang} onToggleLang={handleToggleLang} onAvatarTap={onAvatarTap} showAdminEntry={showAdminEntry} onOpenGraduation={() => setGraduationEntryOpen(true)} /></Suspense>}
       <div style={{ display: showHome && !isMobileContent ? undefined : 'none' }} aria-hidden={!showHome || isMobileContent}>
           <DesktopHome
@@ -771,7 +772,7 @@ export default function App() {
       {isAdvisorReviewRoute ? <Suspense fallback={<div role="status">正在加载开题报告…</div>}><AdvisorReviewPage /></Suspense> : null}
       {isResearchLibraryRoute ? <Suspense fallback={<div role="status">正在加载研究资料库…</div>}><ResearchLibrary /></Suspense> : null}
       {isGraduationRoute ? <Suspense fallback={<div role="status">正在加载研究工作台…</div>}><GraduationPage /></Suspense> : null}
-      {isAdminRoute ? <AdminStudio lang={lang} onBack={goHome} /> : null}
+      {isAdminRoute ? <Suspense fallback={<div role="status">{t('正在加载管理后台…', 'Loading admin studio…')}</div>}><AdminStudio lang={lang} onBack={goHome} /></Suspense> : null}
       {isAwardsRoute && !isMobileContent ? <AwardsPage lang={lang} focusAwardId={awardsFocusId} onBack={goHome} onOpenWork={openHomeDetail} /> : null}
       {isPdfsRoute ? <CollectionPage kind="pdfs" lang={lang} onToggleLang={handleToggleLang} /> : null}
       {isVibecodingRoute ? <CollectionPage kind="vibecoding" lang={lang} onToggleLang={handleToggleLang} /> : null}

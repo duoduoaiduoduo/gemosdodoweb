@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
 import crypto from 'crypto';
-import {spawnSync} from 'child_process';
+import {createTimelineVideoProcessor} from './server/timeline-video.js';
 import http from 'http';
 import dotenv from 'dotenv';
 import multer from 'multer';
@@ -723,144 +723,7 @@ const normalizeTimelineVideoSources = (value) =>
         .filter(Boolean)
     : [];
 
-const pickVideoLabelFromHeight = (height) => {
-  const h = Number(height) || 0;
-  if (h >= 1000 && h <= 1180) return '1080p';
-  if (h >= 660 && h <= 780) return '720p';
-  if (h >= 430 && h <= 540) return '480p';
-  return 'Original';
-};
-
-const probeVideoMeta = (absPath) => {
-  try {
-    const result = spawnSync(
-      'ffprobe',
-      [
-        '-v',
-        'error',
-        '-select_streams',
-        'v:0',
-        '-show_entries',
-        'stream=width,height,bit_rate',
-        '-of',
-        'json',
-        absPath,
-      ],
-      {encoding: 'utf8', windowsHide: true},
-    );
-    if (result.status !== 0) return null;
-    const parsed = JSON.parse(result.stdout || '{}');
-    const stream = Array.isArray(parsed?.streams) ? parsed.streams[0] : null;
-    if (!stream) return null;
-    return {
-      width: Number(stream.width) || 0,
-      height: Number(stream.height) || 0,
-      bitrateKbps: Math.round((Number(stream.bit_rate) || 0) / 1000),
-    };
-  } catch {
-    return null;
-  }
-};
-
-const TIMELINE_VIDEO_VARIANTS = [
-  {label: '1080p', height: 1080, bitrateKbps: 4500},
-  {label: '720p', height: 720, bitrateKbps: 2600},
-  {label: '480p', height: 480, bitrateKbps: 1200},
-];
-
-const generateTimelineVideoVariants = ({entryId, absPath, fileId, baseName, mime, originalName, size}) => {
-  const sourceMeta = probeVideoMeta(absPath);
-  const relativePath = path.join('uploads', 'timeline', entryId, path.basename(absPath));
-  const originalUrl = `/${relativePath.replace(/\\/g, '/')}`;
-  const sources = [
-    {
-      label: pickVideoLabelFromHeight(sourceMeta?.height),
-      url: originalUrl,
-      relativePath,
-      mime,
-      size: Number(size) || 0,
-      height: Number(sourceMeta?.height) || 0,
-      width: Number(sourceMeta?.width) || 0,
-      bitrateKbps: Number(sourceMeta?.bitrateKbps) || 0,
-      isOriginal: true,
-      originalName,
-    },
-  ];
-
-  if (!sourceMeta?.height || !sourceMeta?.width) {
-    return {
-      defaultUrl: originalUrl,
-      sources,
-    };
-  }
-
-  for (const variant of TIMELINE_VIDEO_VARIANTS) {
-    if (sourceMeta.height <= variant.height) continue;
-    const variantFileName = `${fileId}-${baseName}-${variant.label}.mp4`;
-    const variantAbsPath = path.join(path.dirname(absPath), variantFileName);
-    const scaleFilter = `scale=-2:${variant.height}`;
-    const ffmpeg = spawnSync(
-      'ffmpeg',
-      [
-        '-y',
-        '-i',
-        absPath,
-        '-vf',
-        scaleFilter,
-        '-c:v',
-        'libx264',
-        '-preset',
-        'veryfast',
-        '-crf',
-        '23',
-        '-maxrate',
-        `${variant.bitrateKbps}k`,
-        '-bufsize',
-        `${variant.bitrateKbps * 2}k`,
-        '-c:a',
-        'aac',
-        '-b:a',
-        '128k',
-        '-movflags',
-        '+faststart',
-        variantAbsPath,
-      ],
-      {encoding: 'utf8', windowsHide: true},
-    );
-    if (ffmpeg.status !== 0 || !fs.existsSync(variantAbsPath)) continue;
-    const variantMeta = probeVideoMeta(variantAbsPath);
-    let variantSize = 0;
-    try {
-      variantSize = Number(fs.statSync(variantAbsPath).size) || 0;
-    } catch {
-      variantSize = 0;
-    }
-    const variantRelativePath = path.join('uploads', 'timeline', entryId, variantFileName);
-    sources.push({
-      label: variant.label,
-      url: `/${variantRelativePath.replace(/\\/g, '/')}`,
-      relativePath: variantRelativePath,
-      mime: 'video/mp4',
-      size: variantSize,
-      height: Number(variantMeta?.height) || variant.height,
-      width: Number(variantMeta?.width) || 0,
-      bitrateKbps: variant.bitrateKbps,
-      isOriginal: false,
-      originalName: variantFileName,
-    });
-  }
-
-  const defaultSource =
-    sources.find((item) => item.label === '720p') ||
-    sources.find((item) => item.label === '480p') ||
-    sources.find((item) => item.label === '1080p') ||
-    sources[0];
-
-  return {
-    defaultUrl: defaultSource?.url || originalUrl,
-    sources,
-  };
-};
+const generateTimelineVideoVariants = createTimelineVideoProcessor();
 
 const isLegacyAwardTimelineItem = (item) => item?.category === 'award';
 
@@ -2406,7 +2269,7 @@ app.post('/api/timeline/video-upload', requireAdminSecret, (req, res, next) => {
     }
     res.status(400).json({success: false, error: err.message || 'Upload failed'});
   });
-}, (req, res) => {
+}, async (req, res) => {
   const entryId = typeof req.body?.entryId === 'string' ? req.body.entryId.trim() : '';
   if (!entryId) {
     safeUnlink(req.file?.path);
@@ -2441,7 +2304,7 @@ app.post('/api/timeline/video-upload', requireAdminSecret, (req, res, next) => {
     const finalName = `${fileId}-${baseName}${ext}`;
     const absPath = path.join(targetDir, finalName);
     fs.renameSync(up.path, absPath);
-    const {defaultUrl, sources} = generateTimelineVideoVariants({
+    const {defaultUrl, sources} = await generateTimelineVideoVariants({
       entryId,
       absPath,
       fileId,
@@ -2487,15 +2350,14 @@ app.get('/api/journals', (req, res) => {
 });
 
 app.get('/api/vibecoding', (req, res) => {
-  const data = readData();
-  const projects = sortVibecodingProjects(Array.isArray(data.vibecodingProjects) ? data.vibecodingProjects : []);
+  const projects = sortVibecodingProjects(readVibecodingProjects());
   res.json({success: true, projects});
 });
 
 app.get('/api/vibecoding/:slug', (req, res) => {
-  const data = readData();
+  const projects = readVibecodingProjects();
   const slug = slugifyText(req.params.slug || '');
-  const project = (Array.isArray(data.vibecodingProjects) ? data.vibecodingProjects : []).find(
+  const project = projects.find(
     (item) => slugifyText(item?.slug || item?.title || '') === slug,
   );
   if (!project) {

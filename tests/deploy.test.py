@@ -9,6 +9,9 @@ class DeployTests(unittest.TestCase):
         self.root = pathlib.Path(self.tmp.name)
         for name in ['deploy.sh', 'autodeploy.sh']:
             shutil.copy(ROOT/name, self.root/name)
+        (self.root/'scripts').mkdir()
+        for name in ['prune-builds.mjs', 'precompress-static.mjs']:
+            shutil.copy(ROOT/'scripts'/name, self.root/'scripts'/name)
         (self.root/'server.js').write_text('')
         assets = self.root/'public/vibecoding-projects/still-memory-box'
         (assets/'browser-inference').mkdir(parents=True)
@@ -83,4 +86,39 @@ class DeployTests(unittest.TestCase):
         result=subprocess.run(['bash','autodeploy.sh'],cwd=self.root,env={**self.env,'AUTODEPLOY_ONCE':'1','FETCH_RESULT':'128'},capture_output=True,text=True)
         self.assertEqual(result.returncode,128)
         self.assertIn('retrying',result.stdout)
+    def test_cleanup_failure_leaves_verified_deployment_successful(self):
+        # A cleanup failure is not a deployment failure, and cleanup must only
+        # begin after the final success marker exists with the expected commit.
+        (self.root/'scripts/prune-builds.mjs').write_text('''
+import fs from 'node:fs';
+const marker=fs.readFileSync('.deploy-state/deployed-commit','utf8').trim();
+fs.writeFileSync('cleanup-marker-observed',marker);
+process.exit(77);
+''')
+        result=self.run_deploy()
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertEqual((self.root/'cleanup-marker-observed').read_text(),'new')
+        self.assertEqual((self.root/'.deploy-state/deployed-commit').read_text().strip(),'new')
+        self.assertIn('Warning: build history cleanup failed',result.stdout)
+        self.assertNotIn('Deployment failed (',result.stdout)
+    def test_failed_deployment_never_prunes_and_success_retains_three(self):
+        state=self.root/'.deploy-state'; state.mkdir()
+        snapshots=[]
+        for day in range(1,5):
+            snapshot=state/f'dist-previous-202001{day:02d}-120000-100'
+            snapshot.mkdir(); (snapshot/'index.html').write_text('rollback build')
+            snapshots.append(snapshot)
+        (self.root/'fail-build').touch()
+        self.assertEqual(self.run_deploy().returncode,42)
+        self.assertTrue(all(snapshot.exists() for snapshot in snapshots))
+        (self.root/'fail-build').unlink()
+        result=self.run_deploy()
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertEqual(len(list(state.glob('dist-previous-*'))),3)
+        self.assertFalse(snapshots[0].exists())
+        self.assertFalse(snapshots[1].exists())
+        self.assertTrue(snapshots[2].exists())
+        self.assertTrue(snapshots[3].exists())
+        self.assertEqual((self.root/'uploads/keep').read_text(),'user data')
+        self.assertTrue(list(state.glob('data-*')))
 if __name__=='__main__': unittest.main()

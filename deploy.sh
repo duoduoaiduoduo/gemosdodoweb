@@ -74,6 +74,7 @@ timeout -k 15 600 npm run build -- --outDir "$STAGE"
 for relative in index.html browser-inference/ui.js tide.js; do
   cmp "public/vibecoding-projects/still-memory-box/$relative" "$STAGE/vibecoding-projects/still-memory-box/$relative"
 done
+node scripts/precompress-static.mjs "$STAGE"
 node - "$STAGE/deployment.json" "$TARGET" <<'JS'
 require('fs').writeFileSync(process.argv[2],JSON.stringify({commit:process.argv[3],builtAt:new Date().toISOString()})+'\n');
 JS
@@ -102,3 +103,8 @@ done
 printf '%s\n' "$TARGET" > "$STATE/deployed-commit.tmp"
 mv "$STATE/deployed-commit.tmp" "$STATE/deployed-commit"
 log "Deployment verified locally: $TARGET. Previous dist retained at $PREVIOUS. Verify public HTTPS resources separately."
+# Keep three completed rollback builds. Failure here must not invalidate the
+# healthy deployment or its success marker; runtime data and uploads are ignored.
+if ! node scripts/prune-builds.mjs --root "$STATE"; then
+  log 'Warning: build history cleanup failed. Deployment remains verified; inspect retained build history separately.'
+fi
