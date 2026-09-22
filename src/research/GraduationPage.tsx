@@ -16,13 +16,13 @@ const sources = [
   { type: '官方说明 · 2022', title: '研究范围可以如何收窄？', name: '生态环境部｜3月例行新闻发布会', url: 'https://www.mee.gov.cn/ywdt/xwfb/202203/t20220330_973154.shtml', note: '介绍持久性有机污染物、内分泌干扰物、抗生素、微塑料等类别。具体研究对象待确定。' },
 ];
 const schedule = [
-  ['09.17—09.23', '明确问题边界', '一页选题说明：候选对象、受众、问题与待补证据'],
-  ['09.24—10.07', '整理文献与案例', '文献矩阵、案例比较表、初步研究缺口'],
-  ['10.08—10.14', '探索用户问题', '小规模访谈与理解任务，记录反例及样本局限'],
-  ['10.15—10.21', '建立设计逻辑', '问题—策略对应表、内容框架、交互草图'],
-  ['10.22—10.28', '完成开题初稿', '按学校六部分模板组织证据、方案和计划'],
-  ['10.29—11.04', '导师反馈与修订', '调整研究问题与论证，完成汇报初稿'],
-  ['11.05—11.12', '准备开题汇报', '检查引文、演练答辩、核对提交要求'],
+  ['09.22—09.25', '讨论暂定范围', '一页选题说明、6个案例与两套四屏草图；核对受众与阅读材料'],
+  ['09.26—10.02', '试访与探索访谈', '先试走流程，再完成6—8人的真实记录；保留基线与阅读后解释'],
+  ['10.03—10.09', '从记录收窄问题', '原话—任务证据—困难—策略矩阵；保留反例，决定是否调整方向'],
+  ['10.10—10.16', '确定内容与原型', '核验科学内容，根据真实发现选择设计路线'],
+  ['10.17—10.23', '原型可用性试测', '观察操作与理解问题，修订原型，不将可用性直接等同学习效果'],
+  ['10.24—11.01', '完善开题报告', '补入真实证据、设计取舍、拟创新与后续评价计划'],
+  ['11.02—11.12', '修订与演练', '核对引文、学校要求与汇报时间；11月13日开题'],
 ];
 const outline = [
   ['研究背景与依据', '现实背景 → 国内外研究与实践 → 尚未解决的问题 → 理论意义与实践价值'],
@@ -65,7 +65,7 @@ export default function GraduationPage() {
         <div><p className="grad-eyebrow"><span /> 信息与交互设计 · 硕士毕业设计</p><h1>从一个问题，<br />走向有依据的设计<span>。</span></h1><p className="grad-intro">新污染物科普研究工作台。<br />把每一次阅读、观察与设计决定，连接成清晰的论证。</p><a className="grad-start" href="#grad-workspace">开始梳理论证 <ArrowRight size={17} /></a></div>
         <aside className="grad-milestone"><div className="grad-tag">下一站 / 开题</div><p className="grad-date">11<span>/</span>13</p><p className="grad-year">2026 · 研究准备阶段</p><div className="grad-milestone-bottom"><span>当前重点</span><strong>选题必要性论证</strong><p>具体污染物、目标人群与作品形式<br />将在证据积累后确定。</p></div></aside>
       </section>
-      <div className="grad-advisor-link" style={{gap:24,flexWrap:'wrap'}}><Link to="/graduation/research">新污染物资料库 · 中文导读与原文链接 <BookOpen size={16} /></Link><Link to="/graduation/review">导师阅览版 · 阅读开题报告与批注 <ArrowUpRight size={16} /></Link></div>
+      <div className="grad-advisor-link" style={{gap:24,flexWrap:'wrap'}}><Link to="/graduation/research">新污染物资料库 · 中文导读与原文链接 <BookOpen size={16} /></Link><Link to="/graduation/research?view=plan">方案与调研 · 选题、访谈与两套草图 <ArrowRight size={16} /></Link><Link to="/graduation/review">导师阅览版 · 阅读开题报告与批注 <ArrowUpRight size={16} /></Link></div>
       <div className="grad-principle"><span>研究主线</span><p>因为什么，<strong>所以才做什么。</strong></p><span>每一个设计决定，都有来处。</span></div>
       <section id="grad-workspace" className="grad-workspace">
         <nav className="grad-tabs" aria-label="研究工作台栏目">{[['logic', '01', '论证链'], ['sources', '02', '资料起点'], ['plan', '03', '开题计划'], ['outline', '04', '报告框架']].map(([id, n, title]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)} className={tab === id ? 'active' : ''}><span>{n}</span>{title}</button>)}</nav>
