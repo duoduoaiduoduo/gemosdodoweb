@@ -76,3 +76,7 @@
 #ritual .caption{color:#9d9f95;font-size:11px;line-height:1.85}
 @media(max-width:800px){#ritual .ritual-heading{grid-template-columns:1fr;gap:24px}#ritual .ritual-heading .body-copy{justify-self:start;margin:0;font-size:14px}#ritual .detail-grid{margin-top:32px;gap:20px}#ritual .detail-grid figcaption{padding:4px 22px 24px}#ritual .detail-grid strong{font-size:21px}}
 @media(max-width:600px){#ritual .detail-grid{gap:24px}#ritual .ritual-heading{gap:20px}#ritual .detail-grid strong{font-size:20px}#ritual .detail-grid p{font-size:13px}#ritual .scene-label{font-size:9px}}
+
+/* Center the visible Chinese text on the icon and download action. */
+.download-title{letter-spacing:0;line-height:1.28;font-style:normal}
+.download-title>span{display:block}
