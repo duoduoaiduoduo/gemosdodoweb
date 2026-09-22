@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f6f5f2">
 <title>Gemos Still for Mac — 把照片，收藏成空间</title>
 <meta name="description" content="把一张普通照片，封装成可转动的 3D 记忆盒。Gemos Still 原生 Mac 版：本机 SHARP 重建、粒子收藏动画、4K 影片导出。下载 Apple 芯片预览版。">
-<link rel="canonical" href="https://gemosdodo.art/gemos-still/"><meta property="og:title" content="Gemos Still for Mac · 把照片，收藏成空间"><meta property="og:description" content="一张照片。一整个小世界。原生 Mac 版，现已可下载。"><meta property="og:image" content="https://gemosdodo.art/gemos-still/assets/hero.jpg"><meta property="og:type" content="website"><link rel="icon" href="assets/icon.png"><link rel="stylesheet" href="style.css?v=download-align-20260922">
+<link rel="canonical" href="https://gemosdodo.art/gemos-still/"><meta property="og:title" content="Gemos Still for Mac · 把照片，收藏成空间"><meta property="og:description" content="一张照片。一整个小世界。原生 Mac 版，现已可下载。"><meta property="og:image" content="https://gemosdodo.art/gemos-still/assets/hero.jpg"><meta property="og:type" content="website"><link rel="icon" href="assets/icon.png"><link rel="stylesheet" href="style.css?v=scroll-story-20260922">
 </head>
 <body>
 <a class="skip" href="#main">跳到正文</a>
@@ -19,9 +19,40 @@
 <figure class="hero-visual"><img src="assets/hero.jpg" width="2400" height="1800" fetchpriority="high" alt="Gemos Still 复古记忆电脑，透明玻璃里涌动着紫蓝色粒子"><figcaption><span>OBJECT 01 / 记忆终端</span><span>Mac 版真实渲染</span></figcaption></figure>
 </section>
 <section class="intro wrap reveal" id="experience"><p class="eyebrow">A LITTLE MORE THAN A PHOTO</p><h2>照片留下瞬间。<br>Still 让你走近它。</h2><p class="body-copy">旅行时的一瞥，窗边的一束光，或是想念的日常。选一张照片，Still 会在你的 Mac 上重建它的空间层次，再把它放进这台小小的复古电脑里。</p></section>
-<section class="story wrap reveal"><div class="story-head"><div><p class="eyebrow">01 / FROM PHOTO TO SPACE</p><h2>平面的回忆，<br>有了新的角度。</h2></div><p>从近处的石阶，到远方的海。<br>轻轻转动，发现照片里的前后与远近。</p></div>
-<div class="comparison-switch" role="group" aria-label="切换照片与三维效果"><button type="button" aria-pressed="false" data-view="photo">原始照片</button><button type="button" aria-pressed="true" data-view="scene">3D 记忆盒</button></div><div class="comparison" data-view="scene"><figure class="source-photo"><img src="assets/coast-photo.jpg" width="1254" height="1254" loading="lazy" alt="用来生成三维场景的海边石阶照片"><figcaption><span class="number">01</span> 一张照片</figcaption></figure><figure class="scene-photo"><img src="assets/coast-scene.jpg" width="2000" height="1600" loading="lazy" alt="由左侧海边照片实际生成的高斯场景，收藏在玻璃记忆盒中"><figcaption><span class="number">02</span> 一个可以探索的空间</figcaption></figure></div>
+<section class="scroll-story" id="photo-to-space" aria-label="从照片到三维记忆" data-frame-base="assets/scroll-coast-v1/" data-frame-count="40">
+<div class="journey-track" hidden><div class="journey-sticky wrap">
+ <div class="journey-copy">
+  <p class="eyebrow">01 / SCROLL TO DISCOVER</p>
+  <h2 id="journey-title">从一张照片<br><span>走进一段记忆</span></h2>
+  <div class="journey-notes">
+   <p data-journey-note="0">先从一个喜欢的瞬间开始。<br>比如，通往海边的那段石阶。</p>
+   <p data-journey-note="1" aria-hidden="true">近处的树影，远处的海。<br>照片里的风景，渐渐有了远近。</p>
+   <p data-journey-note="2" aria-hidden="true">换一个角度，再看一眼。<br>把这一刻，留在你的记忆盒里。</p>
+  </div>
+  <div class="journey-actions">
+   <div class="journey-controls" role="group" aria-label="跳转展示阶段">
+    <button type="button" data-journey-go="0" aria-current="step"><span>01</span> 照片</button>
+    <button type="button" data-journey-go="1"><span>02</span> 空间</button>
+    <button type="button" data-journey-go="2"><span>03</span> 记忆</button>
+   </div>
+   <a class="journey-skip" href="#ritual">继续浏览 <span aria-hidden="true">↓</span></a>
+  </div>
+ </div>
+ <figure class="journey-visual">
+  <div class="journey-stage">
+   <img class="journey-poster" src="assets/coast-studio-v2.jpg" width="1000" height="800" loading="lazy" alt="海边照片经 SHARP 实际重建后，收藏在复古记忆电脑中">
+   <canvas class="journey-canvas" width="1000" height="800" aria-hidden="true"></canvas>
+   <div class="journey-photo"><img src="assets/scroll-coast-v1/photo.webp" width="1254" height="1254" loading="lazy" alt="原始照片：树影下的石阶通往蔚蓝海湾"></div>
+  </div>
+  <figcaption><span data-journey-label>01 / 一张照片</span><span>实际重建 · Mac 原生渲染</span></figcaption>
+ </figure>
+</div></div>
+<div class="journey-static"><section class="story wrap"><div class="story-head"><div><p class="eyebrow">01 / FROM PHOTO TO SPACE</p><h2>平面的回忆，<br>有了新的角度。</h2></div><p>从近处的石阶，到远方的海。<br>轻轻转动，发现照片里的前后与远近。</p></div>
+<div class="comparison-switch" role="group" aria-label="切换照片与三维效果"><button type="button" aria-pressed="false" data-view="photo">原始照片</button><button type="button" aria-pressed="true" data-view="scene">3D 记忆盒</button></div><div class="comparison" data-view="scene"><figure class="source-photo"><img src="assets/scroll-coast-v1/photo.webp" width="1254" height="1254" loading="lazy" alt="用来生成三维场景的海边石阶照片"><figcaption><span class="number">01</span> 一张照片</figcaption></figure><figure class="scene-photo"><img src="assets/coast-studio-v2.jpg" width="2000" height="1600" loading="lazy" alt="由左侧海边照片实际生成的高斯场景，收藏在玻璃记忆盒中"><figcaption><span class="number">02</span> 一个可以探索的空间</figcaption></figure></div>
 <p class="caption">本组海边源图由 AI 创作，并经 SHARP 实际重建、Mac 原生渲染。单张照片无法完整还原未被拍到的部分。</p>
+</section>
+</div>
+<p class="journey-caption caption wrap" hidden>海边源图由 AI 创作，经 SHARP 实际重建。滚动画面来自 Mac 应用的真实相机环绕；单张照片无法完整还原未被拍到的部分。</p>
 </section>
 <section class="dark-section" id="ritual"><div class="wrap"><div class="ritual-heading reveal"><div><p class="eyebrow">02 / A WORLD TO KEEP</p><h2>把想念的风景，<br>留在眼前。</h2></div><p class="body-copy">一座雨后的庭院，一条入夜的街。<br>从照片到可以转动的小世界，<br>让平常的瞬间，多一种重温的方式。</p></div><div class="detail-grid"><figure class="reveal"><img src="assets/garden-scene-v1.jpg" width="2000" height="1600" loading="lazy" alt="庭院照片经 SHARP 实际重建的三维记忆盒"><figcaption><span class="scene-label">01 / AFTER THE RAIN</span><strong>雨后的庭院。</strong><p>石灯、苔藓与红枫，在小小的空间里有了远近。</p></figcaption></figure><figure class="reveal"><img src="assets/night-scene-v1.jpg" width="2000" height="1600" loading="lazy" alt="雨后夜街照片实际重建的三维记忆盒，暖灯映照石板路"><figcaption><span class="scene-label">02 / AFTER DARK</span><strong>入夜后的灯火。</strong><p>一盏暖灯，一条雨后的街，把夜色也收藏起来。</p></figcaption></figure></div><p class="caption">庭院与夜街源图由 AI 创作，经 SHARP 在本机实际重建；以上为应用内三维场景的真实渲染。</p></div></section>
 <section class="film wrap reveal"><p class="eyebrow">03 / MADE TO BE SHARED</p><div class="story-head"><h2>把你的记忆，<br>放进一段影片。</h2><p>从卡片入仓到风景显现，<br>用自动运镜与钢琴配乐，<br>把整个收藏过程分享出去。</p></div><div class="film-stage"><img src="assets/coast-scene.jpg" width="2000" height="1600" loading="lazy" alt="影片中的主角：海边记忆盒"><div class="film-overlay"><span class="film-label">GEMOS STILL</span><span class="film-title">A moment.<br>A little world.</span><span class="film-bottom">CAPTURED IN A MEMORY BOX / 01</span></div></div><div class="specs"><div><strong>4K</strong><span>30 / 60 帧导出</span></div><div><strong>1080P</strong><span>30 / 60 帧导出</span></div><div><strong>MP4</strong><span>横屏与竖屏影片</span></div></div><p class="caption">影片主场景由本机逐帧渲染。九宫格片尾使用内置示例视频，4K 导出不会增加原素材细节。</p></section>
@@ -29,4 +60,4 @@
 <section class="download-section" id="download"><div class="wrap download-inner reveal"><img class="app-icon" src="assets/icon.png" width="112" height="112" loading="lazy" alt="白底圆角 Gemos Still 应用图标"><p class="eyebrow">YOUR NEXT MEMORY STARTS HERE</p><h2 class="download-title"><span>留一个位置</span><span>给下一段记忆</span></h2><p class="download-copy">Gemos Still for Mac <span>0.4.2 预览版</span></p><div class="mobile-save"><p>现在用手机浏览？<br>复制页面链接，回到 Mac 再下载。</p><button type="button" id="copy-mac-link" class="button primary">复制 Mac 下载页 <span aria-hidden="true">↗</span></button><span class="copy-feedback" role="status" aria-live="polite"></span></div><a class="button primary download-file" href="/downloads/gemos-still/Gemos-Still-0.4.2-Apple-Silicon.zip" download>下载 Apple 芯片版 <span aria-hidden="true">↓</span></a><p class="micro">ZIP · <span id="download-size">2.98 GB</span> · 内置本机模型</p><p class="mobile-note" id="mobile-note" hidden>这是 Mac 软件。你可以先收藏此页，回到 Mac 后下载，或<a href="/vibecoding-projects/still-memory-box/index.html">打开网页版体验</a>。</p><div class="requirements"><div><strong>运行要求</strong><p>Apple 芯片 M1 或更新<br>macOS 14 或更新<br>建议 16 GB 统一内存<br>下载与解压预留约 8 GB 空间</p></div><div><strong>下载前请知悉</strong><p>当前是未经过 Apple 公证的预览版，macOS 可能阻止打开。请先阅读下方安装说明。暂不支持 Intel Mac，8 GB 机型尚未验证。</p></div></div><a class="text-link checksum" href="SHA256SUMS.txt">查看安装包校验值 ↗</a></div></section>
 <section class="faq wrap" id="questions"><div><p class="eyebrow">A FEW THINGS TO KNOW</p><h2>开始之前。</h2></div><div class="questions"><details><summary>下载之后，怎么安装？</summary><p>解压 ZIP，把 Gemos Still.app 拖入“应用程序”。完整包已经内置模型和推理环境，无需安装 Python。首次打开后，可以先点“查看示例”，再选择自己的照片。</p></details><details><summary>为什么 macOS 提示无法验证开发者？</summary><p>作者目前没有 Apple Developer 账号，因此这个版本只有本地签名，尚未通过 Apple 公证。macOS 可能阻止它运行。只有在你确认信任下载来源时，才按 <a href="https://support.apple.com/102445" target="_blank" rel="noopener noreferrer">Apple 官方说明</a>在“系统设置 → 隐私与安全性”中检查是否有“仍要打开”选项；不同系统版本的提示可能不同。不要关闭系统整体安全保护。也可以直接使用<a href="/vibecoding-projects/still-memory-box/index.html">网页版</a>。</p></details><details><summary>照片会上传吗？还需要联网下载模型吗？</summary><p>Mac 完整包已内置模型。生成时照片与结果留在本机，无需调用在线生成服务。记忆文件会占用你的 Mac 储存空间；只有你主动导出并分享时，其他人才会收到内容。</p></details><details><summary>任何照片都能变成完整的 3D 吗？</summary><p>这是单图空间重建，不是多视角扫描。前景、中景、远景分明的照片通常更适合展示层次；大角度转到背面时，可能出现缺失、拉伸或不自然的区域。</p></details><details><summary>可以商用吗？</summary><p>应用源码与模型使用不同的许可。内置 Apple SHARP 权重受研究模型许可约束，不能把代码开源理解为模型可自由商用。请阅读<a href="APPLE-SHARP-LICENSE.txt">完整模型许可</a>与<a href="https://github.com/duoduoaiduoduo/gemos-still/blob/main/THIRD_PARTY_NOTICES.md">第三方说明</a>。</p></details></div></section>
 </main><footer class="wrap footer"><a class="brand" href="/">Gemos Still</a><p>Made with curiosity. By Gemosdodo.</p><div><a href="/">官网</a><a href="/vibecoding-projects/still-memory-box/index.html">网页版</a><a href="https://github.com/duoduoaiduoduo/gemos-still">GitHub ↗</a></div></footer><script src="page.js?v=mobile-2"></script>
-</body></html>
+<script src="scroll-story.js?v=scroll-story-20260922" defer></script></body></html>

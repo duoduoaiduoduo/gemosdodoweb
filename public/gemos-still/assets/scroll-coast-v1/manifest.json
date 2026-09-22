@@ -1,0 +1,30 @@
+{
+  "width": 1000,
+  "height": 800,
+  "count": 40,
+  "bytes": 1251850,
+  "quality": 80,
+  "pattern": "frame-{index:02d}.webp",
+  "source": "Native SceneKit + Metal rendering of SHARP reconstruction",
+  "yawDegrees": [
+    4,
+    30
+  ],
+  "target": [
+    0,
+    0.1,
+    -0.6
+  ],
+  "radius": 13.5,
+  "relativeHeight": 3.4,
+  "fov": 32,
+  "mobile": {
+    "width": 640,
+    "height": 512,
+    "count": 40,
+    "quality": 80,
+    "bytes": 640518,
+    "pattern": "mobile/frame-{index:02d}.webp",
+    "decodedBytes": 52428800
+  }
+}
