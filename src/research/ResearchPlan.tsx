@@ -43,13 +43,13 @@ function Prototype() {
     <div className="rp-frame-list">{frames.map((f,i)=><article key={f[0]}><span>0{i+1}</span><h4>{f[0]}</h4><p>{f[1]}</p></article>)}</div>
   </div>;
 }
-function downloadPlan() { const url=URL.createObjectURL(new Blob([buildPlanMarkdown()],{type:'text/markdown;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`新污染物-研究与设计准备稿-${planDate}.md`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000); }
+function downloadPlan() { const url=URL.createObjectURL(new Blob([buildPlanMarkdown()],{type:'text/markdown;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`毕业设计-研究与设计准备稿-${planDate}.md`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000); }
 export default function ResearchPlan() {
   useEffect(()=>{const hash=window.location.hash; if(/^#plan-[a-z]+$/.test(hash)){const id=requestAnimationFrame(()=>document.getElementById(hash.slice(1))?.scrollIntoView());return ()=>cancelAnimationFrame(id);}},[]);
   return <div className="rl-content rp-content">
     <section className="rp-intro"><div className="rp-new-idea"><strong>新的作品构想正在整理</strong><p>“照片进入记忆机器”是后续提出的方向；当前页保留此前的微塑料路径研究准备稿，供比较与取证。</p><a href="/graduation/research?view=idea">打开可编辑的作品构想 →</a></div><span className="rl-label">从背景依据，走向可研究的设计问题 · {planDate}</span><h2>下一次见导师，带着这些具体材料。</h2><p>暂定范围、调研工具、六个案例、两套四屏构想，以及验证与时间安排。先把方案说清楚，再用真实受众的记录决定怎样收窄。</p><div className="rp-state"><span>已准备：方案与草图</span><span>待开展：访谈、专业核验与测试</span></div><div className="rp-downloads"><button onClick={downloadPlan}><Download size={15}/>下载完整准备稿</button><a href="/graduation/review">阅读导师讨论稿 <ExternalLink size={14}/></a></div></section>
-    <nav className="rp-jumps" aria-label="方案内容"><a href="#plan-scope">01 暂定选题</a><a href="#plan-study">02 用户调研</a><a href="#plan-cases">03 案例比较</a><a href="#plan-concepts">04 两套构想</a><a href="#plan-test">05 验证与安排</a></nav>
-    <section id="plan-scope" className="rp-section"><span className="rp-overline">01 / 一页选题说明</span><h2>{scopeTitle}</h2><p className="rp-caption">工作题名 · 供导师讨论，尚未定题</p><dl className="rp-scope">{scope.map(([label,body])=><div key={label}><dt>{label}</dt><dd>{body}</dd></div>)}</dl>
+    <nav className="rp-jumps" aria-label="方案内容"><a href="#plan-scope">01 研究范围</a><a href="#plan-study">02 用户调研</a><a href="#plan-cases">03 案例比较</a><a href="#plan-concepts">04 两套构想</a><a href="#plan-test">05 验证与安排</a></nav>
+    <section id="plan-scope" className="rp-section"><span className="rp-overline">01 / 研究范围讨论</span><h2>{scopeTitle}</h2><p className="rp-caption">下列内容是阶段性探索方案，不作为正式题目。</p><dl className="rp-scope">{scope.map(([label,body])=><div key={label}><dt>{label}</dt><dd>{body}</dd></div>)}</dl>
       <div className="rp-argument">{argument.map(([title,because,therefore,status],i)=><article key={title}><span>0{i+1}</span><h3>{title}</h3><p><b>因为</b>{because}</p><p><b>所以</b>{therefore}</p><small>{status}</small></article>)}</div>
       <h3 className="rp-subtitle">具体科普什么，学会什么</h3><div className="rp-table-scroll"><table><thead><tr><th>内容</th><th>科普重点</th><th>可观察的理解目标</th></tr></thead><tbody>{learningGoals.map(r=><tr key={r[0]}>{r.map((v,i)=><td key={i}>{v}</td>)}</tr>)}</tbody></table></div>
     </section>
