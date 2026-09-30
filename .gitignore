@@ -14,6 +14,8 @@ uploads/
 .upload-tmp/
 data.json
 visitor_stats.json
+github-profile-visits.json
+github-profile-visits.json.*.tmp
 tucao-room.json
 !public/vibecoding-projects/gaussian-splatting-viewer-dodo/GaussianSplats3D-src/build/
 !public/vibecoding-projects/gaussian-splatting-viewer-dodo/GaussianSplats3D-src/build/**

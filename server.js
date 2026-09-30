@@ -3,6 +3,7 @@ import {createGraduationEntry} from './server/graduation-entry.js';
 import {graduationEntryConfig} from './server/graduation-entry-config.js';
 import {createGraduationReview} from './server/graduation-review.js';
 import {createTransfer} from './server/transfer.js';
+import {createGithubProfileCounter} from './server/github-profile-counter.js';
 import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
@@ -40,6 +41,7 @@ const maxRequestMb = Number(process.env.MAX_REQUEST_MB || 400);
 
 const app = express();
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1) || 1);
+app.use('/api/github-visitors.svg', createGithubProfileCounter(path.join(__dirname, 'github-profile-visits.json')));
 app.use('/api/transfer', createTransfer({root: path.join(__dirname, '.transfer-storage'), secret: RESOLVED_ADMIN_SECRET}).router);
 app.use('/api/graduation-entry', createGraduationEntry(graduationEntryConfig));
 app.use('/api/graduation-review', createGraduationReview(path.join(__dirname, '.graduation-review', 'annotations.json')));

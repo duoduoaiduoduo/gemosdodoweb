@@ -32,7 +32,7 @@ fi
 [[ "$(git branch --show-current)" == main ]] || { log 'Refusing to deploy a checkout outside main.'; exit 1; }
 # Refuse to overwrite server edits. Ignored runtime data is untouched.
 git diff --quiet && git diff --cached --quiet || { log 'Tracked server files have changes; inspect and preserve them before deploying.'; exit 1; }
-if git ls-tree -r --name-only "$TARGET" | grep -v '^\.env\.example$' | grep -E '^(uploads/|data\.json$|visitor_stats\.json$|tucao-room\.json$|vibecoding-projects\.runtime\.json$|\.env($|\.))' >/dev/null; then
+if git ls-tree -r --name-only "$TARGET" | grep -v '^\.env\.example$' | grep -E '^(uploads/|data\.json$|visitor_stats\.json$|github-profile-visits\.json($|\.)|tucao-room\.json$|vibecoding-projects\.runtime\.json$|\.env($|\.))' >/dev/null; then
   log 'Refusing a revision that tracks runtime data or server environment files.'
   exit 1
 fi
@@ -52,7 +52,7 @@ JS
 # Small runtime JSON snapshots are private and are never copied into dist.
 STAMP="$(date +%Y%m%d-%H%M%S)-$$"
 mkdir "$STATE/data-$STAMP"
-for file in data.json visitor_stats.json tucao-room.json vibecoding-projects.json vibecoding-projects.runtime.json; do
+for file in data.json visitor_stats.json github-profile-visits.json tucao-room.json vibecoding-projects.json vibecoding-projects.runtime.json; do
   [[ ! -f "$file" ]] || cp -p "$file" "$STATE/data-$STAMP/"
 done
 AVAILABLE="$(df -Pk . | awk 'END {print $4}')"

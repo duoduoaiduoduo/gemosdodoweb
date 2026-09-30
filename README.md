@@ -112,6 +112,7 @@ docs/                             设计记录和运维说明
 | 作品时间线、牛牛、奖状、PDF、手账、资源记录 | `data.json`，Git 忽略 |
 | 实验项目 | `vibecoding-projects.json` 是仓库种子；实际修改写入 Git 忽略的 `vibecoding-projects.runtime.json` |
 | 访客统计、吐槽间、报告版本与批注 | `visitor_stats.json`、`tucao-room.json`、`.graduation-review/`，Git 忽略 |
+| GitHub 个人主页计数 | `github-profile-visits.json`，Git 忽略；`GET /api/github-visitors.svg` 提供动态 SVG，每次图片加载累计一次，HEAD 不计数 |
 | 上传媒体、临时私人文件 | `uploads/`、`.transfer-storage/`，Git 忽略且彼此隔离 |
 | 提案批注 | `proposal-annotations.json`，**目前仍受 Git 跟踪** |
 

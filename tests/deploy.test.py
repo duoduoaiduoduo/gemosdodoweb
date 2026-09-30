@@ -23,6 +23,7 @@ class DeployTests(unittest.TestCase):
         (self.root/'uploads').mkdir()
         (self.root/'uploads/keep').write_text('user data')
         (self.root/'vibecoding-projects.runtime.json').write_text('[{"id":"keep"}]')
+        (self.root/'github-profile-visits.json').write_text('{"count":42}')
         self.bin = self.root/'bin'; self.bin.mkdir()
         commands = {
           'flock': 'exit "${LOCK_RESULT:-0}"',
@@ -33,7 +34,7 @@ class DeployTests(unittest.TestCase):
             'rev-parse HEAD') cat head;;
             'branch --show-current') echo main;;
             'diff --quiet'|'diff --cached --quiet') exit 0;;
-            'ls-tree -r --name-only new') echo .env.example;;
+            'ls-tree -r --name-only new') echo .env.example; [[ -z "${TRACKED_RUNTIME:-}" ]] || echo "$TRACKED_RUNTIME";;
             'merge --ff-only new') echo new > head;;
             *) exit 99;; esac''',
           'npm': '''echo "$*" >> calls
@@ -71,6 +72,14 @@ class DeployTests(unittest.TestCase):
         self.assertEqual((self.root/'calls').read_text().count('restart'),before)
         self.assertEqual((self.root/'uploads/keep').read_text(),'user data')
         self.assertEqual((self.root/'vibecoding-projects.runtime.json').read_text(),'[{"id":"keep"}]')
+        self.assertEqual((self.root/'github-profile-visits.json').read_text(),'{"count":42}')
+        snapshots=list((self.root/'.deploy-state').glob('data-*/github-profile-visits.json'))
+        self.assertTrue(snapshots)
+        self.assertTrue(all(p.read_text()=='{"count":42}' for p in snapshots))
+    def test_tracked_profile_counter_state_is_refused(self):
+        result=self.run_deploy(TRACKED_RUNTIME='github-profile-visits.json')
+        self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+        self.assertEqual((self.root/'head').read_text(),'old')
     def test_fetch_failure_does_not_publish(self):
         self.assertEqual(self.run_deploy(FETCH_RESULT='128').returncode,128)
         self.assertEqual((self.root/'head').read_text(),'old')
