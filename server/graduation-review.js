@@ -11,7 +11,7 @@ export const REVIEW_REVISION = 'discussion-2026-09-17-v1';
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const validId = value => typeof value === 'string' && /^[a-zA-Z0-9-]{16,80}$/.test(value);
 const coordinate = (value, max) => Number.isFinite(value) && value >= 0 && value <= max;
-export function createGraduationReview(file) {
+export function createGraduationReview(file, {publication} = {}) {
   const router = express.Router();
   router.use(express.json({limit: '150kb'}));
   const read = () => fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {annotations: []};
@@ -23,6 +23,21 @@ export function createGraduationReview(file) {
   };
   const seed={revision:REVIEW_REVISION,label:'讨论稿 v1',createdAt:'2026-09-17T00:00:00.000Z',sections:reportPages,pages:reportPages};
   const documents=data=>data.documents?.length?data.documents:[seed];
+  // A release appends one version. Stored page geometry and annotations stay intact.
+  if (publication) {
+    const data=read(), all=documents(data);
+    if (!all.some(d=>d.revision===publication.revision)) {
+      if (data.documents?.length && all.at(-1).revision!==publication.baseRevision) {
+        console.warn('[graduation-review] Publication skipped: latest revision changed.');
+      } else {
+        const backup=`${file}.before-${publication.revision}`;
+        if (fs.existsSync(file)&&!fs.existsSync(backup)) fs.copyFileSync(file, backup, fs.constants.COPYFILE_EXCL);
+        const {baseRevision,...report}=publication;
+        data.documents=[...all,{...report,createdAt:report.createdAt||new Date().toISOString(),pages:paginateSections(report.sections)}];
+        write(data);
+      }
+    }
+  }
   const publicDocument=({requestId,ownerHash,...doc})=>doc;
   const bundle=(data,revision)=>{const all=documents(data);const current=all[all.length-1];return {document:publicDocument(all.find(d=>d.revision===revision)||current),latestRevision:current.revision,versions:all.map(({revision,label,createdAt})=>({revision,label,createdAt}))};};
   const publicNote = ({ownerHash, ...note}) => note;
@@ -31,18 +46,21 @@ export function createGraduationReview(file) {
   router.post('/document', (req,res,next)=>{
     try{
       const {baseRevision,sections,requestId,ownerKey}=req.body||{};
-      if(!validId(requestId)||!validId(ownerKey)||!Array.isArray(sections)||sections.length!==6)return res.status(400).json({error:'报告应包含六部分正文'});
+      if(!validId(requestId)||!validId(ownerKey)||!Array.isArray(sections))return res.status(400).json({error:'请检查报告正文'});
       const data=read(),all=documents(data),duplicate=all.find(d=>d.requestId===requestId);
       if(duplicate){if(duplicate.ownerHash!==hash(ownerKey))return res.status(409).json({error:'保存编号冲突'});return res.json(bundle(data,duplicate.revision));}
       if(baseRevision!==all[all.length-1].revision)return res.status(409).json({error:'报告已被另一位编辑者更新。你的修改已保留，请先导出，再打开最新版核对。'});
+      if(sections.length!==all.at(-1).sections.length)return res.status(400).json({error:'请保留本版的完整章节结构'});
       const clean=[];
       for(const section of sections){
         if(!section||typeof section.title!=='string'||!section.title.trim()||section.title.length>80||typeof section.pending!=='string'||section.pending.length>400||!Array.isArray(section.paragraphs)||section.paragraphs.length>100||section.paragraphs.some(p=>typeof p!=='string'||p.length>10000)||section.paragraphs.join('').length>20000)return res.status(400).json({error:'请检查章节标题与正文长度'});
         // Reference links are preserved from the previous version; editing text cannot introduce executable URLs.
-        clean.push({title:section.title.trim(),paragraphs:section.paragraphs.filter(p=>p.trim()),pending:section.pending,links:all[all.length-1].sections[clean.length].links||[]});
+        const previous=all.at(-1).sections[clean.length];
+        clean.push({title:section.title.trim(),paragraphs:section.paragraphs.filter(p=>p.trim()),pending:section.pending,links:previous.links||[],...(previous.images?{images:previous.images}:{}),...(previous.tables?{tables:previous.tables}:{}),...(previous.sourceList?{sourceList:true}:{})});
       }
       if(clean.every(s=>!s.paragraphs.length))return res.status(400).json({error:'正文不能为空'});
-      const revision=crypto.randomUUID();const document={revision,label:`讨论稿 v${all.length+1}`,createdAt:new Date().toISOString(),sections:clean,pages:paginateSections(clean),requestId,ownerHash:hash(ownerKey)};
+      const previous=all.at(-1);
+      const revision=crypto.randomUUID();const document={revision,label:`讨论稿 v${all.length+1}`,createdAt:new Date().toISOString(),sections:clean,pages:paginateSections(clean),requestId,ownerHash:hash(ownerKey),...(previous.title?{title:previous.title}:{}),...(previous.downloads?{downloads:previous.downloads}:{})};
       data.documents=[...all,document];write(data);res.status(201).json(bundle(data,revision));
     }catch(e){next(e);}
   });

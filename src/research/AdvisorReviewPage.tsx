@@ -11,7 +11,7 @@ const ownerStorage = 'gemos-review-owner';
 function readOwn(ownStorage:string): string[] {try {const v=JSON.parse(localStorage.getItem(ownStorage)||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string'):[];}catch{return [];}}
 function getOwner() {try {const previous=localStorage.getItem(ownerStorage);if(previous)return previous;const key=crypto.randomUUID();localStorage.setItem(ownerStorage,key);return key;}catch{return crypto.randomUUID();}}
 
-export default function AdvisorReviewPage({reportPages,reportRevision,versionLabel,onPendingChange}:{reportPages:ReportPage[];reportRevision:string;versionLabel:string;onPendingChange:(pending:boolean)=>void}) {
+export default function AdvisorReviewPage({reportPages,reportRevision,versionLabel,documentTitle,onPendingChange}:{reportPages:ReportPage[];reportRevision:string;versionLabel:string;documentTitle?:string;onPendingChange:(pending:boolean)=>void}) {
   const endpoint = `/api/graduation-review/${reportRevision}`;
   const ownStorage = `gemos-review-own-${reportRevision}`;
   const [tool,setTool]=useState<Tool>('read');
@@ -107,10 +107,12 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
       {reportPages.map((page,index)=><section className="advisor-sheet-wrap" key={index} style={{width:760*scale,height:980*scale}} aria-label={`第 ${index+1} 页：${page.title}`}>
         <article className="advisor-sheet" style={{transform:`scale(${scale})`}}>
           <div className="advisor-running">信息与交互设计 · 硕士<span>{versionLabel}</span></div>
-          {index===0&&<><h1>新污染物科普方向<br/>开题报告</h1><p className="advisor-draft-label">研究讨论稿，非正式定稿 · 开题日期：2026年11月13日</p></>}
+          {index===0&&(documentTitle?<><h1>{documentTitle}</h1><p className="advisor-draft-label">导师审阅稿，题目拟定 · 开题日期：2026年11月13日</p></>:<><h1>新污染物科普方向<br/>开题报告</h1><p className="advisor-draft-label">研究讨论稿，非正式定稿 · 开题日期：2026年11月13日</p></>)}
           <h2>{page.title}</h2>
           {page.paragraphs.map((p,i)=><p className="advisor-paragraph" key={i}>{p}</p>)}
-          {'links' in page && page.links?.map(([label,url])=><a className="advisor-source" href={url} key={url} target="_blank" rel="noopener noreferrer">{label}</a>)}
+          {page.images?.map(({src,alt,caption})=><figure className="advisor-figure" key={src}><img src={src} alt={alt} width="630" height="354"/><figcaption>{caption}</figcaption></figure>)}
+          {page.tables?.map(({caption,rows,widths},tableIndex)=><figure className="advisor-table" key={`${caption}-${tableIndex}`}><figcaption>{caption}</figcaption><table><colgroup>{widths.map((width,i)=><col key={i} style={{width:`${width*100}%`}}/>)}</colgroup>{rows.length>0&&<><thead><tr>{rows[0].map((cell,i)=><th scope="col" key={i}>{cell}</th>)}</tr></thead><tbody>{rows.slice(1).map((row,i)=><tr key={i}>{row.map((cell,j)=><td key={j}>{cell}</td>)}</tr>)}</tbody></>}</table></figure>)}
+          {page.sourceList?<div className="advisor-source-list">{page.links?.map(([label,url])=><a className="advisor-source" href={url} key={url} target="_blank" rel="noopener noreferrer">{label}</a>)}</div>:('links' in page && page.links?.map(([label,url])=><a className="advisor-source" href={url} key={url} target="_blank" rel="noopener noreferrer">{label}</a>))}
           <p className="advisor-pending">{page.pending}</p>
           <footer className="advisor-page-number">{index+1} / {reportPages.length}</footer>
           <svg className={`advisor-ink tool-${tool}`} viewBox="0 0 760 980" aria-label={`第 ${index+1} 页批注画布`} style={{pointerEvents:tool==='read'?'none':'auto',touchAction:tool==='read'?'auto':'none'}} onPointerDown={e=>start(e,index)} onPointerMove={move} onPointerUp={end} onPointerCancel={e=>end(e,true)}>
