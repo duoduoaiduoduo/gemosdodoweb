@@ -1,0 +1,39 @@
+{
+  "original": "public/vibecoding-projects/still-memory-box",
+  "copiedFor": "独立的新污染物主题作品原型",
+  "originalFilesModified": false,
+  "files": [
+    {
+      "file": "computer.js",
+      "sha256": "58d2e080b6607cd20b71e23bb57f76d09b8a3a381a1166b8629d55bd044268db"
+    },
+    {
+      "file": "housing.js",
+      "sha256": "924645a6e5a46e6ee7a07ac5394664d76deddf407f6cb8bc8b20aa65811137ff"
+    },
+    {
+      "file": "studio.js",
+      "sha256": "9e0071da9ada6a0bbe345beb250f0232917d331c9908586f036e6d2e9fb3bb71"
+    },
+    {
+      "file": "vendor/three.module.js",
+      "sha256": "c8211c69345d2e9949dc7a8ac969380497aa0600a5a8ac6a459c8cd02dd9cb8a"
+    },
+    {
+      "file": "vendor/three.core.js",
+      "sha256": "eb077d2417f61d3e6d9264c317cabc4ea35769ed6b0ab533067292a550784c20"
+    },
+    {
+      "file": "vendor/LICENSE",
+      "sha256": "bfe119ea4fd413f5f7ca3fcd63adb0c4a073ed39daa2fe7d3e6b769e21272601"
+    },
+    {
+      "file": "vendor/addons/geometries/RoundedBoxGeometry.js",
+      "sha256": "646b0bbc839c742e43f76023b3832269cea6b649743623b6bb5af6f1a1e512fa"
+    },
+    {
+      "file": "baked/abs-height.png",
+      "sha256": "328ca8d163071bf9e3c6a504ba4b05b172772fa10b9892e6196eee531914ffb8"
+    }
+  ]
+}

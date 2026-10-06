@@ -29,3 +29,6 @@ vibecoding-projects.runtime.json
 .transfer-storage/
 
 .graduation-review/
+
+# Participant photographs and private withdrawal credentials
+.clue-boxes-store/

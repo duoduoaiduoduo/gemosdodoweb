@@ -3,6 +3,7 @@ import {createGraduationEntry} from './server/graduation-entry.js';
 import {graduationEntryConfig} from './server/graduation-entry-config.js';
 import {createGraduationReview} from './server/graduation-review.js';
 import {graduationPublication} from './server/graduation-publication.js';
+import {createClueBoxes} from './server/clue-boxes.js';
 import {createTransfer} from './server/transfer.js';
 import {createGithubProfileCounter} from './server/github-profile-counter.js';
 import fs from 'fs';
@@ -46,6 +47,7 @@ app.use('/api/github-visitors.svg', createGithubProfileCounter(path.join(__dirna
 app.use('/api/transfer', createTransfer({root: path.join(__dirname, '.transfer-storage'), secret: RESOLVED_ADMIN_SECRET}).router);
 app.use('/api/graduation-entry', createGraduationEntry(graduationEntryConfig));
 app.use('/api/graduation-review', createGraduationReview(path.join(__dirname, '.graduation-review', 'annotations.json'), {publication:graduationPublication}));
+app.use('/api/clue-boxes', createClueBoxes({root:path.join(__dirname, '.clue-boxes-store')}));
 app.use(express.json({limit: `${Math.max(50, maxRequestMb)}mb`}));
 
 const visitorStatsFile = path.join(__dirname, 'visitor_stats.json');
