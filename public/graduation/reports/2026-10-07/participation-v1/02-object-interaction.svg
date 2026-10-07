@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<title>物体驱动的创作：看见照片、触碰线索、搬动盒子</title>
+<desc>概念草图。照片不是化学检测。研究逻辑和作品系统仍需用户研究及原型测试验证。</desc>
+<rect width="1600" height="900" fill="white"/>
+<text x="70" y="40" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">概念草图 · 开题阶段</text>
+<text x="70" y="82" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="44" font-weight="600" fill="#24493d">物体驱动的创作：看见照片、触碰线索、搬动盒子</text>
+<text x="70" y="146" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">交互构想示意（非界面截图）。尽量让物体和局部反馈说明操作，必要说明随行动出现。</text>
+<rect x="530" y="228" width="570" height="382" rx="30" fill="#f1ecf6" stroke="#a5b4ac" stroke-width="2"/>
+<rect x="565" y="262" width="500" height="278" rx="22" fill="#e3dee8" stroke="#a5b4ac" stroke-width="2"/>
+<text x="620" y="300" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="27" font-weight="600" fill="#24493d">个人照片重建的 Gaussian 场景</text>
+<rect x="795" y="390" width="130" height="70" rx="30" fill="#d9c2eb" stroke="#9c75b0" stroke-width="2"/>
+<text x="805" y="412" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#24493d">局部热点</text>
+<text x="598" y="500" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="20" font-weight="400" fill="#5d6c65">点一次：来源　再点：潜在影响　最后：减少释放</text>
+<rect x="554" y="608" width="520" height="65" rx="12" fill="#c9c2cf" stroke="#a5b4ac" stroke-width="2"/>
+<text x="710" y="629" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#24493d">键盘底座留在原位</text>
+<rect x="70" y="276" width="340" height="246" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="94" y="296" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">01</text>
+<text x="94" y="329" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">照片卡</text>
+<text x="94" y="384" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">点照片，更换自己的场景</text>
+<text x="94" y="417" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">确认适配，不强行关联</text>
+<polyline points="420,392 522,392" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="522.00,392.00 510.00,386.00 510.00,398.00" fill="#24493d"/>
+<rect x="1170" y="269" width="360" height="262" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="1194" y="289" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">02</text>
+<text x="1194" y="322" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">收藏托盘</text>
+<text x="1194" y="377" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">抓住独立盒子，放入托盘</text>
+<text x="1194" y="410" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">先存本机；公开需另行选择</text>
+<polyline points="1108,354 1162,354" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="1162.00,354.00 1150.00,348.00 1150.00,360.00" fill="#24493d"/>
+<text x="578" y="711" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="23" font-weight="400" fill="#5d6c65">屏幕抓取已有局部原型；实体抓取仍待制作与空间测试。</text>
+<text x="70" y="800" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="23" font-weight="400" fill="#5d6c65">发光和变色是科普的艺术演绎；颗粒大小、密度与颜色不表示实际污染物含量。</text>
+</svg>

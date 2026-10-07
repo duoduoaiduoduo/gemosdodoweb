@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<title>研究逻辑：个人创作如何延续科普参与</title>
+<desc>概念草图。照片不是化学检测。研究逻辑和作品系统仍需用户研究及原型测试验证。</desc>
+<rect width="1600" height="900" fill="white"/>
+<text x="70" y="40" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">概念草图 · 开题阶段</text>
+<text x="70" y="82" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="44" font-weight="600" fill="#24493d">研究逻辑：个人创作如何延续科普参与</text>
+<text x="70" y="146" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">设计假设：个人意义与美感支持参与；理解质量、自愿分享与再创作需分别收集证据。</text>
+<rect x="70" y="235" width="320" height="240" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="94" y="255" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">01</text>
+<text x="94" y="288" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">生活照片入口</text>
+<text x="94" y="343" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">筛选可讨论的场景</text>
+<text x="94" y="376" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">核对材料与关联条件</text>
+<rect x="450" y="235" width="320" height="240" rx="10" fill="#f2f5f2" stroke="#a5b4ac" stroke-width="2"/>
+<text x="474" y="255" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">02</text>
+<text x="474" y="288" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">艺术化参与</text>
+<text x="474" y="343" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">Gaussian 保留个人场景</text>
+<text x="474" y="376" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">点热点、抓盒子少菜单</text>
+<rect x="830" y="235" width="320" height="240" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="854" y="255" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">03</text>
+<text x="854" y="288" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">科普内容转译</text>
+<text x="854" y="343" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">来源 → 潜在环境影响</text>
+<text x="854" y="376" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">→ 减少释放；保留出处</text>
+<rect x="1210" y="235" width="320" height="240" rx="10" fill="#f2f5f2" stroke="#a5b4ac" stroke-width="2"/>
+<text x="1234" y="255" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">04</text>
+<text x="1234" y="288" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">作品与方法延续</text>
+<text x="1234" y="343" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">艺术卡、二维码、公共库</text>
+<text x="1234" y="376" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">Skill 规则邀请再创作</text>
+<polyline points="398,355 442,355" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="442.00,355.00 430.00,349.00 430.00,361.00" fill="#24493d"/>
+<polyline points="778,355 822,355" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="822.00,355.00 810.00,349.00 810.00,361.00" fill="#24493d"/>
+<polyline points="1158,355 1202,355" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="1202.00,355.00 1190.00,349.00 1190.00,361.00" fill="#24493d"/>
+<rect x="70" y="540" width="1460" height="223" rx="10" fill="#f2f5f2" stroke="#a5b4ac" stroke-width="2"/>
+<text x="95" y="565" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="600" fill="#24493d">问题 → 策略 → 作品 → 证据 → 修订</text>
+<text x="95" y="620" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#24493d">RQ1 个人照片与适配</text>
+<text x="470" y="620" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">照片访谈、场景条件、参与理由与作品个人意义</text>
+<text x="95" y="662" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#24493d">RQ2 少 UI 与空间叙事</text>
+<text x="470" y="662" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">首次操作、三步解释、来源条件和示意／检测区分</text>
+<text x="95" y="704" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#24493d">RQ3 分享与复用</text>
+<text x="470" y="704" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">真实自愿分享、独立接收者理解、Skill 再创作过程</text>
+<text x="70" y="800" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="23" font-weight="400" fill="#5d6c65">评价互不替代：好看 ≠ 理解正确；想分享 ≠ 实际分享；公共作品档案 ≠ 污染监测数据。</text>
+</svg>

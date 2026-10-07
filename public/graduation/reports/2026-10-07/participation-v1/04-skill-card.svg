@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<title>Skill 与卡片：既保留个人风格，也保留科普条件</title>
+<desc>概念草图。照片不是化学检测。研究逻辑和作品系统仍需用户研究及原型测试验证。</desc>
+<rect width="1600" height="900" fill="white"/>
+<text x="70" y="40" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">概念草图 · 开题阶段</text>
+<text x="70" y="82" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="44" font-weight="600" fill="#24493d">Skill 与卡片：既保留个人风格，也保留科普条件</text>
+<text x="70" y="146" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">拟把创作与核验流程封装为 Agent Skill；模板是其中的资源，规则包及复用效果待研究。</text>
+<rect x="70" y="220" width="435" height="543" rx="10" fill="#f2f5f2" stroke="#a5b4ac" stroke-width="2"/>
+<text x="94" y="240" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">规则包（拟制作）</text>
+<text x="94" y="273" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">同一方法处理不同照片</text>
+<text x="94" y="328" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">① 适配：场景范围、未知与退出</text>
+<text x="94" y="361" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">② 内容：核验来源与成立条件</text>
+<text x="94" y="394" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">③ 空间：重建、热点与三步节奏</text>
+<text x="94" y="427" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">④ 风格：构图、色彩、个性参数</text>
+<text x="94" y="460" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">⑤ 输出：卡片、入口和公开范围</text>
+<text x="94" y="493" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">规则和科学内容均保留版本。</text>
+<polyline points="515,460 580,460" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="580.00,460.00 568.00,454.00 568.00,466.00" fill="#24493d"/>
+<rect x="590" y="221" width="480" height="542" rx="20" fill="#f1ecf6" stroke="#a5b4ac" stroke-width="2"/>
+<text x="625" y="246" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="29" font-weight="600" fill="#24493d">个人艺术卡（结构示意）</text>
+<rect x="625" y="307" width="155" height="127" rx="10" fill="#ddd7cb" stroke="#a5b4ac" stroke-width="2"/>
+<text x="647" y="352" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="400" fill="#23332e">原照片</text>
+<rect x="812" y="307" width="223" height="243" rx="10" fill="#d8c7e6" stroke="#a5b4ac" stroke-width="2"/>
+<text x="847" y="412" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="400" fill="#23332e">个人盒子</text>
+<text x="625" y="591" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="23" font-weight="400" fill="#24493d">一条知识＋成立条件＋艺术演绎说明</text>
+<text x="625" y="633" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="23" font-weight="400" fill="#5d6c65">原文出处与作品回看入口</text>
+<rect x="925" y="675" width="93" height="63" rx="10" fill="#ded4e7" stroke="#a5b4ac" stroke-width="2"/>
+<text x="939" y="693" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="20" font-weight="400" fill="#24493d">二维码</text>
+<polyline points="1080,460 1140,460" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="1140.00,460.00 1128.00,454.00 1128.00,466.00" fill="#24493d"/>
+<rect x="1150" y="220" width="380" height="241" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="1174" y="240" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">卡片接收</text>
+<text x="1174" y="273" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">保留解释</text>
+<text x="1174" y="328" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">不扫描也能看到关键条件</text>
+<text x="1174" y="361" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">扫码查看完整作品和出处</text>
+<rect x="1150" y="522" width="380" height="241" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="1174" y="542" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">再次创作</text>
+<text x="1174" y="575" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">邀请与验证</text>
+<text x="1174" y="630" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">替换个人照片，依规则创作</text>
+<text x="1174" y="663" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">误配、断点与改动均记录</text>
+<text x="70" y="800" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="23" font-weight="400" fill="#5d6c65">首个验证单元：合成纤维衣物洗涤。新照片可变，未经核验的科学结论不能随意生成。</text>
+</svg>
