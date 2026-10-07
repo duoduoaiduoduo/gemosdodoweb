@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#24212d">
   <title>日常线索 / DAILY TRACES · 交互草图</title>
-  <link rel="stylesheet" href="style.css?v=app-ui-20261006">
+  <link rel="stylesheet" href="style.css?v=splat-objects-20261007">
 </head>
 <body data-space="workshop" data-story-open="false">
 <main id="app-shell">
@@ -21,8 +21,8 @@
   <section id="workshop-view" class="scene-view" aria-label="个人盒子创作空间">
     <div class="experience">
       <div class="object">
-        <div id="stage" role="img" aria-label="拖动旋转的三维盒子与局部粒子演绎"></div>
-        <div class="object-label"><span class="example-badge">洗衣示例</span><span id="render-kind">照片粒子 · 创作草图</span></div>
+        <div id="stage" role="application" tabindex="0" aria-label="三维创作空间。点照片换图，点发光位置看线索，拖盒子到收藏托盘。键盘操作可从说明开启。"></div>
+        <div class="object-label"><span class="example-badge">洗衣示例</span><span id="render-kind">正在装入高斯场景…</span></div>
         <div class="view-tools glass" aria-label="主舞台工具">
           <button id="open-current-card" type="button" disabled aria-haspopup="dialog" aria-controls="card-section">我的卡片</button>
           <button id="view-reset" type="button" aria-label="复位三维视角">复位</button>
@@ -39,13 +39,13 @@
           <div class="story-links"><a id="story-source" target="_blank" rel="noopener noreferrer">查看依据 ↗</a></div>
           <p class="story-note">合成纤维条件示例 · 艺术演绎</p>
         </article>
-        <div class="story-actions"><button id="next-step" type="button">下一步 <span aria-hidden="true">→</span></button><small>在下方切换三步</small></div>
+        <div class="story-actions"><button id="next-step" type="button">下一步 <span aria-hidden="true">→</span></button><small>再点发光位置继续</small><button id="close-story" type="button" aria-label="收起科普内容">×</button></div>
       </aside>
 
-      <div class="hud-message"><p id="hud-hint" role="status">拖动旋转，靠近你的盒子。</p><span id="stage-hint">拖动旋转 · 滚轮缩放</span></div>
+      <div class="hud-message"><p id="hud-hint" role="status">点一下盒子里发光的位置。</p><span id="stage-hint">拖空白处转动 · 捏合缩放</span></div>
       <p id="action-status" class="assistive-status" role="status"></p>
 
-      <div class="creation-dock glass" aria-label="创作操作">
+      <div class="creation-dock glass" aria-label="备用创作操作">
         <button id="open-photo-tools" class="dock-action" type="button" aria-haspopup="dialog" aria-controls="photo-dialog">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg><span>换照片</span>
         </button>
@@ -87,17 +87,27 @@
       <div class="photo-layout">
         <div class="photo-preview-area">
           <button id="photo-pick" type="button" aria-label="预览与更换照片，点击画面标记热点">
-            <span class="photo-surface"><img id="photo-preview" src="laundry.svg" alt="洗衣场景示意，可点击图中位置标记热点"><span id="hotspot-marker" class="hotspot-marker" aria-hidden="true" style="left:32%;top:66%"></span></span>
+            <span class="photo-surface"><img id="photo-preview" src="sample/photo.jpg" alt="洗衣房示例，可点击图中位置标记热点"><span id="hotspot-marker" class="hotspot-marker" aria-hidden="true" style="left:66%;top:63%"></span></span>
             <span class="photo-pick-footer"><strong>＋ 更换照片</strong><small>JPG · PNG · WebP</small></span>
           </button>
           <p class="field-hint">点画面标记热点，点下方更换照片。</p>
           <input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <input id="still-input" type="file" accept=".still" hidden>
         </div>
         <div class="photo-fields">
-          <label class="field" for="box-name"><span>盒子名称</span><input id="box-name" value="洗衣日的一条线索" maxlength="48" autocomplete="off"></label>
           <label class="field" for="scene-kind"><span>场景类型</span><select id="scene-kind"><option value="laundry">洗衣机 / 衣物 / 洗衣场景</option><option value="portrait">纯人脸或特写自拍</option><option value="other">其他日常场景</option></select></label>
-          <div class="hotspot-tools"><label for="hotspot-radius">热点范围 <output id="radius-value">22%</output></label><input id="hotspot-radius" type="range" min="0.08" max="0.4" step="0.01" value="0.22"></div>
+          <p class="field-hint">先由你确认场景，再重建空间。照片不能检测污染物。</p>
+          <button id="build-scene" class="primary" type="button">把照片放进盒子</button>
+          <p id="model-notice" class="status" role="status"></p>
+          <progress id="build-progress" max="1" value="0" hidden></progress>
+          <button id="cancel-build" type="button" hidden>取消制作</button>
           <p id="scene-status" class="status" role="status">示例已就绪。可以在照片中选择一个局部。</p>
+          <details class="photo-options"><summary>名称、热点与导入</summary>
+            <label class="field" for="box-name"><span>盒子名称</span><input id="box-name" value="洗衣房的一条线索" maxlength="48" autocomplete="off"></label>
+            <div class="hotspot-tools"><label for="hotspot-radius">热点范围 <output id="radius-value">18%</output></label><input id="hotspot-radius" type="range" min="0.08" max="0.4" step="0.01" value="0.18"></div>
+            <label class="field" for="reconstruction-mode"><span>制作方式</span><select id="reconstruction-mode"><option value="auto">自动选择</option><option value="desktop">电脑 GPU · 高细节</option><option value="lite">CPU · 轻量细节</option></select></label>
+            <button id="import-still" type="button">导入已有 .still 盒子</button>
+          </details>
         </div>
       </div>
       <div class="dialog-bottom"><span>从一个生活细节开始。</span><button type="button" class="primary" data-close-dialog="photo-dialog">回到盒子 <span aria-hidden="true">↗</span></button></div>
@@ -109,8 +119,8 @@
     <div class="dialog-body">
       <div class="card-layout">
         <div class="card-preview"><canvas id="art-card" width="1000" height="1400" aria-label="照片、个人盒子与二维码构成的艺术卡片"></canvas></div>
-        <div class="card-tools"><p class="card-intro">把这一张日常带走。</p><button id="download-card" type="button" class="primary">保存卡片 PNG <span aria-hidden="true">↓</span></button>
-          <div class="publish"><label><input id="public-consent" type="checkbox"><span>愿意公开这张照片与盒子</span></label><button id="publish-box" type="button">加入共同收藏 <span aria-hidden="true">↗</span></button><p id="publish-status" class="status" role="status"></p><button id="remove-public" class="quiet-button" type="button" hidden>撤回我的公开盒子</button></div>
+        <div class="card-tools"><p class="card-intro">把这一张日常带走。</p><button id="download-card" type="button" class="primary">保存卡片 PNG <span aria-hidden="true">↓</span></button><button id="download-still" type="button">保存 3D 盒子 .still</button>
+          <div class="publish"><label><input id="public-consent" type="checkbox"><span>愿意公开这张照片、3D 场景与盒子</span></label><button id="publish-box" type="button">加入共同收藏 <span aria-hidden="true">↗</span></button><p id="publish-status" class="status" role="status"></p><button id="remove-public" class="quiet-button" type="button" hidden>撤回我的公开盒子</button></div>
         </div>
       </div>
     </div>
@@ -119,15 +129,17 @@
   <dialog id="about-dialog" class="app-dialog about-dialog" aria-labelledby="about-dialog-title">
     <header class="dialog-header"><div><span class="eyebrow">ABOUT THIS SKETCH</span><h2 id="about-dialog-title">实现与依据</h2></div><button class="dialog-close" type="button" data-close-dialog="about-dialog" aria-label="关闭实现说明">×</button></header>
     <div class="dialog-body implementation">
-      <section><h3>这份草图</h3><p>这是独立的新作品体验草图，沿用 Gemos Still 的电脑造型与 Three.js 视觉基础。当前将照片采样为带艺术深度的点阵，供局部粒子、三步叙事与抓取归档讨论；没有运行 AI 自动筛选、主题关联或 SHARP 重建。场景由人确认，热点由你点击标注。</p></section>
+      <section><h3>怎么玩</h3><p>点左边的照片换成你的场景，点盒子里的发光位置看三步线索；拖动盒子，放到右边的收藏托盘。点收藏柜，看看大家留下的日常。拖空白处转动，捏合或滚轮缩放。</p><button id="open-controls" type="button">显示备用按钮 / 键盘操作</button></section>
+      <section><h3>真实高斯重建</h3><p>这是沿用 Gemos Still 底座的独立作品。盒内使用三维位置、协方差与透明度渲染各向异性高斯；你的照片可通过 SHARP 在当前设备重建。首次制作需要下载模型，确认前不下载；轻量版本约 809 MB，电脑高细节版本约 1.32 GB，完成后可在支持缓存的浏览器复用。CPU 制作可能需要数分钟。场景类型暂由人确认，尚未实现 AI 自动关联新污染物。</p><p>单张照片的三维是模型估计，背面与遮挡处可能失真。你可以导入原作品的 .still 盒子；不会改动原作。</p></section>
       <section><h3>怎样理解这些线索</h3><p>照片提供场景关联，发光、变色与湍流属于艺术演绎。共同收藏是参与线索与作品的艺术档案，不能用于判断污染物实际分布、浓度、暴露程度或个人健康风险。洗衣是当前演示内容，其他场景的依据与视觉语言还需要设计。</p><p>微纤维包括塑料与非塑料纤维；这里仅在合成纤维衣物条件下讨论微塑料纤维。</p><div class="source-links"><a href="https://pubmed.ncbi.nlm.nih.gov/27686821/" target="_blank" rel="noopener noreferrer">纤维释放研究 ↗</a><a href="https://pubmed.ncbi.nlm.nih.gov/27191224/" target="_blank" rel="noopener noreferrer">废水处理研究 ↗</a><a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0233332" target="_blank" rel="noopener noreferrer">洗涤条件研究 ↗</a></div></section>
-      <section><h3>收藏与分享</h3><p>本机收藏保存在当前浏览器。公开收藏由你主动勾选并发布，网站保存照片、热点与盒子记录；公开卡片的二维码可以跨设备回看这条记录。本机卡片的二维码指向创作入口，不能跨设备找回尚未公开的作品。</p><p>原型没有账号系统。撤回凭证保存在创建时的浏览器；请保留该浏览器数据。公开展示撤回后，本机收藏仍会保留。</p></section>
+      <section><h3>收藏与分享</h3><p>本机收藏保存照片、热点与完整高斯模型。主动勾选发布后，网站也保存这些内容，二维码可以跨设备回看三维盒子。共同收藏里的远景用照片缩略图节省性能，打开盒子后加载完整模型。旧版只有照片的记录会明确显示为照片，需重新制作三维。</p><p>原型没有账号系统。撤回凭证保存在创建时的浏览器；请保留该浏览器数据。公开展示撤回后，本机收藏仍会保留。本机卡片二维码指向创作入口；导出的 .still 文件可以保留完整三维。</p></section>
       <section><h3>视觉与组件</h3><p>模型和渲染素材来自本独立目录中的 Gemos Still 视觉底座。Three.js 与二维码组件 qrcode-generator 使用 MIT 许可。Skill 的视觉生成规则与传播方法仍待制作。</p></section>
+      <section><h3>示例照片</h3><p>洗衣房照片由 Eden Aviv 拍摄，以 <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener noreferrer">CC0</a> 提供；本版缩小照片并用 SHARP 重建高斯模型。<a href="https://commons.wikimedia.org/wiki/File:Laundry_room_in_apartment_building.png" target="_blank" rel="noopener noreferrer">照片来源 ↗</a>。洗衣机的发光位置由设计者标记，仅表示科普关联。</p></section>
       <a class="back-to-plan" href="/graduation/research?view=idea">回到作品构想 <span aria-hidden="true">↗</span></a>
     </div>
   </dialog>
 </main>
 <script src="vendor/qrcode.js"></script>
-<script type="module" src="app.js?v=app-ui-20261006"></script>
+<script type="module" src="app.js?v=splat-objects-20261007"></script>
 </body>
 </html>

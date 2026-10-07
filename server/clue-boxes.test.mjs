@@ -42,6 +42,21 @@ const erase = (base, id, token, extra = {}) => fetch(`${base}/boxes/${id}`, {
   method: 'DELETE', headers: token ? {Authorization: `Bearer ${token}`} : {}, ...extra,
 });
 
+function gaussianBytes(count = 3) {
+  const bytes = Buffer.alloc(count * 64);
+  for (let i = 0; i < count; i++) {
+    const values = [(i % 10) * 0.1, -0.2, 0.3, 0.7, 0.01, 0.002, 0.001, 0.02,
+      0.003, 0.03, 1, 0.25, 0.1, 0.2, 0.3, 0.75];
+    values.forEach((value, slot) => bytes.writeFloatLE(value, i * 64 + slot * 4));
+  }
+  return bytes;
+}
+
+const upload = (base, id, token, bytes = gaussianBytes(), headers = {}) => fetch(`${base}/boxes/${id}/model`, {
+  method: 'POST', headers: {'Content-Type': 'application/octet-stream',
+    'X-Reconstruction-Method': 'sharp-webgpu', ...(token ? {Authorization: `Bearer ${token}`} : {}), ...headers}, body: bytes,
+});
+
 test('public boxes persist across a router restart, serve JPEGs, and expose only fixed topic content', async t => {
   const app = await setup(t);
   const response = await post(app.base, body({id: '../../outside', title: '伪造科学结论', source: 'javascript:alert(1)', html: '<script>bad</script>'}));
@@ -242,4 +257,185 @@ test('a failed atomic commit leaves no public or partially stored box and can be
     assert.deepEqual(await (await fetch(`${app.base}/boxes`)).json(), {boxes: [], total: 0});
   } finally { rename.mock.restore(); }
   assert.equal((await post(app.base, body())).status, 201);
+});
+
+test('real Gaussian models persist with method and camera UV, while JPEG-only legacy records remain photos', async t => {
+  const app = await setup(t);
+  const created = await (await post(app.base, body())).json();
+  const id = created.box.id;
+  const record = path.join(app.root, id, 'box.json');
+  const legacy = JSON.parse(fs.readFileSync(record, 'utf8'));
+  delete legacy.photoSha256;
+  fs.writeFileSync(record, JSON.stringify(legacy));
+  const before = await (await fetch(`${app.base}/boxes/${id}`)).json();
+  for (const key of ['modelUrl', 'modelMethod', 'gaussianCount', 'modelHasPhotoUV']) assert.ok(!(key in before.box));
+  assert.equal((await fetch(`${app.base}/boxes/${id}/model`)).status, 404);
+  const bytes = gaussianBytes();
+  const response = await upload(app.base, id, created.deleteToken, bytes, {
+    'X-Reconstruction-Method': 'sharp-native', 'X-Model-Photo-UV': '1',
+  });
+  assert.equal(response.status, 201);
+  const saved = await response.json();
+  assert.equal(saved.box.modelUrl, `/api/clue-boxes/boxes/${id}/model`);
+  assert.equal(saved.box.modelMethod, 'sharp-native');
+  assert.equal(saved.box.gaussianCount, 3);
+  assert.equal(saved.box.modelHasPhotoUV, true);
+  assert.deepEqual(saved.box.hotspot, created.box.hotspot);
+  const privateBox = JSON.parse(fs.readFileSync(record, 'utf8'));
+  assert.equal(privateBox.model.format, 'memorygs-f32le-v1');
+  assert.equal(privateBox.model.photoSha256, crypto.createHash('sha256').update(Buffer.from(JPEG, 'base64')).digest('hex'));
+  assert.equal(privateBox.model.photoSha256, privateBox.photoSha256);
+  assert.equal(privateBox.deleteTokenHash, legacy.deleteTokenHash);
+  const restarted = await start(app.root);
+  try {
+    const list = await (await fetch(`${restarted.base}/boxes`)).json();
+    assert.deepEqual(list.boxes, [saved.box]);
+    const raw = JSON.stringify(list);
+    for (const hidden of [created.deleteToken, privateBox.deleteTokenHash, privateBox.model.sha256, privateBox.photoSha256]) assert.ok(!raw.includes(hidden));
+    const model = await fetch(`${restarted.origin}${saved.box.modelUrl}`);
+    assert.equal(model.headers.get('content-type'), 'application/octet-stream');
+    assert.equal(model.headers.get('x-model-photo-uv'), '1');
+    assert.equal(model.headers.get('x-gaussian-count'), '3');
+    assert.deepEqual(Buffer.from(await model.arrayBuffer()), bytes);
+    assert.equal((await upload(restarted.base, id, created.deleteToken, bytes, {
+      'X-Reconstruction-Method': 'sharp-native', 'X-Model-Photo-UV': '1',
+    })).status, 200);
+    const different = gaussianBytes(); different.writeFloatLE(0.8, 3 * 4);
+    assert.equal((await upload(restarted.base, id, created.deleteToken, different)).status, 409);
+    assert.equal((await erase(restarted.base, id, created.deleteToken)).status, 200);
+    assert.deepEqual(fs.readdirSync(app.root), []);
+    assert.equal((await fetch(`${restarted.base}/boxes/${id}/model`)).status, 404);
+  } finally { await restarted.close(); }
+});
+
+test('model uploads require the current owner, a supported method, and a binary content type', async t => {
+  const app = await setup(t);
+  const created = await (await post(app.base, body())).json();
+  const id = created.box.id, owner = created.deleteToken;
+  assert.equal((await upload(app.base, id, undefined)).status, 403);
+  assert.equal((await upload(app.base, id, crypto.randomBytes(32).toString('base64url'))).status, 403);
+  assert.equal((await upload(app.base, id, owner, gaussianBytes(), {'X-Reconstruction-Method': 'fake-depth'})).status, 400);
+  assert.equal((await upload(app.base, id, owner, gaussianBytes(), {'X-Model-Photo-UV': 'true'})).status, 400);
+  assert.equal((await upload(app.base, id, owner, gaussianBytes(), {'Content-Type': 'text/plain'})).status, 415);
+  assert.equal((await upload(app.base, id, owner, Buffer.alloc(0))).status, 400);
+  assert.equal((await upload(app.base, crypto.randomUUID(), owner)).status, 404);
+  assert.equal((await upload(app.base, '..%2Foutside', owner)).status, 400);
+  assert.deepEqual(fs.readdirSync(path.join(app.root, id)).sort(), ['box.json', 'photo.jpg']);
+  for (const method of ['sharp-webgpu', 'sharp-lite-wasm', 'sharp-native', 'imported-still']) {
+    const fresh = await (await post(app.base, body())).json();
+    const response = await upload(app.base, fresh.box.id, fresh.deleteToken, gaussianBytes(), {'X-Reconstruction-Method': method});
+    assert.equal(response.status, 201);
+    assert.equal((await response.json()).box.modelHasPhotoUV, false);
+  }
+});
+
+test('models validate all finite values, position, alpha, RGB, covariance PSD, stride and declared UV', async t => {
+  const app = await setup(t);
+  const created = await (await post(app.base, body())).json();
+  const invalid = [Buffer.alloc(1), Buffer.alloc(63), Buffer.alloc(65)];
+  for (const [slot, value] of [[0, NaN], [2, Infinity], [0, 1001], [3, -0.01], [3, 1.01],
+    [4, -0.01], [9, 10001], [12, -0.01], [14, 1.01], [10, NaN], [11, NaN], [15, Infinity]]) {
+    const bytes = gaussianBytes(); bytes.writeFloatLE(value, slot * 4); invalid.push(bytes);
+  }
+  const badPair = gaussianBytes(); badPair.writeFloatLE(1, 5 * 4); invalid.push(badPair);
+  // Nonnegative diagonals and 2x2 minors alone do not prove 3x3 PSD.
+  const badDeterminant = gaussianBytes();
+  for (const [slot, value] of [[4, 1], [7, 1], [9, 1], [5, 0.9], [6, 0.9], [8, -0.9]]) badDeterminant.writeFloatLE(value, slot * 4);
+  invalid.push(badDeterminant);
+  const zeroDiagonal = gaussianBytes(); zeroDiagonal.writeFloatLE(0, 4 * 4); invalid.push(zeroDiagonal);
+  for (const bytes of invalid) assert.equal((await upload(app.base, created.box.id, created.deleteToken, bytes)).status, 400);
+  for (const [slot, value] of [[11, -0.01], [11, 1.01], [15, -0.01], [15, 1.01]]) {
+    const bytes = gaussianBytes(); bytes.writeFloatLE(value, slot * 4);
+    assert.equal((await upload(app.base, created.box.id, created.deleteToken, bytes, {'X-Model-Photo-UV': '1'})).status, 400);
+  }
+  const box = await (await fetch(`${app.base}/boxes/${created.box.id}`)).json();
+  assert.ok(!('modelUrl' in box.box));
+  assert.deepEqual(fs.readdirSync(path.join(app.root, created.box.id)).sort(), ['box.json', 'photo.jpg']);
+  assert.equal((await upload(app.base, created.box.id, created.deleteToken, gaussianBytes(), {'X-Model-Photo-UV': '1'})).status, 201);
+});
+
+test('a failed model metadata commit rolls back binary files, preserves photo/owner, and allows retry', async t => {
+  const app = await setup(t);
+  const created = await (await post(app.base, body())).json();
+  const dir = path.join(app.root, created.box.id);
+  const original = fs.readFileSync(path.join(dir, 'box.json'));
+  const renameSync = fs.renameSync;
+  const rename = t.mock.method(fs, 'renameSync', (from, to) => {
+    if (path.basename(from).startsWith('.box-')) throw Object.assign(new Error('simulated model metadata failure'), {code: 'EIO'});
+    return renameSync(from, to);
+  });
+  try {
+    assert.equal((await upload(app.base, created.box.id, created.deleteToken)).status, 500);
+    assert.deepEqual(fs.readFileSync(path.join(dir, 'box.json')), original);
+    assert.deepEqual(fs.readFileSync(path.join(dir, 'photo.jpg')), Buffer.from(JPEG, 'base64'));
+    assert.deepEqual(fs.readdirSync(dir).sort(), ['box.json', 'photo.jpg']);
+    assert.equal((await fetch(`${app.base}/boxes/${created.box.id}/model`)).status, 404);
+  } finally { rename.mock.restore(); }
+  assert.equal((await upload(app.base, created.box.id, created.deleteToken)).status, 201);
+  assert.equal((await erase(app.base, created.box.id, created.deleteToken)).status, 200);
+});
+
+test('model quota includes binary and staging metadata, with restart-safe orphan recovery', async t => {
+  const app = await setup(t);
+  const created = await (await post(app.base, body())).json();
+  const dir = path.join(app.root, created.box.id), bytes = gaussianBytes();
+  const privateBytes = fs.readdirSync(dir).reduce((sum, name) => sum + fs.statSync(path.join(dir, name)).size, 0);
+  const stale = path.join(app.root, `.pending-${crypto.randomUUID()}`);
+  fs.mkdirSync(stale);
+  const padding = path.join(stale, 'model.memorygs'); fs.writeFileSync(padding, '');
+  fs.truncateSync(padding, 600 * 1024 * 1024 - privateBytes - bytes.length);
+  assert.equal((await upload(app.base, created.box.id, created.deleteToken, bytes)).status, 507);
+  assert.deepEqual(fs.readdirSync(dir).sort(), ['box.json', 'photo.jpg']);
+  fs.rmSync(stale, {recursive: true});
+  // A process crash can leave a fully written model before box.json switches.
+  const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+  fs.writeFileSync(path.join(dir, `model-${digest}.memorygs`), bytes);
+  const restarted = await start(app.root);
+  try {
+    assert.equal((await fetch(`${restarted.base}/boxes/${created.box.id}/model`)).status, 404);
+    assert.equal((await upload(restarted.base, created.box.id, created.deleteToken, bytes)).status, 201);
+    assert.equal(fs.readdirSync(dir).filter(name => name.endsWith('.memorygs')).length, 1);
+    const stored = JSON.parse(fs.readFileSync(path.join(dir, 'box.json'), 'utf8'));
+    assert.equal(stored.model.byteLength, bytes.length);
+    assert.equal(stored.model.count, 3);
+    assert.deepEqual(Buffer.from(await (await fetch(`${restarted.base}/boxes/${created.box.id}/model`)).arrayBuffer()), bytes);
+  } finally { await restarted.close(); }
+});
+
+test('model symlinks and photo/model tampering cannot be served, and owner deletion does not follow links', async t => {
+  const app = await setup(t);
+  const created = await (await post(app.base, body())).json();
+  const id = created.box.id, dir = path.join(app.root, id), bytes = gaussianBytes();
+  assert.equal((await upload(app.base, id, created.deleteToken, bytes)).status, 201);
+  const stored = JSON.parse(fs.readFileSync(path.join(dir, 'box.json'), 'utf8'));
+  const file = path.join(dir, stored.model.file);
+  const corrupted = Buffer.from(bytes); corrupted.writeFloatLE(0.5, 3 * 4);
+  fs.writeFileSync(file, corrupted);
+  assert.equal((await fetch(`${app.base}/boxes/${id}/model`)).status, 404);
+  fs.writeFileSync(file, bytes);
+  const photoFile = path.join(dir, 'photo.jpg');
+  const changedPhoto = Buffer.from(JPEG, 'base64'); changedPhoto[40] ^= 1;
+  fs.writeFileSync(photoFile, changedPhoto);
+  assert.equal((await fetch(`${app.base}/boxes/${id}/model`)).status, 404);
+  fs.writeFileSync(photoFile, Buffer.from(JPEG, 'base64'));
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'clue-model-outside-'));
+  t.after(() => fs.rmSync(outside, {recursive: true, force: true}));
+  const target = path.join(outside, 'model.memorygs'); fs.writeFileSync(target, bytes);
+  fs.unlinkSync(file); fs.symlinkSync(target, file);
+  assert.equal((await fetch(`${app.base}/boxes/${id}/model`)).status, 404);
+  assert.ok(!('modelUrl' in (await (await fetch(`${app.base}/boxes/${id}`)).json()).box));
+  assert.equal((await upload(app.base, id, created.deleteToken, bytes)).status, 409);
+  assert.equal((await erase(app.base, id, created.deleteToken)).status, 200);
+  assert.deepEqual(fs.readFileSync(target), bytes);
+});
+
+test('binary model size accepts 32 MiB exactly and rejects the next point before saving', async t => {
+  const app = await setup(t);
+  const created = await (await post(app.base, body())).json();
+  const max = 32 * 1024 * 1024;
+  assert.equal((await upload(app.base, created.box.id, created.deleteToken, Buffer.alloc(max + 64))).status, 413);
+  assert.ok(!('modelUrl' in (await (await fetch(`${app.base}/boxes/${created.box.id}`)).json()).box));
+  const response = await upload(app.base, created.box.id, created.deleteToken, gaussianBytes(max / 64));
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).box.gaussianCount, max / 64);
 });

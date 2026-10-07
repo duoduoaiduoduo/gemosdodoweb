@@ -150,3 +150,42 @@ button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.5
 
 body[data-story-open="false"] .story-tabs{display:none}
 @media(max-width:700px){body[data-story-open="false"] .hud-message{bottom:calc(103px + env(safe-area-inset-bottom,0px))}}
+
+/* Objects carry the main interaction. Controls remain reachable by keyboard
+   and can be made visible explicitly from the small help menu. */
+body[data-space="workshop"] .space-switch{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+body[data-space="workshop"] .space-switch:focus-within{position:static;width:auto;height:auto;overflow:visible;clip-path:none}
+.view-tools,.creation-dock{width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);border:0;box-shadow:none}
+.view-tools:focus-within,.creation-dock:focus-within,body[data-controls-open="true"] .view-tools,body[data-controls-open="true"] .creation-dock{width:auto;height:auto;padding:10px 12px;overflow:visible;clip-path:none;border:1px solid var(--line)}
+body[data-controls-open="true"][data-space="workshop"] .space-switch{position:static;width:auto;height:auto;clip-path:none;overflow:visible}
+.object-label{opacity:.6;font-size:9px;pointer-events:none}
+.example-badge{display:none}
+.about-button{font-size:11px;background:transparent;border-color:transparent;box-shadow:none;backdrop-filter:none}
+.hud-message,body[data-story-open="false"] .hud-message{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+#stage-hint{opacity:.5}
+body[data-controls-open="true"] .hud-message{bottom:calc(112px + env(safe-area-inset-bottom,0px))}
+.story-panel{top:auto;bottom:calc(82px + env(safe-area-inset-bottom,0px));max-height:min(350px,calc(100dvh - 210px));background:#2b2539d9}
+#close-story{font-size:20px;padding:0 7px;min-width:32px;margin-left:auto}
+.collection-tray{background:#2b25394d;box-shadow:none;max-width:560px}
+.collection-head{top:calc(96px + env(safe-area-inset-top,0px))}
+.photo-options{margin-top:20px;border-top:1px solid #86699116;padding-top:12px;color:var(--dialog-muted);font-size:11px}
+.photo-options summary{cursor:pointer;margin-bottom:12px}
+.photo-options .field{margin-top:14px}
+.photo-options button{margin-top:14px}
+#build-scene{width:100%;margin-top:20px;white-space:normal}
+#model-notice{font-size:10px;margin-top:10px}
+#build-progress{width:100%;height:5px;margin-top:14px;accent-color:#a27fc2}
+#cancel-build{margin-top:10px;font-size:11px}
+#download-still{margin-top:10px;font-size:11px}
+@media(max-width:700px){
+ .app-topbar{top:calc(14px + env(safe-area-inset-top,0px));left:20px;right:20px}
+ .story-panel{bottom:calc(90px + env(safe-area-inset-bottom,0px));max-height:min(290px,calc(100dvh - 220px));width:min(315px,calc(100% - 32px));right:16px}
+ .hud-message,body[data-story-open="false"] .hud-message{bottom:calc(24px + env(safe-area-inset-bottom,0px));width:calc(100% - 38px)}
+ #hud-hint{font-size:11px}
+ body[data-controls-open="true"] .hud-message{bottom:calc(160px + env(safe-area-inset-bottom,0px))}
+ .collection-head{top:calc(83px + env(safe-area-inset-top,0px))}
+ .collection-tray{padding:9px 10px}
+ .collection-box{width:74px}
+ .collection-box img{height:44px}
+ .collective-caption{bottom:calc(142px + env(safe-area-inset-bottom,0px))}
+}

@@ -4,6 +4,10 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 
 const MAX_PHOTO_BYTES = 600 * 1024;
+const MAX_MODEL_BYTES = 32 * 1024 * 1024;
+const MODEL_STRIDE = 64;
+const MODEL_FORMAT = 'memorygs-f32le-v1';
+const MODEL_METHODS = new Set(['sharp-webgpu', 'sharp-lite-wasm', 'sharp-native', 'imported-still']);
 const MAX_BOXES = 1000;
 const MAX_STORE_BYTES = 600 * 1024 * 1024;
 const CREATE_WINDOW_MS = 60 * 60 * 1000;
@@ -21,6 +25,7 @@ const SOURCE = Object.freeze({
   url: 'https://doi.org/10.1016/j.marpolbul.2016.09.025',
 });
 const hashToken = token => crypto.createHash('sha256').update(token).digest();
+const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const coordinate = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
 const plainName = value => typeof value === 'string' && value.trim().length > 0
   && Array.from(value).length <= 48 && !/[\p{Cc}\p{Cf}<>]/u.test(value);
@@ -109,6 +114,40 @@ function decodePhoto(value) {
   return {bytes, ...jpegDimensions(bytes)};
 }
 
+// memorygs is the renderer's native array: 16 little-endian Float32 values
+// per point, without a file header. Camera UV occupies the formerly unused
+// slots 11/15 only when explicitly declared by the reconstruction pipeline.
+function validateModel(bytes, hasPhotoUV) {
+  const invalid = () => { throw apiError(400, 'INVALID_MODEL', 'Gaussian模型格式或数值不正确。'); };
+  if (!Buffer.isBuffer(bytes) || !bytes.length || bytes.length % MODEL_STRIDE) invalid();
+  if (bytes.length > MAX_MODEL_BYTES) throw apiError(413, 'MODEL_TOO_LARGE', 'Gaussian模型最多32 MiB。');
+  const point = new Float64Array(16);
+  for (let offset = 0; offset < bytes.length; offset += MODEL_STRIDE) {
+    for (let i = 0; i < 16; i++) {
+      point[i] = bytes.readFloatLE(offset + i * 4);
+      if (!Number.isFinite(point[i])) invalid();
+    }
+    // Prepared memorygs uses bounded scene coordinates, rather than raw world
+    // coordinates. Loose limits also prevent overflow in projection arithmetic.
+    if (Math.abs(point[0]) > 1000 || Math.abs(point[1]) > 1000 || Math.abs(point[2]) > 1000
+        || !coordinate(point[3]) || !coordinate(point[12]) || !coordinate(point[13]) || !coordinate(point[14])) invalid();
+    if (hasPhotoUV && (!coordinate(point[11]) || !coordinate(point[15]))) invalid();
+    const xx = point[4], xy = point[5], xz = point[6], yy = point[7], yz = point[8], zz = point[9];
+    if (xx < 0 || yy < 0 || zz < 0 || xx > 10000 || yy > 10000 || zz > 10000) invalid();
+    if ((xx === 0 && (xy !== 0 || xz !== 0)) || (yy === 0 && (xy !== 0 || yz !== 0))
+        || (zz === 0 && (xz !== 0 || yz !== 0))) invalid();
+    const scale = Math.max(xx, yy, zz);
+    if (!scale) continue;
+    const a = xx / scale, b = xy / scale, c = xz / scale, d = yy / scale, e = yz / scale, f = zz / scale;
+    // All principal minors of the symmetric matrix must be nonnegative.
+    // Float32 rounding of J C J^T can produce tiny negative determinants.
+    const tolerance = 1e-6;
+    if (a * d - b * b < -tolerance || a * f - c * c < -tolerance || d * f - e * e < -tolerance
+        || a * d * f + 2 * b * c * e - a * e * e - d * c * c - f * b * b < -tolerance) invalid();
+  }
+  return bytes.length / MODEL_STRIDE;
+}
+
 function regularFile(file) {
   try {
     const stat = fs.lstatSync(file);
@@ -159,6 +198,16 @@ export function createClueBoxes({root} = {}) {
       throw error;
     }
   };
+  const modelInfo = box => {
+    const model = box.model;
+    if (!model || model.version !== 1 || model.format !== MODEL_FORMAT || !MODEL_METHODS.has(model.method)
+        || typeof model.hasPhotoUV !== 'boolean' || !HASH.test(model.sha256) || !HASH.test(model.photoSha256)
+        || model.photoSha256 !== box.photoSha256 || model.file !== `model-${model.sha256}.memorygs`
+        || !Number.isSafeInteger(model.count) || model.count < 1 || !Number.isSafeInteger(model.byteLength)
+        || model.byteLength !== model.count * MODEL_STRIDE || model.byteLength > MAX_MODEL_BYTES) return null;
+    const stat = regularFile(path.join(directory(box.id), model.file));
+    return stat && stat.size === model.byteLength ? model : null;
+  };
   const publicBox = box => ({
     id: box.id,
     name: box.name,
@@ -171,10 +220,26 @@ export function createClueBoxes({root} = {}) {
     photoWidth: box.photoWidth,
     photoHeight: box.photoHeight,
     source: {...SOURCE},
+    ...(() => {
+      const model = modelInfo(box);
+      return model ? {modelUrl: `/api/clue-boxes/boxes/${box.id}/model`, modelMethod: model.method,
+        gaussianCount: model.count, modelHasPhotoUV: model.hasPhotoUV} : {};
+    })(),
   });
   const requireId = id => {
     if (!UUID.test(id)) throw apiError(400, 'INVALID_ID', '盒子编号格式不正确。');
     return id;
+  };
+  const ownedBox = (req, code = 'MODEL_FORBIDDEN') => {
+    const id = requireId(req.params.id);
+    const auth = /^Bearer ([A-Za-z0-9_-]{43})$/i.exec(req.get('Authorization') || '');
+    if (!auth || !TOKEN.test(auth[1])) throw apiError(403, code, '需要创建此盒子时取得的所有者凭证。');
+    const box = readBox(id);
+    if (!box) throw apiError(404, 'BOX_NOT_FOUND', '盒子不存在。');
+    if (!crypto.timingSafeEqual(hashToken(auth[1]), Buffer.from(box.deleteTokenHash, 'hex'))) {
+      throw apiError(403, code, '所有者凭证不正确。');
+    }
+    return box;
   };
   const storageUsage = () => {
     let count = 0;
@@ -231,6 +296,92 @@ export function createClueBoxes({root} = {}) {
     } catch (error) { next(error); }
   });
 
+  router.get('/boxes/:id/model', (req, res, next) => {
+    try {
+      const box = readBox(requireId(req.params.id));
+      if (!box) return res.status(404).json({error: '盒子不存在。', code: 'BOX_NOT_FOUND'});
+      const model = modelInfo(box);
+      if (!model) return res.status(404).json({error: '此盒子尚未保存Gaussian模型。', code: 'MODEL_NOT_FOUND'});
+      const photo = fs.readFileSync(path.join(directory(box.id), 'photo.jpg'));
+      const bytes = fs.readFileSync(path.join(directory(box.id), model.file));
+      if (sha256(photo) !== model.photoSha256 || sha256(bytes) !== model.sha256) {
+        return res.status(404).json({error: '模型与照片档案不完整。', code: 'MODEL_NOT_FOUND'});
+      }
+      res.set({'X-Reconstruction-Method': model.method, 'X-Gaussian-Count': String(model.count),
+        'X-Model-Photo-UV': model.hasPhotoUV ? '1' : '0', 'X-Model-Format': MODEL_FORMAT,
+        'Content-Disposition': `inline; filename="${box.id}.memorygs"`});
+      res.type('application/octet-stream').send(bytes);
+    } catch (error) { next(error); }
+  });
+
+  router.post('/boxes/:id/model', (req, res, next) => {
+    try {
+      // Authenticate before accepting a large binary body. Authentication is
+      // checked again after parsing, because the owner may delete in flight.
+      ownedBox(req);
+      if (!req.is('application/octet-stream')) throw apiError(415, 'INVALID_MODEL_TYPE', '模型需以application/octet-stream上传。');
+      if (!MODEL_METHODS.has(req.get('X-Reconstruction-Method'))) throw apiError(400, 'INVALID_MODEL_METHOD', '请提供支持的重建方法。');
+      const uv = req.get('X-Model-Photo-UV');
+      if (uv !== undefined && uv !== '0' && uv !== '1') throw apiError(400, 'INVALID_MODEL_UV', '照片UV声明必须为0或1。');
+      next();
+    } catch (error) { next(error); }
+  }, express.raw({type: 'application/octet-stream', limit: '32mb', inflate: false}), (req, res, next) => {
+    try {
+      const box = ownedBox(req);
+      const method = req.get('X-Reconstruction-Method');
+      const hasPhotoUV = req.get('X-Model-Photo-UV') === '1';
+      const count = validateModel(req.body, hasPhotoUV);
+      const digest = sha256(req.body);
+      const photoDigest = sha256(fs.readFileSync(path.join(directory(box.id), 'photo.jpg')));
+      const existing = modelInfo(box);
+      if (existing) {
+        if (existing.sha256 === digest && existing.method === method && existing.hasPhotoUV === hasPhotoUV
+            && existing.photoSha256 === photoDigest) return res.json({box: publicBox(box)});
+        throw apiError(409, 'MODEL_ALREADY_SAVED', '此盒子已有模型；不同的重建请创建新的盒子。');
+      }
+      const file = `model-${digest}.memorygs`;
+      const finalFile = path.join(directory(box.id), file);
+      let reuse = false;
+      try {
+        const stat = fs.lstatSync(finalFile);
+        // A crash before the JSON commit may leave an immutable model orphan.
+        // Reuse only a regular file with exactly the validated byte content.
+        if (!stat.isFile() || stat.size !== req.body.length || sha256(fs.readFileSync(finalFile)) !== digest) {
+          throw apiError(409, 'INVALID_MODEL_STORAGE', '模型存储状态不一致，请稍后重试。');
+        }
+        reuse = true;
+      } catch (error) { if (error.code !== 'ENOENT') throw error; }
+      const updated = {...box, photoSha256: photoDigest, model: {
+        version: 1, format: MODEL_FORMAT, file, byteLength: req.body.length, count, method,
+        hasPhotoUV, sha256: digest, photoSha256: photoDigest, createdAt: new Date().toISOString(),
+      }};
+      const json = JSON.stringify(updated);
+      const jsonFile = path.join(directory(box.id), 'box.json');
+      // Reserve the new metadata while the old JSON still exists, so even the
+      // temporary atomic-commit footprint stays inside the archive ceiling.
+      const addedBytes = (reuse ? 0 : req.body.length) + Buffer.byteLength(json);
+      if (storageUsage().bytes + addedBytes > MAX_STORE_BYTES) {
+        throw apiError(507, 'STORAGE_LIMIT', '公共盒子存储已满，请稍后再试。');
+      }
+      const nonce = crypto.randomUUID();
+      const pendingModel = path.join(directory(box.id), `.model-${nonce}.tmp`);
+      const pendingJson = path.join(directory(box.id), `.box-${nonce}.tmp`);
+      let committed = false;
+      try {
+        if (!reuse) { writeDurably(pendingModel, req.body); fs.renameSync(pendingModel, finalFile); }
+        writeDurably(pendingJson, json);
+        // Public readers see the model only after this atomic metadata commit.
+        fs.renameSync(pendingJson, jsonFile);
+        committed = true;
+      } finally {
+        fs.rmSync(pendingModel, {force: true});
+        fs.rmSync(pendingJson, {force: true});
+        if (!committed && !reuse) fs.rmSync(finalFile, {force: true});
+      }
+      res.status(201).json({box: publicBox(updated)});
+    } catch (error) { next(error); }
+  });
+
   router.get('/boxes/:id', (req, res, next) => {
     try {
       const box = readBox(requireId(req.params.id));
@@ -259,7 +410,7 @@ export function createClueBoxes({root} = {}) {
         version: 1, id, name: body.name.trim(), topic: 'laundry', title: TITLE,
         publicConsent: true, createdAt: new Date(now).toISOString(),
         hotspot: {x: body.hotspot.x, y: body.hotspot.y, radius: body.hotspot.radius},
-        photoWidth: photo.width, photoHeight: photo.height,
+        photoWidth: photo.width, photoHeight: photo.height, photoSha256: sha256(photo.bytes),
         source: {...SOURCE}, deleteTokenHash: hashToken(deleteToken).toString('hex'),
       };
       const json = JSON.stringify(box);
@@ -286,14 +437,8 @@ export function createClueBoxes({root} = {}) {
 
   router.delete('/boxes/:id', (req, res, next) => {
     try {
-      const id = requireId(req.params.id);
-      const auth = /^Bearer ([A-Za-z0-9_-]{43})$/i.exec(req.get('Authorization') || '');
-      if (!auth || !TOKEN.test(auth[1])) throw apiError(403, 'DELETE_FORBIDDEN', '需要创建此盒子时取得的删除凭证。');
-      const box = readBox(id);
-      if (!box) return res.status(404).json({error: '盒子不存在。', code: 'BOX_NOT_FOUND'});
-      if (!crypto.timingSafeEqual(hashToken(auth[1]), Buffer.from(box.deleteTokenHash, 'hex'))) {
-        throw apiError(403, 'DELETE_FORBIDDEN', '删除凭证不正确。');
-      }
+      const box = ownedBox(req, 'DELETE_FORBIDDEN');
+      const id = box.id;
       const tombstone = path.join(store, `.deleting-${id}-${crypto.randomUUID()}`);
       fs.renameSync(directory(id), tombstone);
       fs.rmSync(tombstone, {recursive: true, force: true});
@@ -303,9 +448,13 @@ export function createClueBoxes({root} = {}) {
 
   router.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
-    if (error.status === 413) return res.status(413).json({error: '提交内容过大；JPEG照片最多600 KiB。', code: error.code || 'BODY_TOO_LARGE'});
+    if (error.status === 413) {
+      const model = /\/model$/.test(req.path);
+      return res.status(413).json({error: model ? 'Gaussian模型最多32 MiB。' : '提交内容过大；JPEG照片最多600 KiB。',
+        code: error.code || (model ? 'MODEL_TOO_LARGE' : 'BODY_TOO_LARGE')});
+    }
     if (error.type === 'entity.parse.failed' || error instanceof URIError) return res.status(400).json({error: '请求格式不正确。', code: 'INVALID_REQUEST'});
-    if ([400, 403, 409, 429, 507].includes(error.status)) {
+    if ([400, 403, 404, 409, 415, 429, 507].includes(error.status)) {
       if (error.retryAfter) res.set('Retry-After', String(error.retryAfter));
       return res.status(error.status).json({error: error.message, code: error.code});
     }

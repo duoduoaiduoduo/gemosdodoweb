@@ -1,0 +1,39 @@
+{
+  "title": "Laundry room in an apartment building",
+  "author": "Eden Aviv",
+  "source": "https://commons.wikimedia.org/wiki/File:Laundry_room_in_apartment_building.png",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "sourcePhotoDate": "2023-03-17",
+  "createdForPrototype": "2026-10-07",
+  "photoChanges": "500×672 thumbnail converted to JPEG, no crop",
+  "reconstruction": {
+    "engine": "Apple SHARP native PyTorch",
+    "checkpoint": "sharp_2572gikvuh.pt",
+    "focalLengthAssumptionMm": 30,
+    "sourceGaussians": 1179648,
+    "displayGaussians": 100000,
+    "displayFormat": "memorygs-f32le-v1",
+    "displayBytes": 6400000,
+    "depthCompressed": true,
+    "anisotropicCovariance": true,
+    "hasPhotoUV": true,
+    "uvSlots": [
+      11,
+      15
+    ],
+    "uvFormula": "U=0.5+focalPx*X/(width*Z); V=0.5+focalPx*Y/(height*Z), metric OpenCV PLY before display warp",
+    "uvOutsidePhoto": "discarded without clamping",
+    "topicAssociation": "manual laundry scenario, not pollutant detection"
+  },
+  "files": {
+    "photo.jpg": {
+      "bytes": 59010,
+      "sha256": "7a659ac0edcc4160c51c915505c4fcaf6983fecc777178aae2146a9196b5cd8d"
+    },
+    "model.memorygs": {
+      "bytes": 6400000,
+      "sha256": "01a1e2a6381a25db2d8686039d76e7dc6cfc5abc89cb5d9628781ad1d8ed55f9"
+    }
+  }
+}
