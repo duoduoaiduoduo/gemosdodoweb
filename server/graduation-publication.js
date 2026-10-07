@@ -1,18 +1,18 @@
 // Controlled report release. Never reuse this revision after changing its content.
 export const graduationPublication = {
-  "revision": "proposal-2026-10-07-interactive-cases-v1",
-  "baseRevision": "proposal-2026-10-07-digital-practices-v1",
-  "label": "开题审阅稿 · 数字交互科普现状修订版",
+  "revision": "proposal-2026-10-07-design-gaps-v1",
+  "baseRevision": "proposal-2026-10-07-interactive-cases-v1",
+  "label": "开题审阅稿 · 科普设计短板修订版",
   "outlineFormat": "reference",
   "title": "面向新污染物科普的照片驱动参与式交互设计研究",
   "downloads": [
     [
-      "2026-10-07 PDF · 数字交互科普现状修订版",
-      "/graduation/reports/2026-10-07/interactive-cases-v1/proposal-review.pdf"
+      "2026-10-07 PDF · 科普设计短板修订版",
+      "/graduation/reports/2026-10-07/design-gaps-v1/proposal-review.pdf"
     ],
     [
-      "2026-10-07 Word · 数字交互科普现状修订版",
-      "/graduation/reports/2026-10-07/interactive-cases-v1/proposal-review.docx"
+      "2026-10-07 Word · 科普设计短板修订版",
+      "/graduation/reports/2026-10-07/design-gaps-v1/proposal-review.docx"
     ]
   ],
   "sections": [
@@ -46,7 +46,7 @@ export const graduationPublication = {
         "1.3.2 国内现状",
         "国内已有围绕新污染物制作的数字科普内容。福建省生态环境厅于2024年发布《揭开新污染物的真面目》科普动画，网页提供视频附件和手机访问入口。[9]四川农业大学的《“泌”不可分》则聚焦环境内分泌干扰物，依托实验室前期研究，采用二维动画等形式介绍相关知识。[10]这些作品表明，新污染物知识已经通过数字影像向公众传播。不过，动画的主要参与方式是观看，它们能够说明数字内容创作的现状，尚不足以代表让用户作出选择、探索信息并获得反馈的数字交互作品。",
         "数字交互形式已进入相关创作的支持范围。2025年，生态环境部宣传教育中心的新污染物治理宣传产品征集通知，将交互H5和新媒体小游戏等纳入征集类别，并安排部分优秀作品通过网络平台发布。[11]这说明有关创作已经鼓励公众操作和网络参与的形式，也为探索数字交互科普提供了明确方向。征集通知反映的是创作要求与支持方向，具体有哪些可体验的成品、怎样操作，以及能否帮助理解知识，仍需作品资料和评价记录来说明。",
-        "本次检索主要查阅了国内官方科普平台、高校作品介绍及相关宣传产品资料，可以确认上述数字影像作品与交互形式的征集方向。但对于直接面向公众、具有公开体验入口，并能明确观察到操作与反馈机制的新污染物数字交互科普作品，目前尚未获得充分的案例资料。这是本次可获取材料上的不足，不能据此断言国内完全没有此类作品。由此可以提出需要继续研究的问题：怎样让公众通过操作理解新污染物的来源、环境过程和适用条件，怎样让反馈解释用户的选择，以及怎样评价知识理解与后续参与。这些问题构成进一步开展数字交互科普创作研究的空间。",
+        "从上述数字内容及交互创作方向看，新污染物数字科普还需完善三个方面：一是主动参与的机会，影像讲解以观看为主，需要让公众能够选择问题、探索内容，并从反馈中理解知识；二是操作与知识的联系，需要把来源、环境过程及行动建议放在日常生活情境中讲清楚，让每一步操作都有明确的科普目的；三是效果评价，需要了解公众实际理解了什么，是否愿意持续参与和主动分享。",
         "1.4 创作选题的理论意义与实践价值",
         "1.4.1 理论意义",
         "（1）丰富生活情境中的科普信息组织",
@@ -103,7 +103,7 @@ export const graduationPublication = {
       "links": [],
       "images": [
         {
-          "src": "/graduation/reports/2026-10-07/interactive-cases-v1/03-system-sharing.png",
+          "src": "/graduation/reports/2026-10-07/design-gaps-v1/03-system-sharing.png",
           "alt": "照片怎样进入作品、保存成卡片并邀请他人再创作（设计构想草图）",
           "caption": "照片怎样进入作品、保存成卡片并邀请他人再创作（设计构想草图）"
         }
