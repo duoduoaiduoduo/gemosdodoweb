@@ -1,18 +1,18 @@
 // Controlled report release. Never reuse this revision after changing its content.
 export const graduationPublication = {
-  "revision": "proposal-2026-10-07-theoretical-value-v1",
-  "baseRevision": "proposal-2026-10-07-comparison-topics-v1",
-  "label": "开题审阅稿 · 研究意义修订版",
+  "revision": "proposal-2026-10-07-significance-expanded-v1",
+  "baseRevision": "proposal-2026-10-07-theoretical-value-v1",
+  "label": "开题审阅稿 · 研究意义完善版",
   "outlineFormat": "reference",
   "title": "面向新污染物科普的照片驱动参与式交互设计研究",
   "downloads": [
     [
-      "2026-10-07 PDF · 研究意义修订版",
-      "/graduation/reports/2026-10-07/theoretical-value-v1/proposal-review.pdf"
+      "2026-10-07 PDF · 研究意义完善版",
+      "/graduation/reports/2026-10-07/significance-expanded-v1/proposal-review.pdf"
     ],
     [
-      "2026-10-07 Word · 研究意义修订版",
-      "/graduation/reports/2026-10-07/theoretical-value-v1/proposal-review.docx"
+      "2026-10-07 Word · 研究意义完善版",
+      "/graduation/reports/2026-10-07/significance-expanded-v1/proposal-review.docx"
     ]
   ],
   "sections": [
@@ -55,9 +55,9 @@ export const graduationPublication = {
         "从上述数字内容及交互创作方向看，新污染物数字科普还需完善三个方面：一是主动参与的机会，影像讲解以观看为主，需要让公众能够选择问题、探索内容，并从反馈中理解知识；二是操作与知识的联系，需要把来源、环境过程及行动建议放在日常生活情境中讲清楚，让每一步操作都有明确的科普目的；三是效果评价，需要了解公众实际理解了什么，是否愿意持续参与和主动分享。",
         "1.4 创作选题的理论意义与实践价值",
         "（1）理论意义",
-        "本研究将参与式交互的设计思路应用于新污染物科普，关注公众如何从日常生活经验理解陌生的科学知识，以及选择、探索和反馈怎样帮助人们看清新污染物的来源、可能影响与应对方法。通过研究科普信息的表达、参与过程与知识理解之间的关系，探索适合新污染物议题的数字科普设计方法，为参与式交互在环境科普中的应用提供参考，也为信息与交互设计领域的相关研究补充实践经验。",
+        "本研究将参与式交互的设计思路应用于新污染物科普，关注公众如何从日常生活经验出发，理解不容易直观察觉的污染问题。研究拟探索科普信息的表达、主动参与和知识理解之间的关系，分析选择、探索和反馈如何帮助公众看清污染物的来源、环境过程与可能影响，以及个人经验如何影响参与和交流的意愿。研究将从这些关系中总结适合新污染物议题的信息组织和交互引导方法，探索科学表达、审美体验与知识理解怎样相互配合，为参与式交互在环境科普中的应用补充设计经验，也为信息与交互设计领域的科普研究提供参考。",
         "（2）实践价值",
-        "新污染物与生产及日常生活密切相关，但其来源和环境影响不容易被公众直观理解。本研究从公众的疑问和信息需求出发，探索更容易理解、便于参与和交流的科普表达，旨在帮助公众认识相关物质与生活的联系，了解个人能够参与的合理防范和治理环节。同时，研究将梳理科学内容如何组织、交互如何引导理解以及传播如何延续等设计经验，为新污染物数字科普的后续创作提供参考，推动专业环境知识进入日常讨论，支持公众关注和参与新污染物治理。"
+        "新污染物科普的实践价值，在于帮助公众把陌生的专业知识与自身生活联系起来。本研究从公众的疑问和信息需求出发，探索更容易理解、便于参与和交流的表达方式，旨在帮助公众认识有关物质为什么受到关注，其生产、使用和处置与环境有什么联系，以及个人能够参与哪些合理的防范和治理环节，同时理解企业与公共治理承担的责任。对于科普创作者，研究将整理如何把专业概念转化为生活问题、如何组织来源与影响的说明、如何通过交互反馈帮助理解，以及如何让知识在分享中继续被阅读等设计经验。研究还将分别考察公众的知识理解、参与意愿和主动分享，为后续改进科普内容与传播方式提供依据，支持新污染物知识进入日常交流。"
       ],
       "pending": "",
       "links": []
@@ -99,7 +99,7 @@ export const graduationPublication = {
       "links": [],
       "images": [
         {
-          "src": "/graduation/reports/2026-10-07/theoretical-value-v1/03-system-sharing.png",
+          "src": "/graduation/reports/2026-10-07/significance-expanded-v1/03-system-sharing.png",
           "alt": "照片怎样进入作品、保存成卡片并邀请他人再创作（设计构想草图）",
           "caption": "照片怎样进入作品、保存成卡片并邀请他人再创作（设计构想草图）"
         }
