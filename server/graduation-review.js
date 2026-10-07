@@ -11,7 +11,7 @@ export const REVIEW_REVISION = 'discussion-2026-09-17-v1';
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const validId = value => typeof value === 'string' && /^[a-zA-Z0-9-]{16,80}$/.test(value);
 const coordinate = (value, max) => Number.isFinite(value) && value >= 0 && value <= max;
-export function createGraduationReview(file, {publication,initialDocument,versionLabelPrefix='讨论稿',bodyLimit='150kb',maxSectionCharacters=20000,maxSectionParagraphs=100} = {}) {
+export function createGraduationReview(file, {publication,publications,initialDocument,versionLabelPrefix='讨论稿',bodyLimit='150kb',maxSectionCharacters=20000,maxSectionParagraphs=100} = {}) {
   const router = express.Router();
   router.use(express.json({limit: bodyLimit}));
   const read = () => fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {annotations: []};
@@ -32,15 +32,15 @@ export function createGraduationReview(file, {publication,initialDocument,versio
     if(!data.documents?.length){data.documents=[seed];write(data);}
   }
   // A release appends one version. Stored page geometry and annotations stay intact.
-  if (publication) {
+  for (const release of publications || (publication ? [publication] : [])) {
     const data=read(), all=documents(data);
-    if (!all.some(d=>d.revision===publication.revision)) {
-      if (data.documents?.length && all.at(-1).revision!==publication.baseRevision) {
+    if (!all.some(d=>d.revision===release.revision)) {
+      if (data.documents?.length && all.at(-1).revision!==release.baseRevision) {
         console.warn('[graduation-review] Publication skipped: latest revision changed.');
       } else {
-        const backup=`${file}.before-${publication.revision}`;
+        const backup=`${file}.before-${release.revision}`;
         if (fs.existsSync(file)&&!fs.existsSync(backup)) fs.copyFileSync(file, backup, fs.constants.COPYFILE_EXCL);
-        const {baseRevision,...report}=publication;
+        const {baseRevision,...report}=release;
         data.documents=[...all,{...report,createdAt:report.createdAt||new Date().toISOString(),pages:paginateSections(report.sections)}];
         write(data);
       }

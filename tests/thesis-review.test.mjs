@@ -24,7 +24,7 @@ async function harness(t){
   async function start(options={}){
     const app=express();
     app.use('/api/graduation-review',createGraduationReview(proposalFile));
-    app.use('/api/thesis-review',createGraduationReview(thesisFile,{initialDocument:options.initialDocument||initialDocument(),versionLabelPrefix:'论文讨论稿',bodyLimit:'1mb',maxSectionCharacters:60000,maxSectionParagraphs:300,...(options.publication?{publication:options.publication}:{})}));
+    app.use('/api/thesis-review',createGraduationReview(thesisFile,{initialDocument:options.initialDocument||initialDocument(),versionLabelPrefix:'论文讨论稿',bodyLimit:'1mb',maxSectionCharacters:60000,maxSectionParagraphs:300,...(options.publication?{publication:options.publication}:{}),...(options.publications?{publications:options.publications}:{})}));
     const server=app.listen(0,'127.0.0.1');servers.push(server);
     await new Promise((resolve,reject)=>{server.once('listening',resolve);server.once('error',reject);});
     const base=`http://127.0.0.1:${server.address().port}`;
@@ -139,6 +139,34 @@ test('future thesis publications append once, back up the stored outline and hon
   assert.equal(fs.readFileSync(h.thesisFile,'utf8'),bytes);
   assert.ok(!fs.existsSync(`${h.thesisFile}.before-${competing.revision}`));
   assert.equal(fs.readFileSync(h.proposalFile,'utf8'),proposalBytes);
+});
+
+test('ordered thesis releases bootstrap a fresh store and preserve later edits across restarts',async t=>{
+  const h=await harness(t),seed=(await h.client.get('thesis')).document;
+  const note={id:NOTE_ID,page:0,type:'text',x:70,y:190,text:'最初版本的批注。'};
+  assert.equal((await h.client.request('thesis','/'+THESIS_REVISION,'POST',{ownerKey:OWNER,annotation:note})).status,201);
+  const first={...initialDocument(),revision:'thesis-outline-chain-release',baseRevision:THESIS_REVISION};
+  first.sections=first.sections.slice(1);
+  const second={...first,revision:'thesis-literature-chain-release',baseRevision:first.revision};
+  second.sections=structuredClone(first.sections);
+  second.sections[0].paragraphs=['依据文献整理的正文。'];
+  const publications=[first,second],publishedClient=await h.start({publications});
+  const published=await publishedClient.get('thesis');
+  assert.deepEqual(published.versions.map(v=>v.revision),[THESIS_REVISION,first.revision,second.revision]);
+  assert.deepEqual((await publishedClient.get('thesis','/document?revision='+THESIS_REVISION)).document,seed);
+  assert.equal((await publishedClient.get('thesis','/'+THESIS_REVISION)).annotations[0].text,note.text);
+  const freshFile=path.join(path.dirname(h.thesisFile),'fresh-thesis.json');
+  createGraduationReview(freshFile,{initialDocument:initialDocument(),publications});
+  const fresh=JSON.parse(fs.readFileSync(freshFile,'utf8'));
+  assert.deepEqual(fresh.documents.map(d=>d.revision),published.versions.map(v=>v.revision));
+  assert.deepEqual(fresh.documents.at(-1).sections,published.document.sections);
+  const sections=structuredClone(published.document.sections);sections[0].paragraphs=['导师随后保存的修改。'];
+  const response=await publishedClient.request('thesis','/document','POST',{baseRevision:second.revision,sections,requestId:OTHER_OWNER,ownerKey:OWNER});
+  assert.equal(response.status,201);
+  const edited=await response.json(),bytes=fs.readFileSync(h.thesisFile,'utf8');
+  const restarted=await h.start({publications});
+  assert.equal((await restarted.get('thesis')).latestRevision,edited.latestRevision);
+  assert.equal(fs.readFileSync(h.thesisFile,'utf8'),bytes);
 });
 
 test('long thesis chapters exceed proposal limits while preserving every character across pages',async t=>{
