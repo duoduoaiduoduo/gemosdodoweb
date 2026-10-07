@@ -104,11 +104,12 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
     </header>
     <div className="advisor-instructions">{tool==='read'?'可直接阅读正文。需要圈画时选择“画笔”，文字意见可点“文字批注”后落在页面上。':tool==='pen'?'在纸面上拖动画线或圈画；触屏上下翻页请先切回“阅读”。':'点击纸面上的位置，填写文字意见。'}<span>批注保存在服务器 · 持链接可阅读、批注和修改正文</span></div>
     <div className="advisor-document" ref={viewportRef}>
-      {reportPages.map((page,index)=><section className="advisor-sheet-wrap" key={index} style={{width:760*scale,height:980*scale}} aria-label={`第 ${index+1} 页：${page.title}`}>
+      {reportPages.map((page,index)=><section className="advisor-sheet-wrap" key={index} style={{width:760*scale,height:980*scale}} aria-label={`第 ${index+1} 页：${page.title.replace(/（续）$/,'')}`}>
         <article className="advisor-sheet" style={{transform:`scale(${scale})`}}>
           <div className="advisor-running">信息与交互设计 · 硕士<span>{versionLabel}</span></div>
           {index===0&&(documentTitle?<><h1>{documentTitle}</h1><p className="advisor-draft-label">导师审阅稿，题目拟定 · 开题日期：2026年11月13日</p></>:<><h1>新污染物科普方向<br/>开题报告</h1><p className="advisor-draft-label">研究讨论稿，非正式定稿 · 开题日期：2026年11月13日</p></>)}
-          <h2>{page.title}</h2>
+          {/* Keep the original heading space so saved ink remains aligned. */}
+          <h2 style={page.title.endsWith('（续）')?{visibility:'hidden'}:undefined} aria-hidden={page.title.endsWith('（续）')||undefined}>{page.title}</h2>
           {page.paragraphs.map((p,i)=><p className="advisor-paragraph" key={i}>{p}</p>)}
           {page.images?.map(({src,alt,caption})=><figure className="advisor-figure" key={src}><img src={src} alt={alt} width="630" height="354"/><figcaption>{caption}</figcaption></figure>)}
           {page.tables?.map(({caption,rows,widths},tableIndex)=><figure className="advisor-table" key={`${caption}-${tableIndex}`}><figcaption>{caption}</figcaption><table><colgroup>{widths.map((width,i)=><col key={i} style={{width:`${width*100}%`}}/>)}</colgroup>{rows.length>0&&<><thead><tr>{rows[0].map((cell,i)=><th scope="col" key={i}>{cell}</th>)}</tr></thead><tbody>{rows.slice(1).map((row,i)=><tr key={i}>{row.map((cell,j)=><td key={j}>{cell}</td>)}</tr>)}</tbody></>}</table></figure>)}
