@@ -1,18 +1,18 @@
 // Controlled report release. Never reuse this revision after changing its content.
 export const graduationPublication = {
-  "revision": "proposal-2026-10-07-sentence-trim-v1",
-  "baseRevision": "proposal-2026-10-07-design-gaps-v1",
-  "label": "开题审阅稿 · 文字精简版",
+  "revision": "proposal-2026-10-07-comparison-topics-v1",
+  "baseRevision": "proposal-2026-10-07-sentence-trim-v1",
+  "label": "开题审阅稿 · 现状分点版",
   "outlineFormat": "reference",
   "title": "面向新污染物科普的照片驱动参与式交互设计研究",
   "downloads": [
     [
-      "2026-10-07 PDF · 文字精简版",
-      "/graduation/reports/2026-10-07/sentence-trim-v1/proposal-review.pdf"
+      "2026-10-07 PDF · 现状分点版",
+      "/graduation/reports/2026-10-07/comparison-topics-v1/proposal-review.pdf"
     ],
     [
-      "2026-10-07 Word · 文字精简版",
-      "/graduation/reports/2026-10-07/sentence-trim-v1/proposal-review.docx"
+      "2026-10-07 Word · 现状分点版",
+      "/graduation/reports/2026-10-07/comparison-topics-v1/proposal-review.docx"
     ]
   ],
   "sections": [
@@ -39,13 +39,19 @@ export const graduationPublication = {
         "数字科普作品是借助数字媒介解释和交流科学知识的内容或体验，常见形式包括科普网页、数字影像和交互展示。它可以结合文字、图像、声音等方式，说明科学概念、现象及其联系，让没有相关专业背景的人也能接触知识。作品形式可以具有艺术性，所传递的科学内容仍需保留可靠依据和必要条件；数字传播也可以提供资料查阅与交流的入口。[1][5]",
         "1.3 国内外创作实践的现状、趋势",
         "1.3.1 国外现状",
-        "国外已有围绕新污染物相关对象制作的交互科普作品。2023年，SDU-Denmark团队在iGEM项目网页中提供了两款PFAS小游戏。其中，路径游戏设置4×4棋盘，用户从日常物品的示意起点出发，通过上下左右选择，探索作品设置的潜在迁移路径，到达环境、动物或人体等终点，找到正确路径后获得提示。另一款游戏设置八种生活用品示例，用户先作判断，再点击查看PFAS相关解释。[6]两款游戏分别把知识变成路径选择和点击揭示，让用户的操作与正在理解的问题联系起来。规则中的路径和物品是科普示例。",
-        "GRID-Arendal于2023年发布的PFAS StoryMap将地图操作与故事阅读结合。作品以比利时一处工厂周边的污染问题为案例，组织文字、图像、访谈和地图。用户可以缩放地图、点击位置查看更多信息，并沿故事了解污染来源及其与环境、社会的联系。[7]这种交互方式既安排了连续阅读的线索，也保留了用户自行查看局部信息的机会。观众通过切换尺度和查找位置，将叙述中的事件与空间关系联系起来；地图中的实际检测与推测信息仍需区分。",
+        "（1）新污染物科普的数字呈现",
+        "GRID-Arendal于2023年发布的PFAS StoryMap将地图操作与故事阅读结合。作品以比利时一处工厂周边的污染问题为案例，组织文字、图像、访谈和地图。用户可以缩放地图、点击位置查看更多信息，并沿故事了解污染来源及其与环境、社会的联系。[6]这种交互方式既安排了连续阅读的线索，也保留了用户自行查看局部信息的机会。观众通过切换尺度和查找位置，将叙述中的事件与空间关系联系起来；地图中的实际检测与推测信息仍需区分。",
+        "（2）数字交互的创作形式",
+        "国外已有围绕新污染物相关对象制作的交互科普作品。2023年，SDU-Denmark团队在iGEM项目网页中提供了两款PFAS小游戏。其中，路径游戏设置4×4棋盘，用户从日常物品的示意起点出发，通过上下左右选择，探索作品设置的潜在迁移路径，到达环境、动物或人体等终点，找到正确路径后获得提示。另一款游戏设置八种生活用品示例，用户先作判断，再点击查看PFAS相关解释。[7]两款游戏分别把知识变成路径选择和点击揭示，让用户的操作与正在理解的问题联系起来。规则中的路径和物品是科普示例。",
+        "（3）公众参与与传播的发展方向",
         "Silent Spring Institute开发的Detox Me应用则提供日常查询、记录和分享的交互。其研究涉及内分泌干扰物等对象，开发者将研究资料整理为日常建议。用户可以按关注的问题查找内容，通过产品条码寻找相关建议，记录自己的进度，并将建议分享给他人；项目也提供网页版。[8]这一案例把知识阅读接到后续操作中：使用者选择自己关心的内容、作出记录，并继续交流。交互承担的是信息查询和参与记录，而这些功能是否改善理解，仍需对应评价支持。",
-        "从这些案例可以归纳出一种交互科普方向：围绕具体科学问题，设计选择、探索和反馈，让用户在操作中逐步获得解释，并提供继续查阅或分享的入口。[6][7][8]路径游戏强调选择与结果，故事地图强调位置探索与阅读，应用强调日常查询与持续记录。不同机制对应不同理解任务，比较时应关注操作能否帮助人看清关系、反馈能否解释选择，以及科学依据和适用条件能否被找到。上述项目的物质范围也需与我国新污染物概念分别核对。",
+        "从这些案例可以归纳出一种交互科普方向：围绕具体科学问题，设计选择、探索和反馈，让用户在操作中逐步获得解释，并提供继续查阅或分享的入口。[7][6][8]路径游戏强调选择与结果，故事地图强调位置探索与阅读，应用强调日常查询与持续记录。不同机制对应不同理解任务，比较时应关注操作能否帮助人看清关系、反馈能否解释选择，以及科学依据和适用条件能否被找到。上述项目的物质范围也需与我国新污染物概念分别核对。",
         "1.3.2 国内现状",
+        "（1）新污染物科普的数字呈现",
         "国内已有围绕新污染物制作的数字科普内容。福建省生态环境厅于2024年发布《揭开新污染物的真面目》科普动画，网页提供视频附件和手机访问入口。[9]四川农业大学的《“泌”不可分》则聚焦环境内分泌干扰物，依托实验室前期研究，采用二维动画等形式介绍相关知识。[10]这些作品表明，新污染物知识已经通过数字影像向公众传播。不过，动画的主要参与方式是观看，它们能够说明数字内容创作的现状，尚不足以代表让用户作出选择、探索信息并获得反馈的数字交互作品。",
+        "（2）数字交互的创作形式",
         "数字交互形式已进入相关创作的支持范围。2025年，生态环境部宣传教育中心的新污染物治理宣传产品征集通知，将交互H5和新媒体小游戏等纳入征集类别，并安排部分优秀作品通过网络平台发布。[11]这说明有关创作已经鼓励公众操作和网络参与的形式，也为探索数字交互科普提供了明确方向。征集通知反映的是创作要求与支持方向，具体有哪些可体验的成品、怎样操作，以及能否帮助理解知识，仍需作品资料和评价记录来说明。",
+        "（3）公众参与与传播的发展方向",
         "从上述数字内容及交互创作方向看，新污染物数字科普还需完善三个方面：一是主动参与的机会，影像讲解以观看为主，需要让公众能够选择问题、探索内容，并从反馈中理解知识；二是操作与知识的联系，需要把来源、环境过程及行动建议放在日常生活情境中讲清楚，让每一步操作都有明确的科普目的；三是效果评价，需要了解公众实际理解了什么，是否愿意持续参与和主动分享。",
         "1.4 创作选题的理论意义与实践价值",
         "1.4.1 理论意义",
@@ -103,7 +109,7 @@ export const graduationPublication = {
       "links": [],
       "images": [
         {
-          "src": "/graduation/reports/2026-10-07/sentence-trim-v1/03-system-sharing.png",
+          "src": "/graduation/reports/2026-10-07/comparison-topics-v1/03-system-sharing.png",
           "alt": "照片怎样进入作品、保存成卡片并邀请他人再创作（设计构想草图）",
           "caption": "照片怎样进入作品、保存成卡片并邀请他人再创作（设计构想草图）"
         }
@@ -229,8 +235,8 @@ export const graduationPublication = {
         "[3] 王金南. 系列解读（9）｜加强新污染物治理 统筹推动有毒有害化学物质环境风险管理[EB/OL]. 生态环境部官网, (2021-11-19)[2026-10-07].",
         "[4] JENKINS H, CLINTON K, PURUSHOTMA R, et al. Confronting the Challenges of Participatory Culture: Media Education for the 21st Century[R/OL]. Chicago: MacArthur Foundation, 2006[2026-10-07].",
         "[5] UNITED STATES ENVIRONMENTAL PROTECTION AGENCY. PFAS Explained[EB/OL]. (2026-09-09)[2026-10-07].",
-        "[6] SDU-DENMARK. Education: The PFAS Pathway Game; The PFAS Board Game[EB/OL]. iGEM, 2023[2026-10-07].",
-        "[7] GRID-ARENDAL. PFAS – our intimate relation with these forever chemicals[EB/OL]. (2023-12-22)[2026-10-07].",
+        "[6] GRID-ARENDAL. PFAS – our intimate relation with these forever chemicals[EB/OL]. (2023-12-22)[2026-10-07].",
+        "[7] SDU-DENMARK. Education: The PFAS Pathway Game; The PFAS Board Game[EB/OL]. iGEM, 2023[2026-10-07].",
         "[8] SILENT SPRING INSTITUTE. Detox Me mobile app[EB/OL]. [2026-10-07].",
         "[9] 福建省生态环境厅. 小山小水说“环保”系列科普动画之《揭开新污染物的真面目》[EB/OL]. (2024-11-03)[2026-10-07].",
         "[10] 刘荣轩. 我校学子在四川省大学生环保科普创意大赛总决赛中获佳绩[EB/OL]. 四川农业大学新闻网, (2024-11-19)[2026-10-07].",
@@ -262,12 +268,12 @@ export const graduationPublication = {
           "https://www.epa.gov/pfas/pfas-explained"
         ],
         [
-          "[6] SDU-DENMARK. Education: The PFAS Pathway Game; The PFAS Board Game[EB/OL]. iGEM, 2023[2026-10-07].",
-          "https://2023.igem.wiki/sdu-denmark/hp-education"
+          "[6] GRID-ARENDAL. PFAS – our intimate relation with these forever chemicals[EB/OL]. (2023-12-22)[2026-10-07].",
+          "https://www.grida.no/publications/1024"
         ],
         [
-          "[7] GRID-ARENDAL. PFAS – our intimate relation with these forever chemicals[EB/OL]. (2023-12-22)[2026-10-07].",
-          "https://www.grida.no/publications/1024"
+          "[7] SDU-DENMARK. Education: The PFAS Pathway Game; The PFAS Board Game[EB/OL]. iGEM, 2023[2026-10-07].",
+          "https://2023.igem.wiki/sdu-denmark/hp-education"
         ],
         [
           "[8] SILENT SPRING INSTITUTE. Detox Me mobile app[EB/OL]. [2026-10-07].",
