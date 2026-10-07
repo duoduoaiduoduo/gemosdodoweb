@@ -4,6 +4,7 @@ import {graduationEntryConfig} from './server/graduation-entry-config.js';
 import {createGraduationReview} from './server/graduation-review.js';
 import {graduationPublication} from './server/graduation-publication.js';
 import {thesisInitialDocument} from './server/thesis-document.js';
+import {thesisPublication} from './server/thesis-publication.js';
 import {createClueBoxes} from './server/clue-boxes.js';
 import {createTransfer} from './server/transfer.js';
 import {createGithubProfileCounter} from './server/github-profile-counter.js';
@@ -48,7 +49,7 @@ app.use('/api/github-visitors.svg', createGithubProfileCounter(path.join(__dirna
 app.use('/api/transfer', createTransfer({root: path.join(__dirname, '.transfer-storage'), secret: RESOLVED_ADMIN_SECRET}).router);
 app.use('/api/graduation-entry', createGraduationEntry(graduationEntryConfig));
 app.use('/api/graduation-review', createGraduationReview(path.join(__dirname, '.graduation-review', 'annotations.json'), {publication:graduationPublication}));
-app.use('/api/thesis-review', createGraduationReview(path.join(__dirname, '.graduation-review', 'thesis-annotations.json'), {initialDocument:thesisInitialDocument,versionLabelPrefix:'论文讨论稿',bodyLimit:'1mb',maxSectionCharacters:60000,maxSectionParagraphs:300}));
+app.use('/api/thesis-review', createGraduationReview(path.join(__dirname, '.graduation-review', 'thesis-annotations.json'), {initialDocument:thesisInitialDocument,publication:thesisPublication,versionLabelPrefix:'论文讨论稿',bodyLimit:'1mb',maxSectionCharacters:60000,maxSectionParagraphs:300}));
 app.use('/api/clue-boxes', createClueBoxes({root:path.join(__dirname, '.clue-boxes-store')}));
 app.use(express.json({limit: `${Math.max(50, maxRequestMb)}mb`}));
 

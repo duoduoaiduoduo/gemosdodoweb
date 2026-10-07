@@ -47,11 +47,14 @@ export default function ReviewDocumentManager({documentKind='proposal'}:{documen
   };
   const exportDraft=()=>{if(!editing)return;const content=editing.sections.map(s=>`${s.title}\n\n${s.paragraphs.join('\n\n')}\n\n${s.pending}`).join('\n\n');const href=URL.createObjectURL(new Blob([content],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=href;a.download=`${mode.documentName}修改稿.txt`;a.click();setTimeout(()=>URL.revokeObjectURL(href),1000);};
   const comparePrevious=async()=>{if(!bundle)return;if(compare){setCompare(null);return;}const index=bundle.versions.findIndex(v=>v.revision===bundle.document.revision);if(index<1)return;setComparing(true);setError('');try{const response=await fetch(`${url}?revision=${bundle.versions[index-1].revision}`);if(!response.ok)throw Error('旧版加载失败，请重试');const data=await response.json();setCompare(data.document);}catch(e){setError(e instanceof Error?e.message:'对照加载失败');}finally{setComparing(false);}};
-  // The seven-section report adds a schedule before the old final references section.
+  // Thesis chapters can move when a prefatory section is removed. The proposal
+  // keeps its original index comparison, including its added schedule section.
   const previousSections=compare
-    ? documentKind==='proposal'&&bundle?.document.sections.length===7&&compare.sections.length===6
-      ? [...compare.sections.slice(0,5),undefined,compare.sections[5]]
-      : compare.sections
+    ? documentKind==='thesis'
+      ? bundle?.document.sections.map(section=>compare.sections.find(previous=>previous.title===section.title))||[]
+      : bundle?.document.sections.length===7&&compare.sections.length===6
+        ? [...compare.sections.slice(0,5),undefined,compare.sections[5]]
+        : compare.sections
     : [];
   return <div className="review-manager">
     <nav className="review-document-nav" aria-label="毕业研究文档">
