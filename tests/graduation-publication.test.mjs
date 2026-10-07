@@ -202,8 +202,8 @@ test('the actual seven-section report retains all figures and accepts a subseque
   assert.equal(published.sections.length,7);
   assert.ok(published.sections[5].title.startsWith('六、毕业创作进度'));
   assert.ok(published.sections[6].title.startsWith('七、参考文献'));
-  assert.equal(published.pages.flatMap(p=>p.images||[]).length,4);
-  assert.equal(published.pages.flatMap(p=>p.links||[]).length,24);
+  assert.equal(published.pages.flatMap(p=>p.images||[]).length,1);
+  assert.equal(published.pages.flatMap(p=>p.links||[]).length,12);
   assert.equal(published.pages.flatMap(p=>p.paragraphs||[]).join(''),report.sections.flatMap(s=>s.paragraphs).join(''));
   const sections=structuredClone(published.sections);sections[0].paragraphs.unshift('后续导师意见示例。');
   const response=await h.post('/document',{baseRevision:published.revision,sections,ownerKey:OWNER,requestId:'dddddddd-dddd-dddd-dddd-dddddddddddd'});

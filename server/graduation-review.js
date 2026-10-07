@@ -60,7 +60,7 @@ export function createGraduationReview(file, {publication} = {}) {
       }
       if(clean.every(s=>!s.paragraphs.length))return res.status(400).json({error:'正文不能为空'});
       const previous=all.at(-1);
-      const revision=crypto.randomUUID();const document={revision,label:`讨论稿 v${all.length+1}`,createdAt:new Date().toISOString(),sections:clean,pages:paginateSections(clean),requestId,ownerHash:hash(ownerKey),...(previous.title?{title:previous.title}:{}),...(previous.downloads?{downloads:previous.downloads}:{})};
+      const revision=crypto.randomUUID();const document={revision,label:`讨论稿 v${all.length+1}`,createdAt:new Date().toISOString(),sections:clean,pages:paginateSections(clean),requestId,ownerHash:hash(ownerKey),...(previous.title?{title:previous.title}:{}),...(previous.outlineFormat?{outlineFormat:previous.outlineFormat}:{}),...(previous.downloads?{downloads:previous.downloads}:{})};
       data.documents=[...all,document];write(data);res.status(201).json(bundle(data,revision));
     }catch(e){next(e);}
   });

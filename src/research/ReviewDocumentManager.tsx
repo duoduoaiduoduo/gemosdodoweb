@@ -3,7 +3,7 @@ import AdvisorReviewPage from './AdvisorReviewPage';
 import type {ReportPage} from './reviewDocument';
 import './advisor-review.css';
 
-type DocumentVersion={revision:string;label:string;createdAt:string;sections:ReportPage[];pages:ReportPage[];title?:string;downloads?:string[][]};
+type DocumentVersion={revision:string;label:string;createdAt:string;sections:ReportPage[];pages:ReportPage[];title?:string;outlineFormat?:'reference';downloads?:string[][]};
 type Bundle={document:DocumentVersion;latestRevision:string;versions:{revision:string;label:string;createdAt:string}[]};
 type Draft={baseRevision:string;sections:ReportPage[];requestId:string};
 const url='/api/graduation-review/document';
@@ -58,6 +58,6 @@ export default function ReviewDocumentManager(){
     {editing?<main className="review-editor"><p className="review-edit-status" role="status">{backup}</p>{editing.sections.map((s,i)=><section className="review-edit-section" key={i}><label>第 {i+1} 部分标题<input aria-label={`第${i+1}部分标题`} maxLength={80} value={s.title} disabled={saving} onChange={e=>change(i,'title',e.target.value)}/></label><label>正文<textarea aria-label={`第${i+1}部分正文`} value={s.paragraphs.join('\n\n')} disabled={saving} onChange={e=>change(i,'paragraphs',e.target.value)}/></label><label>待补充说明（可删除）<textarea className="review-pending-input" aria-label={`第${i+1}部分待补充说明`} maxLength={400} value={s.pending} disabled={saving} onChange={e=>change(i,'pending',e.target.value)}/></label></section>)}<button className="review-save-bottom" disabled={saving} onClick={()=>void save()}>保存新版本</button></main>
       :loading?<p className="review-message" role="status">正在加载报告…</p>
       :bundle&&compare?<main className="review-comparison"><p>左侧：{compare.label}　右侧：{bundle.document.label}。发生改动的章节以浅色背景标出。</p>{bundle.document.sections.map((s,i)=>{const old=previousSections[i];const changed=JSON.stringify(old)!==JSON.stringify(s);return <section key={i} className={changed?'changed':''}><h2>{s.title}{!old?' · 新增部分':changed?' · 有修改':' · 未修改'}</h2><div>{[old,s].map((part,j)=><article key={j}><h3>{j===0?compare.label:bundle.document.label}</h3>{part?<><strong>{part.title}</strong>{part.paragraphs.map((p,k)=><p key={k}>{p}</p>)}{Boolean(part.images?.length||part.tables?.length||part.links?.length)&&<p>附件：{part.images?.length||0} 张草图 · {part.tables?.length||0} 张表格 · {part.links?.length||0} 条来源链接</p>}<small>{part.pending}</small></>:<p>上一版没有此部分。</p>}</article>)}</div></section>;})}</main>
-      :bundle?<div key={bundle.document.revision}><AdvisorReviewPage reportPages={bundle.document.pages} reportRevision={bundle.document.revision} documentTitle={bundle.document.title} versionLabel={`${bundle.document.label} · ${new Date(bundle.document.createdAt).toLocaleDateString('zh-CN')}`} onPendingChange={setAnnotationPending}/></div>:null}
+      :bundle?<div key={bundle.document.revision}><AdvisorReviewPage reportPages={bundle.document.pages} reportRevision={bundle.document.revision} documentTitle={bundle.document.title} outlineFormat={bundle.document.outlineFormat} versionLabel={`${bundle.document.label} · ${new Date(bundle.document.createdAt).toLocaleDateString('zh-CN')}`} onPendingChange={setAnnotationPending}/></div>:null}
   </div>;
 }

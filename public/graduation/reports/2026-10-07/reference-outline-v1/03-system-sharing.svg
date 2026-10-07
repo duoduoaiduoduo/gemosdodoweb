@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<title>同一条创作链：线上为主，线下作为入口</title>
+<desc>概念草图。照片不是化学检测。研究逻辑和作品系统仍需用户研究及原型测试验证。</desc>
+<rect width="1600" height="900" fill="white"/>
+<text x="70" y="40" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">概念草图 · 开题阶段</text>
+<text x="70" y="82" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="44" font-weight="600" fill="#24493d">同一条创作链：线上为主，线下作为入口</text>
+<text x="70" y="146" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">当前已有独立数字原型；AI 辅助适配、Skill 规则包、实体装置与用户评价为后续研究内容。</text>
+<rect x="70" y="227" width="330" height="239" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="94" y="247" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">入口 A</text>
+<text x="94" y="280" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">线上个人照片</text>
+<text x="94" y="335" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">场景适配与条件确认</text>
+<text x="94" y="368" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">私有照片优先留在本机</text>
+<rect x="70" y="529" width="330" height="218" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="94" y="549" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">入口 B</text>
+<text x="94" y="582" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">线下同链体验</text>
+<text x="94" y="637" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">照片入仓、空间探索</text>
+<text x="94" y="670" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">实体动作和展示待制作</text>
+<polyline points="410,340 490,340" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="490.00,340.00 478.00,334.00 478.00,346.00" fill="#24493d"/>
+<polyline points="410,635 465,635 465,388 490,388" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round" stroke-dasharray="8 8"/>
+<polygon points="490.00,388.00 478.00,382.00 478.00,394.00" fill="#24493d"/>
+<rect x="500" y="260" width="475" height="277" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="524" y="280" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">共同核心</text>
+<text x="524" y="313" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">场景与科普分开组织</text>
+<text x="524" y="368" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">SHARP：重建可观看的三维场景</text>
+<text x="524" y="401" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">来源库：解释有条件的环境过程</text>
+<text x="524" y="434" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">热点、三步叙事、独立盒子收藏</text>
+<polyline points="985,390 1060,390" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="1060.00,390.00 1048.00,384.00 1048.00,396.00" fill="#24493d"/>
+<rect x="1070" y="227" width="460" height="239" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="1094" y="247" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">离场产物</text>
+<text x="1094" y="280" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">个人艺术卡</text>
+<text x="1094" y="335" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">原照片＋盒子＋条件短句</text>
+<text x="1094" y="368" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">出处＋二维码，脱离网页也能读</text>
+<rect x="1070" y="529" width="460" height="218" rx="10" fill="white" stroke="#a5b4ac" stroke-width="2"/>
+<text x="1094" y="549" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#5d6c65">继续参与</text>
+<text x="1094" y="582" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="31" font-weight="600" fill="#24493d">公共档案与 Skill</text>
+<text x="1094" y="637" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">自愿公开后扫码回看同一模型</text>
+<text x="1094" y="670" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="400" fill="#23332e">浏览作品，用自己的照片再创作</text>
+<polyline points="1300,474 1300,521" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="1300.00,521.00 1306.00,509.00 1294.00,509.00" fill="#24493d"/>
+<polyline points="1062,634 980,634 980,585 748,585 748,545" fill="none" stroke="#24493d" stroke-width="3" stroke-linejoin="round" stroke-dasharray="8 8"/>
+<polygon points="748.00,545.00 742.00,557.00 754.00,557.00" fill="#24493d"/>
+<text x="519" y="680" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="22" font-weight="400" fill="#5d6c65">虚线表示拟研究的延续与线下接入</text>
+<text x="70" y="800" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="23" font-weight="400" fill="#5d6c65">个人保存、公开展示、对外分享分别选择；不依赖公开个人照片才能参与科普。</text>
+</svg>
