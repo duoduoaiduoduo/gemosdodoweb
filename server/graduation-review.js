@@ -11,9 +11,9 @@ export const REVIEW_REVISION = 'discussion-2026-09-17-v1';
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const validId = value => typeof value === 'string' && /^[a-zA-Z0-9-]{16,80}$/.test(value);
 const coordinate = (value, max) => Number.isFinite(value) && value >= 0 && value <= max;
-export function createGraduationReview(file, {publication} = {}) {
+export function createGraduationReview(file, {publication,initialDocument,versionLabelPrefix='讨论稿',bodyLimit='150kb',maxSectionCharacters=20000,maxSectionParagraphs=100} = {}) {
   const router = express.Router();
-  router.use(express.json({limit: '150kb'}));
+  router.use(express.json({limit: bodyLimit}));
   const read = () => fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {annotations: []};
   const write = data => {
     fs.mkdirSync(path.dirname(file), {recursive: true});
@@ -21,8 +21,16 @@ export function createGraduationReview(file, {publication} = {}) {
     fs.writeFileSync(tmp, JSON.stringify(data), {mode: 0o600});
     fs.renameSync(tmp, file);
   };
-  const seed={revision:REVIEW_REVISION,label:'讨论稿 v1',createdAt:'2026-09-17T00:00:00.000Z',sections:reportPages,pages:reportPages};
+  const seed=initialDocument
+    ? {...initialDocument,pages:initialDocument.pages||paginateSections(initialDocument.sections)}
+    : {revision:REVIEW_REVISION,label:'讨论稿 v1',createdAt:'2026-09-17T00:00:00.000Z',sections:reportPages,pages:reportPages};
   const documents=data=>data.documents?.length?data.documents:[seed];
+  // A separate document's first edition must survive later bootstrap changes,
+  // even before anyone has added a note or edited its text.
+  if(initialDocument){
+    const data=read();
+    if(!data.documents?.length){data.documents=[seed];write(data);}
+  }
   // A release appends one version. Stored page geometry and annotations stay intact.
   if (publication) {
     const data=read(), all=documents(data);
@@ -53,14 +61,14 @@ export function createGraduationReview(file, {publication} = {}) {
       if(sections.length!==all.at(-1).sections.length)return res.status(400).json({error:'请保留本版的完整章节结构'});
       const clean=[];
       for(const section of sections){
-        if(!section||typeof section.title!=='string'||!section.title.trim()||section.title.length>80||typeof section.pending!=='string'||section.pending.length>400||!Array.isArray(section.paragraphs)||section.paragraphs.length>100||section.paragraphs.some(p=>typeof p!=='string'||p.length>10000)||section.paragraphs.join('').length>20000)return res.status(400).json({error:'请检查章节标题与正文长度'});
+        if(!section||typeof section.title!=='string'||!section.title.trim()||section.title.length>80||typeof section.pending!=='string'||section.pending.length>400||!Array.isArray(section.paragraphs)||section.paragraphs.length>maxSectionParagraphs||section.paragraphs.some(p=>typeof p!=='string'||p.length>10000)||section.paragraphs.join('').length>maxSectionCharacters)return res.status(400).json({error:'请检查章节标题与正文长度'});
         // Reference links are preserved from the previous version; editing text cannot introduce executable URLs.
         const previous=all.at(-1).sections[clean.length];
         clean.push({title:section.title.trim(),paragraphs:section.paragraphs.filter(p=>p.trim()),pending:section.pending,links:previous.links||[],...(previous.images?{images:previous.images}:{}),...(previous.tables?{tables:previous.tables}:{}),...(previous.sourceList?{sourceList:true}:{})});
       }
       if(clean.every(s=>!s.paragraphs.length))return res.status(400).json({error:'正文不能为空'});
       const previous=all.at(-1);
-      const revision=crypto.randomUUID();const document={revision,label:`讨论稿 v${all.length+1}`,createdAt:new Date().toISOString(),sections:clean,pages:paginateSections(clean),requestId,ownerHash:hash(ownerKey),...(previous.title?{title:previous.title}:{}),...(previous.outlineFormat?{outlineFormat:previous.outlineFormat}:{}),...(previous.downloads?{downloads:previous.downloads}:{})};
+      const revision=crypto.randomUUID();const document={revision,label:`${versionLabelPrefix} v${all.length+1}`,createdAt:new Date().toISOString(),sections:clean,pages:paginateSections(clean),requestId,ownerHash:hash(ownerKey),...(previous.title?{title:previous.title}:{}),...(previous.outlineFormat?{outlineFormat:previous.outlineFormat}:{}),...(typeof previous.coverNote==='string'?{coverNote:previous.coverNote}:{}),...(previous.downloads?{downloads:previous.downloads}:{})};
       data.documents=[...all,document];write(data);res.status(201).json(bundle(data,revision));
     }catch(e){next(e);}
   });

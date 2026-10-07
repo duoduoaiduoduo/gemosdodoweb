@@ -476,6 +476,7 @@ export default function App() {
   const isResearchLibraryRoute = pathname === '/graduation/research';
   const isGraduationRoute = pathname === '/graduation';
   const isAdvisorReviewRoute = pathname === '/graduation/review';
+  const isThesisReviewRoute = pathname === '/graduation/thesis';
   const isPastureRoute = pathname === '/pasture';
   /** 隐藏页：主页不放任何入口，只能靠网址进来 */
   const isPingPongRoute = pathname === '/pingpong';
@@ -494,6 +495,7 @@ export default function App() {
     !isGraduationRoute &&
     !isResearchLibraryRoute &&
     !isAdvisorReviewRoute &&
+    !isThesisReviewRoute &&
     !isVibecodingRoute &&
     !isVibecodingLaunchRoute &&
     !isPastureRoute &&
@@ -769,7 +771,8 @@ export default function App() {
       </div>
 
       {graduationEntryOpen && <GraduationEntryDialog lang={lang} onClose={() => setGraduationEntryOpen(false)} onVerified={() => {setGraduationEntryOpen(false);navigateToPath('/graduation');}} />}
-      {isAdvisorReviewRoute ? <Suspense fallback={<div role="status">正在加载开题报告…</div>}><AdvisorReviewPage /></Suspense> : null}
+      {isAdvisorReviewRoute ? <Suspense fallback={<div role="status">正在加载开题报告…</div>}><AdvisorReviewPage key="proposal" /></Suspense> : null}
+      {isThesisReviewRoute ? <Suspense fallback={<div role="status">正在加载论文大纲…</div>}><AdvisorReviewPage key="thesis" documentKind="thesis" /></Suspense> : null}
       {isResearchLibraryRoute ? <Suspense fallback={<div role="status">正在加载研究资料库…</div>}><ResearchLibrary /></Suspense> : null}
       {isGraduationRoute ? <Suspense fallback={<div role="status">正在加载研究工作台…</div>}><GraduationPage /></Suspense> : null}
       {isAdminRoute ? <Suspense fallback={<div role="status">{t('正在加载管理后台…', 'Loading admin studio…')}</div>}><AdminStudio lang={lang} onBack={goHome} /></Suspense> : null}

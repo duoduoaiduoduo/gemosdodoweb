@@ -7,13 +7,12 @@ type Point = {x:number;y:number};
 type Note = {id:string;page:number;type:'pen'|'text';points?:Point[];x?:number;y?:number;text?:string;createdAt?:string};
 type Operation = {method:'POST'|'DELETE';note:Note};
 type Tool = 'read'|'pen'|'text';
-const ownerStorage = 'gemos-review-owner';
 function readOwn(ownStorage:string): string[] {try {const v=JSON.parse(localStorage.getItem(ownStorage)||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string'):[];}catch{return [];}}
-function getOwner() {try {const previous=localStorage.getItem(ownerStorage);if(previous)return previous;const key=crypto.randomUUID();localStorage.setItem(ownerStorage,key);return key;}catch{return crypto.randomUUID();}}
+function getOwner(ownerStorage:string) {try {const previous=localStorage.getItem(ownerStorage);if(previous)return previous;const key=crypto.randomUUID();localStorage.setItem(ownerStorage,key);return key;}catch{return crypto.randomUUID();}}
 
-export default function AdvisorReviewPage({reportPages,reportRevision,versionLabel,documentTitle,outlineFormat,onPendingChange}:{reportPages:ReportPage[];reportRevision:string;versionLabel:string;documentTitle?:string;outlineFormat?:'reference';onPendingChange:(pending:boolean)=>void}) {
-  const endpoint = `/api/graduation-review/${reportRevision}`;
-  const ownStorage = `gemos-review-own-${reportRevision}`;
+export default function AdvisorReviewPage({reportPages,reportRevision,versionLabel,documentTitle,outlineFormat,coverNote,apiBase='/api/graduation-review',storagePrefix='gemos-review',sharePath='/graduation/review',documentName='开题报告',onPendingChange}:{reportPages:ReportPage[];reportRevision:string;versionLabel:string;documentTitle?:string;outlineFormat?:'reference';coverNote?:string;apiBase?:string;storagePrefix?:string;sharePath?:string;documentName?:string;onPendingChange:(pending:boolean)=>void}) {
+  const endpoint = `${apiBase}/${reportRevision}`;
+  const ownStorage = `${storagePrefix}-own-${reportRevision}`;
   const [tool,setTool]=useState<Tool>('read');
   const [notes,setNotes]=useState<Note[]>([]);
   const [draft,setDraft]=useState<Note|null>(null);
@@ -26,7 +25,7 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
   const [busy,setBusy]=useState(false);
   const busyRef=useRef(false);
   const pendingRef=useRef<Operation|null>(null);
-  const owner=useRef(getOwner());
+  const owner=useRef(getOwner(`${storagePrefix}-owner`));
   const [own,setOwn]=useState<string[]>(()=>readOwn(ownStorage));
   const [zoom,setZoom]=useState('fit');
   const [scale,setScale]=useState(1);
@@ -48,12 +47,12 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
   },[endpoint]);
   useEffect(()=>{void load();const timer=window.setInterval(()=>void load(),10000);return()=>clearInterval(timer);},[load]);
   useEffect(()=>{
-    const title=document.title;document.title='开题报告 · 导师阅览';
+    const title=document.title;document.title=`${documentName} · 导师阅览`;
     document.documentElement.classList.add('advisor-mode');document.body.classList.add('advisor-mode');window.scrollTo(0,0);
     const warn=(e:BeforeUnloadEvent)=>{if(pendingRef.current||draftRef.current||interactionRef.current){e.preventDefault();e.returnValue='';}};
     window.addEventListener('beforeunload',warn);
     return()=>{document.title=title;document.documentElement.classList.remove('advisor-mode');document.body.classList.remove('advisor-mode');window.removeEventListener('beforeunload',warn);};
-  },[]);
+  },[documentName]);
   useEffect(()=>{
     const host=viewportRef.current;if(!host)return;
     const update=()=>setScale(zoom==='fit'?Math.min(1,(host.clientWidth-24)/760):Number(zoom));
@@ -93,21 +92,21 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
     if(!cancel&&note.points!.length>1)add(note);
   };
   const undo=()=>{const note=[...own].reverse().map(id=>notes.find(n=>n.id===id)).find(Boolean);if(note)void save({method:'DELETE',note});};
-  const copyLink=async()=>{try{await navigator.clipboard.writeText(`${location.origin}/graduation/review?version=${encodeURIComponent(reportRevision)}`);setShareStatus('链接已复制');}catch{setShareStatus('请复制浏览器地址分享');}};
+  const copyLink=async()=>{try{await navigator.clipboard.writeText(`${location.origin}${sharePath}?version=${encodeURIComponent(reportRevision)}`);setShareStatus('链接已复制');}catch{setShareStatus('请复制浏览器地址分享');}};
   const selectTool=(next:Tool)=>{setTool(next);setVisible(true);setSelected(null);};
   return <main className="advisor-reader">
     <header className="advisor-toolbar" aria-label="报告阅读与批注工具">
-      <span className="advisor-toolbar-title">开题报告</span>
+      <span className="advisor-toolbar-title">{documentName}</span>
       <div className="advisor-tools">{([['read','阅读'],['pen','画笔'],['text','文字批注']] as [Tool,string][]).map(([id,label])=><button key={id} aria-pressed={tool===id} disabled={id!=='read'&&blocked} onClick={()=>selectTool(id)}>{label}</button>)}<button onClick={undo} disabled={blocked||!own.some(id=>notes.some(n=>n.id===id))}>撤销我的批注</button></div>
       <div className="advisor-tools"><label className="advisor-check"><input type="checkbox" checked={visible} onChange={e=>{setVisible(e.target.checked);setTool('read');}}/>显示批注</label><label><span className="advisor-sr">页面缩放</span><select aria-label="页面缩放" value={zoom} onChange={e=>setZoom(e.target.value)}><option value="fit">适合屏幕</option><option value="1">100%</option><option value="1.25">125%</option></select></label><button onClick={()=>window.print()}>打印</button><button onClick={()=>void copyLink()}>分享链接</button></div>
       <span className={`advisor-save ${failed?'is-error':''}`} role="status">{status}{shareStatus ? ` · ${shareStatus}` : ''}</span>{failed&&<button disabled={busy} onClick={()=>pendingRef.current?void save(pendingRef.current):void load()}>重试</button>}
     </header>
     <div className="advisor-instructions">{tool==='read'?'可直接阅读正文。需要圈画时选择“画笔”，文字意见可点“文字批注”后落在页面上。':tool==='pen'?'在纸面上拖动画线或圈画；触屏上下翻页请先切回“阅读”。':'点击纸面上的位置，填写文字意见。'}<span>批注保存在服务器 · 持链接可阅读、批注和修改正文</span></div>
     <div className="advisor-document" ref={viewportRef}>
-      {reportPages.map((page,index)=><section className="advisor-sheet-wrap" key={index} style={{width:760*scale,height:980*scale}} aria-label={`第 ${index+1} 页：${page.title.replace(/（续）$/,'')}`}>
+      {reportPages.map((page,index)=><section className="advisor-sheet-wrap" id={`review-page-${index+1}`} key={index} style={{width:760*scale,height:980*scale}} aria-label={`第 ${index+1} 页：${page.title.replace(/（续）$/,'')}`}>
         <article className="advisor-sheet" style={{transform:`scale(${scale})`}}>
           <div className="advisor-running">信息与交互设计 · 硕士<span>{versionLabel}</span></div>
-          {index===0&&(documentTitle?<><h1>{documentTitle}</h1><p className="advisor-draft-label">导师审阅稿，题目拟定 · 开题日期：2026年11月13日</p></>:<><h1>新污染物科普方向<br/>开题报告</h1><p className="advisor-draft-label">研究讨论稿，非正式定稿 · 开题日期：2026年11月13日</p></>)}
+          {index===0&&(documentTitle?<><h1>{documentTitle}</h1><p className="advisor-draft-label">{coverNote||'导师审阅稿，题目拟定 · 开题日期：2026年11月13日'}</p></>:<><h1>新污染物科普方向<br/>{documentName}</h1><p className="advisor-draft-label">{coverNote||'研究讨论稿，非正式定稿 · 开题日期：2026年11月13日'}</p></>)}
           {/* Keep the original heading space so saved ink remains aligned. */}
           <h2 style={page.title.endsWith('（续）')?{visibility:'hidden'}:undefined} aria-hidden={page.title.endsWith('（续）')||undefined}>{page.title}</h2>
           {page.paragraphs.map((p,i)=><p className={`advisor-paragraph${outlineFormat==='reference'&&/^(?:\d+\.\d+(?:\.\d+)?\s|（\d+）)/.test(p)?' advisor-outline-heading':''}`} key={i}>{p}</p>)}
