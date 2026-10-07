@@ -1,18 +1,18 @@
 // Controlled report release. Never reuse this revision after changing its content.
 export const graduationPublication = {
-  "revision": "proposal-2026-10-07-plain-language-v1",
-  "baseRevision": "proposal-2026-10-07-reference-outline-v1",
-  "label": "开题审阅稿 · 通俗表达修订版",
+  "revision": "proposal-2026-10-07-urgency-v1",
+  "baseRevision": "proposal-2026-10-07-plain-language-v1",
+  "label": "开题审阅稿 · 研究背景修订版",
   "outlineFormat": "reference",
   "title": "面向新污染物科普的照片驱动参与式交互设计研究",
   "downloads": [
     [
-      "2026-10-07 PDF · 通俗表达修订版",
-      "/graduation/reports/2026-10-07/plain-language-v1/proposal-review.pdf"
+      "2026-10-07 PDF · 研究背景修订版",
+      "/graduation/reports/2026-10-07/urgency-v1/proposal-review.pdf"
     ],
     [
-      "2026-10-07 Word · 通俗表达修订版",
-      "/graduation/reports/2026-10-07/plain-language-v1/proposal-review.docx"
+      "2026-10-07 Word · 研究背景修订版",
+      "/graduation/reports/2026-10-07/urgency-v1/proposal-review.docx"
     ]
   ],
   "sections": [
@@ -21,34 +21,35 @@ export const graduationPublication = {
       "paragraphs": [
         "1.1 创作的研究背景、依据",
         "（1）现实迫切需求",
-        "《新污染物治理行动方案》指出，有毒有害化学物质的生产和使用是新污染物的主要来源，关注持久性有机污染物、内分泌干扰物、抗生素等，也安排了微塑料研究与管控。[1]本课题从这些有明确科学依据的对象中选择内容，先以合成纤维衣物在洗涤时可能释放的微塑料微纤维开展研究。微塑料的研究范围依据政策和科学资料确定，常见衣物和洗衣活动则提供便于从照片进入的生活场景。",
-        "一张晾衣服或洗衣角落的照片，可以让人认出自己的衣服和生活环境，却很难直接说明衣物是什么材料、洗下的纤维会去哪里。本课题拟把这样的照片变成可以换角度观看的三维场景，在衣物旁设置可点选的发光位置，称为“热点”。观众点击后逐步了解有关过程，再在屏幕中把自己的小盒子拖进收藏托盘，得到一张艺术卡。照片和三维模型提供创作材料；物质组成、释放量和个人风险仍需相应检测与研究，不能由画面判断。本作品围绕场景讲解知识，力求让人愿意探索并保留作品。",
+        "新污染物科普的迫切性，首先来自这类污染与日常生活有关，却不容易被直接察觉。《新污染物治理行动方案》指出，有毒有害化学物质的生产和使用是新污染物的主要来源，重点关注持久性有机污染物、内分泌干扰物、抗生素等，也安排了微塑料研究与管控。[1]生态环境部在解读中指出，新污染物的环境风险较为隐蔽，治理难度较大；部分物质可能难以在环境中降解，或在生物体内逐渐积累，并带来毒性影响。[2]因此，环境看起来干净，并不足以说明不存在有关风险。公众需要借助科学知识，理解这些物质从哪里来、怎样进入环境，以及为什么值得关注。",
+        "其次，科普需要在污染预防阶段发挥作用。新污染物治理涉及生产、使用、排放和废弃物处置等多个环节，不能只等到排放后再进行处理。《行动方案》要求同时加强源头管控、过程减排和末端治理。[1]对于难以降解或难以治理的物质，及早减少不必要的产生与释放具有现实意义。[2]如果人们不理解日常使用和废弃处置与环境之间的联系，就难以理解相关限制、产品提示和处置要求为什么存在。科普应把这些联系讲清楚，帮助公众了解自己能够参与的环节，同时认识到企业生产和公共治理同样承担责任。",
+        "科普的必要性还在于，帮助公众把对新污染物的关注转化为有依据的理解和行动。只听到“有毒”“难降解”或“被检出”，不足以判断某一种物质在具体情况下会造成多大风险；还需要结合相应的调查、监测和科学评估。[1]因此，科普既要解释值得关注的原因，也要讲清楚证据、适用条件和仍需研究的问题，让人知道可以做什么、应从哪里获得可靠信息。其迫切性在于：风险可能不易察觉，治理又需要提前预防和多方参与，公众理解不能等到出现可见损害后才开始建立。",
         "（2）政策导向",
-        "政策要求开展新污染物科普，也强调调查评估、分类治理和全过程环境风险管控。[1]这为选题提供了明确的公共价值：科普不仅要让人听过一个名词，还要帮助人了解它与生产、使用、释放和处理过程有什么关系。例如讲洗衣纤维时，需要同时说明材料、洗涤条件和污水处理，个人能做的事情也要放在完整过程里看。",
-        "本作品据此安排“来源—潜在环境影响—减少释放”三个步骤。先解释纤维从哪里来，再讲洗下后可能经过哪些处理、去往哪里，最后说明在什么前提下可以减少释放。个人选择、企业的材料设计和公共污水处理各有作用。照片场景、盒子和卡片采用什么形式，则要结合使用者的意见与试测来确定。后续拟制作可复用创作方法包，简称Skill，让这些讲解方法和作品样式能够一起分享。",
+        "2022年发布的《新污染物治理行动方案》明确提出，开展新污染物治理科普宣传教育，引导公众科学认识新污染物环境风险，树立绿色消费理念，并发挥公众监督作用。[1]这表明，新污染物科普已经是治理工作中的明确任务。政策不仅安排调查、监测和技术治理，也要求让公众理解相关问题，为社会共同参与污染预防提供知识基础。",
+        "这一政策要求意味着，科普需要把专业治理内容转化为公众能够理解的信息：哪些物质受到关注，为什么需要调查与评估，相关管控措施针对哪些生产、使用和排放环节，以及绿色消费和规范处置能够发挥什么作用。科普内容应当有可靠出处，讲清楚具体对象和适用条件，也应说明个人、企业与政府各自承担的责任。让公众理解政策与生活之间的关系，有助于形成对治理措施的理解和参与，是本选题围绕新污染物开展科普研究的政策依据。[1]",
         "（3）社会导向",
-        "许多人会拍摄衣物、房间和身边物件，照片记录的不只是物品，也可能是一段经历。作品拟利用这种个人联系：观众选择自己的照片，给盒子命名，保留熟悉的纹理和颜色，再把它变成可以收藏的画面。共同档案中保存的是每个人创作的盒子和照片，观众也能看到别人从哪些生活场景进入同一议题。线上创作、扫码回看与方法分享是主要使用方式，线下体验则接入同一条创作流程。",
-        "参与方式可以由自己决定。有的人只想在本机保存，有的人愿意公开给朋友看，也有人更愿意使用示例照片或观看别人作品。研究会记录这些选择及理由，让不愿公开的人同样参与反馈。卡片是否好看、作品是否与自己有关、是否愿意主动分享，需要分别了解；研究将通过访谈、操作观察和自愿行为，判断哪些设计值得保留，哪些说明需要改进。",
+        "从社会层面看，新污染物科普需要回答公众能够联系到自身生活的问题：某类物质为什么值得关注，它与产品生产、日常使用和废弃处置有什么关系，哪些信息有科学依据，以及个人可以参与哪些合理的预防行动。这些问题关系到人们怎样理解环境信息、消费提示与公共治理措施。科普应以具体问题解释专业知识，让没有相关专业背景的人也能了解事情的来龙去脉。",
+        "同时，向公众传播知识，需要考虑信息是否容易理解、是否便于查证，以及能否继续与他人交流。把专业名词换成日常语言，说明来源、发生条件和可能影响，并提供可靠的信息出处，可以让人更容易提出问题、讨论问题。依据《行动方案》提出的社会共治要求，公众可以通过了解绿色消费、关注公开环境信息和参与社会监督等方式支持治理。[1]因此，新污染物科普研究需要关注如何让知识进入日常交流、帮助公众形成有依据的判断，并在自身能够参与的范围内采取行动。",
         "1.2 选题创作的研究依据",
         "1.2.1 用照片讲述生活，按过程解释科学",
-        "照片可以帮助人开口讲自己的生活。访谈时，可以先请参与者选一张愿意谈的照片，说说拍摄时发生了什么、为什么想保留、哪个细节最重要。相比只问抽象问题，照片给双方一个可以共同指认的对象。照片访谈研究为这种做法提供参考。[2]本研究拟用它了解选图理由与生活经验，而不预先替参与者决定照片的意义。",
-        "科学过程也可以从一件熟悉的东西讲起。例如先指向衣物，再说明它在什么洗涤条件下可能释放纤维，随后讲纤维可能经过的处理和去向，最后讨论怎样减少释放。科学传播中的叙事研究提示，可以把相关事件的先后经过和联系讲清楚，让观众知道前一步如何接到下一步。[3]",
+        "照片可以帮助人开口讲自己的生活。访谈时，可以先请参与者选一张愿意谈的照片，说说拍摄时发生了什么、为什么想保留、哪个细节最重要。相比只问抽象问题，照片给双方一个可以共同指认的对象。照片访谈研究为这种做法提供参考。[3]本研究拟用它了解选图理由与生活经验，而不预先替参与者决定照片的意义。",
+        "科学过程也可以从一件熟悉的东西讲起。例如先指向衣物，再说明它在什么洗涤条件下可能释放纤维，随后讲纤维可能经过的处理和去向，最后讨论怎样减少释放。科学传播中的叙事研究提示，可以把相关事件的先后经过和联系讲清楚，让观众知道前一步如何接到下一步。[4]",
         "在作品中，照片帮助观众进入自己的生活场景，热点把注意力带到一件物品，三步说明再把画面之外的过程接上。遇到材料或条件不清楚时，作品应提示还需要哪些信息。这样安排能否帮助本项目的参与和理解，将由后续访谈和试测回答。",
         "1.2.2 让操作与科普信息容易理解",
         "（1）每次突出一小段内容",
-        "人在观看转动的三维场景时，还要寻找入口、阅读文字，注意力容易分散。多媒体学习研究提出，可以把内容分成小段、突出重要位置，并让说明靠近对应画面。[4]本作品拟每次只突出一个热点和一小段解释，读完后再进入下一步；条件和出处放在相关内容旁边，也允许暂停与回看。三步是本作品选择的组织方式，是否清楚仍要试测，不由这一研究直接决定。",
+        "人在观看转动的三维场景时，还要寻找入口、阅读文字，注意力容易分散。多媒体学习研究提出，可以把内容分成小段、突出重要位置，并让说明靠近对应画面。[5]本作品拟每次只突出一个热点和一小段解释，读完后再进入下一步；条件和出处放在相关内容旁边，也允许暂停与回看。三步是本作品选择的组织方式，是否清楚仍要试测，不由这一研究直接决定。",
         "（2）让操作结果清楚可见",
         "操作应当让人明白自己做了什么、接下来会发生什么。照片卡负责把照片放进场景，热点负责打开讲解，盒子负责承载完成的作品，托盘负责收藏。例如拖起盒子时，底座与盒子分离；放入托盘后，出现明确的保存反馈。拟通过这些动作表达创作进度，减少反复寻找文字按钮的需要。观察重点是入口能否找到、反馈能否看懂，以及动作有没有帮助人理解内容。",
         "（3）照片空间与知识说明分清",
-        "本项目使用从单张照片估计三维空间的工具SHARP。它生成的“三维高斯场景”，由许多有颜色、大小和透明度的小斑块组成，能在附近位置换角度观看，保留照片中的物件与空间层次。[5]因此，本作品使用实际三维高斯数据来承载照片空间，再另外设计热点和讲解效果。照片内看得见的东西、参与者补充的衣物信息、研究资料中的过程，会用不同标签说明。换角度时，观众既能探索自己的画面，也能知道哪些内容来自照片、哪些内容来自资料。",
+        "本项目使用从单张照片估计三维空间的工具SHARP。它生成的“三维高斯场景”，由许多有颜色、大小和透明度的小斑块组成，能在附近位置换角度观看，保留照片中的物件与空间层次。[6]因此，本作品使用实际三维高斯数据来承载照片空间，再另外设计热点和讲解效果。照片内看得见的东西、参与者补充的衣物信息、研究资料中的过程，会用不同标签说明。换角度时，观众既能探索自己的画面，也能知道哪些内容来自照片、哪些内容来自资料。",
         "（4）保留个人表达，分享创作方法",
-        "个人表达可以体现在照片纹理、盒子名字、画面留白和卡片构图中。拟制作的Skill则是一套可分享的创作方法包，包含操作步骤、核对过的科学材料、图片和卡片模板、使用说明。这套文件拟按Agent Skills规范组织，使支持这一规范的AI助手能读到步骤和材料，再协助使用者换素材创作。[6]收到方法包的人按说明核对内容，并制作自己的新作品。当前方法包仍待制作。研究将观察人们怎样使用这些规则、哪里需要帮助，以及哪些内容容易在再创作时丢失。",
+        "个人表达可以体现在照片纹理、盒子名字、画面留白和卡片构图中。拟制作的Skill则是一套可分享的创作方法包，包含操作步骤、核对过的科学材料、图片和卡片模板、使用说明。这套文件拟按Agent Skills规范组织，使支持这一规范的AI助手能读到步骤和材料，再协助使用者换素材创作。[7]收到方法包的人按说明核对内容，并制作自己的新作品。当前方法包仍待制作。研究将观察人们怎样使用这些规则、哪里需要帮助，以及哪些内容容易在再创作时丢失。",
         "1.2.3 把科学过程讲清楚、画出来",
         "（1）说明纤维来源与可能去向",
-        "首个例子从合成纤维衣物的洗涤开始。有关研究考察了不同织物和洗涤条件下细小塑料纤维的释放，说明释放与材料及洗涤方式有关。[7]细小的塑料纤维属于微塑料的一种，细纤维却并不都由塑料组成。作品会先核对衣物标签或已知材料，再选择适合的讲解。洗衣是便于验证整条创作流程的第一个例子，后续主题仍需各自查阅资料，按同样的方法组织。",
-        "洗下来的纤维还会经过画面之外的过程。一项针对二级污水处理厂的研究发现，处理能够减少微塑料，处理后的出水中仍可能有残余。[8]因此，讲解会区分洗衣排水、污水收集、处理和出水去向，并根据有依据的情况说明。当地设施与排放方式不同，后续去向也可能不同。作品中的“潜在环境影响”先解释这些可能的环境过程；若进一步讲生态后果，还要核对对应研究，不把所有排水统一画成直接入海。",
+        "首个例子从合成纤维衣物的洗涤开始。有关研究考察了不同织物和洗涤条件下细小塑料纤维的释放，说明释放与材料及洗涤方式有关。[8]细小的塑料纤维属于微塑料的一种，细纤维却并不都由塑料组成。作品会先核对衣物标签或已知材料，再选择适合的讲解。洗衣是便于验证整条创作流程的第一个例子，后续主题仍需各自查阅资料，按同样的方法组织。",
+        "洗下来的纤维还会经过画面之外的过程。一项针对二级污水处理厂的研究发现，处理能够减少微塑料，处理后的出水中仍可能有残余。[9]因此，讲解会区分洗衣排水、污水收集、处理和出水去向，并根据有依据的情况说明。当地设施与排放方式不同，后续去向也可能不同。作品中的“潜在环境影响”先解释这些可能的环境过程；若进一步讲生态后果，还要核对对应研究，不把所有排水统一画成直接入海。",
         "（2）说明怎样少释放、怎样继续参与",
-        "减少释放的建议也要说明适用前提。一项实际脏衣研究统计了每公斤衣物洗下的全部纤维，其中多数不是塑料。研究同时改变了温度和程序时长，因此较冷、较短程序的结果，不能拆成温度或时长各自的作用。[9]按每公斤衣物计算时释放较少，也不等于一整次洗衣总量必然较少，更不保证每件衣物都减少同样多。作品拟用简短说明保留这些差别，并给出有条件的建议：查看衣物护理标签，结合清洁需要考虑较低温、较短的合适程序，使用合适负荷，不超过机器允许容量。",
+        "减少释放的建议也要说明适用前提。一项实际脏衣研究统计了每公斤衣物洗下的全部纤维，其中多数不是塑料。研究同时改变了温度和程序时长，因此较冷、较短程序的结果，不能拆成温度或时长各自的作用。[10]按每公斤衣物计算时释放较少，也不等于一整次洗衣总量必然较少，更不保证每件衣物都减少同样多。作品拟用简短说明保留这些差别，并给出有条件的建议：查看衣物护理标签，结合清洁需要考虑较低温、较短的合适程序，使用合适负荷，不超过机器允许容量。",
         "在进入创作前，先看这张照片适合讲什么。例如洗衣机、衣物或洗衣活动可以提示场景，但衣物材质和洗涤条件可能还要通过标签或参与者补充来确认。当前由人工做这一步，后续拟让AI提出建议，再由设计者核对。纯人脸自拍暂不进入这条场景路线，是本作品的选图规则，并不表示这类照片完全没有环境关联。没有合适内容时，可以换照片，或只进行图像创作而不附污染物结论。",
         "热点把解释放到观众可以找到的位置。例如衣物旁出现一个发光提示，点击后先突出正在讲的局部，再显示短句和下一步入口。位置和范围由设计者核对，避免把提示点放到与讲解无关的物品上。除了颜色，还拟使用轮廓、标签和形态变化，让人知道当前在看哪个环节。原型已有局部高亮和变色；进一步表现运动、散开或湍流的效果，仍需制作并观察是否容易理解。",
         "三步中的画面变化是设计者画出来帮助讲解的。光点变亮、改变颜色或流动，可以提示某个过程正在发生；它们的多少和颜色不代表照片测出的污染物。照片空间保留个人生活质感，资料说明负责讲清科学关系，两者在画面中配合。每一步都应能找到相应短句和出处，观众可以从效果回到文字，了解它具体想表达什么，而不只记住一段漂亮动画。",
@@ -57,11 +58,11 @@ export const graduationPublication = {
         "扫码回看一件现有作品，与使用Skill另做一件作品，是两种不同的后续参与。Skill拟把选图、核对材料、组织三步说明、安排热点和生成卡片的过程写清楚，并附模板、示例和来源记录。下一位创作者可以换自己的照片和名字，但科学说明及其前提要随作品保留。后续试测会检查使用者能否按说明完成，以及哪里需要补充示例或调整步骤。",
         "1.3 国内外创作实践的现状、趋势",
         "1.3.1 国外现状",
-        "国外科普短片《The Story of Microfibers》从衣物进入，讲述纤维与环境之间的联系，给观众一个熟悉的起点。[10]它提示本研究：可以先让人认出物品，再展开画面之外的过程。短片带有倡议目的，借用其中的讲法时仍需核对科学条件。另一类参照是SHARP的照片空间生成，它为个人照片进入三维作品提供了技术可能。两者分别帮助思考“讲什么”和“怎样呈现”。",
+        "国外科普短片《The Story of Microfibers》从衣物进入，讲述纤维与环境之间的联系，给观众一个熟悉的起点。[11]它提示本研究：可以先让人认出物品，再展开画面之外的过程。短片带有倡议目的，借用其中的讲法时仍需核对科学条件。另一类参照是SHARP的照片空间生成，它为个人照片进入三维作品提供了技术可能。两者分别帮助思考“讲什么”和“怎样呈现”。",
         "本研究拟把这些参照接到个人创作中：使用者选择自己的照片，通过热点理解过程，抓出盒子形成作品，再通过卡片和方法包继续分享。案例比较会具体看入口、讲解顺序、操作反馈和来源怎么安排，也会记录哪些地方值得改进。现有材料提供的是具体方法参照；公开播放或能生成三维场景，并没有回答本作品中的人是否理解、是否愿意分享，这些问题仍由本研究观察。",
         "1.3.2 国内现状",
-        "国内已有将环境议题变成互动作品的具体探索。中央美术学院“海洋增强”课程先调查海洋生态，再整理生态关系和危机关系图谱。其中“海洋‘声’态”方案让多人操作旋钮，模拟海洋噪声并呈现相应画面。[11]它启发本研究先了解科学关系，再决定观众的动作与画面怎样联系；多人共同改变画面的思路，也为个人盒子组成共同档案提供参照。该网页记录的是方案阶段，研究借鉴的是设计过程。",
-        "科普说明也需要照顾人在现场怎样操作。国内关于展品说明牌可视化的研究，讨论简化层次、突出重点、适应观看情境和及时反馈，并结合操作指引改版说明如何组织原理、操作与延伸内容。[12]这提示本作品把必要说明放在动作附近，让观众找到入口后知道下一步。该文并非专门研究污染物；本课题借用的是说明和反馈的方法。两项国内案例分别联系环境艺术和科普信息设计，为本研究提供不同的参照角度。",
+        "国内已有将环境议题变成互动作品的具体探索。中央美术学院“海洋增强”课程先调查海洋生态，再整理生态关系和危机关系图谱。其中“海洋‘声’态”方案让多人操作旋钮，模拟海洋噪声并呈现相应画面。[12]它启发本研究先了解科学关系，再决定观众的动作与画面怎样联系；多人共同改变画面的思路，也为个人盒子组成共同档案提供参照。该网页记录的是方案阶段，研究借鉴的是设计过程。",
+        "科普说明也需要照顾人在现场怎样操作。国内关于展品说明牌可视化的研究，讨论简化层次、突出重点、适应观看情境和及时反馈，并结合操作指引改版说明如何组织原理、操作与延伸内容。[13]这提示本作品把必要说明放在动作附近，让观众找到入口后知道下一步。该文并非专门研究污染物；本课题借用的是说明和反馈的方法。两项国内案例分别联系环境艺术和科普信息设计，为本研究提供不同的参照角度。",
         "1.4 创作选题的理论意义与实践价值",
         "1.4.1 理论意义",
         "（1）丰富生活情境中的科普信息组织",
@@ -112,7 +113,7 @@ export const graduationPublication = {
       "links": [],
       "images": [
         {
-          "src": "/graduation/reports/2026-10-07/plain-language-v1/03-system-sharing.png",
+          "src": "/graduation/reports/2026-10-07/urgency-v1/03-system-sharing.png",
           "alt": "照片怎样进入作品、保存成卡片并邀请他人再创作（设计构想草图）",
           "caption": "照片怎样进入作品、保存成卡片并邀请他人再创作（设计构想草图）"
         }
@@ -234,17 +235,18 @@ export const graduationPublication = {
       "title": "七、参考文献",
       "paragraphs": [
         "[1] 国务院办公厅. 关于印发新污染物治理行动方案的通知：国办发〔2022〕15号[EB/OL]. (2022-05-24)[2026-10-06].",
-        "[2] HARPER D. Talking about pictures: A case for photo elicitation[J]. Visual Studies, 2002, 17(1): 13–26.",
-        "[3] DAHLSTROM M F. Using narratives and storytelling to communicate science with nonexpert audiences[J]. Proceedings of the National Academy of Sciences, 2014, 111(Suppl 4): 13614–13620.",
-        "[4] MAYER R E, MORENO R. Nine Ways to Reduce Cognitive Load in Multimedia Learning[J]. Educational Psychologist, 2003, 38(1): 43–52.",
-        "[5] MESCHEDER L, DONG W, LI S, et al. Sharp Monocular View Synthesis in Less Than a Second[C/OL]//ICLR. 2026[2026-10-07].",
-        "[6] AGENT SKILLS. Specification[EB/OL]. [2026-10-07].",
-        "[7] NAPPER I E, THOMPSON R C. Release of synthetic microplastic plastic fibres from domestic washing machines: Effects of fabric type and washing conditions[J]. Marine Pollution Bulletin, 2016, 112(1–2): 39–45.",
-        "[8] MURPHY F, EWINS C, CARBONNIER F, et al. Wastewater Treatment Works (WwTW) as a Source of Microplastics in the Aquatic Environment[J]. Environmental Science & Technology, 2016, 50(11): 5800–5808.",
-        "[9] LANT N J, HAYWARD A S, PETHTHAWADU M M D, et al. Microfiber release from real soiled consumer laundry and the impact of fabric care products and washing conditions[J]. PLOS ONE, 2020, 15(6): e0233332.",
-        "[10] THE STORY OF STUFF PROJECT. The Story of Microfibers[EB/OL]. 2017[2026-10-06].",
-        "[11] 中央美术学院. 精彩“云”课｜响应式环境：“海洋增强”1 / 景斯阳·设计学院[EB/OL]. (2020-04-03)[2026-10-07].",
-        "[12] 俞放. 科普展品说明牌的可视化设计研究[EB/OL]. (2026-06-19)[2026-10-07]."
+        "[2] 生态环境部. 生态环境部有关负责人就《新污染物治理行动方案》答记者问[EB/OL]. (2022-05-24)[2026-10-07].",
+        "[3] HARPER D. Talking about pictures: A case for photo elicitation[J]. Visual Studies, 2002, 17(1): 13–26.",
+        "[4] DAHLSTROM M F. Using narratives and storytelling to communicate science with nonexpert audiences[J]. Proceedings of the National Academy of Sciences, 2014, 111(Suppl 4): 13614–13620.",
+        "[5] MAYER R E, MORENO R. Nine Ways to Reduce Cognitive Load in Multimedia Learning[J]. Educational Psychologist, 2003, 38(1): 43–52.",
+        "[6] MESCHEDER L, DONG W, LI S, et al. Sharp Monocular View Synthesis in Less Than a Second[C/OL]//ICLR. 2026[2026-10-07].",
+        "[7] AGENT SKILLS. Specification[EB/OL]. [2026-10-07].",
+        "[8] NAPPER I E, THOMPSON R C. Release of synthetic microplastic plastic fibres from domestic washing machines: Effects of fabric type and washing conditions[J]. Marine Pollution Bulletin, 2016, 112(1–2): 39–45.",
+        "[9] MURPHY F, EWINS C, CARBONNIER F, et al. Wastewater Treatment Works (WwTW) as a Source of Microplastics in the Aquatic Environment[J]. Environmental Science & Technology, 2016, 50(11): 5800–5808.",
+        "[10] LANT N J, HAYWARD A S, PETHTHAWADU M M D, et al. Microfiber release from real soiled consumer laundry and the impact of fabric care products and washing conditions[J]. PLOS ONE, 2020, 15(6): e0233332.",
+        "[11] THE STORY OF STUFF PROJECT. The Story of Microfibers[EB/OL]. 2017[2026-10-06].",
+        "[12] 中央美术学院. 精彩“云”课｜响应式环境：“海洋增强”1 / 景斯阳·设计学院[EB/OL]. (2020-04-03)[2026-10-07].",
+        "[13] 俞放. 科普展品说明牌的可视化设计研究[EB/OL]. (2026-06-19)[2026-10-07]."
       ],
       "pending": "",
       "links": [
@@ -253,47 +255,51 @@ export const graduationPublication = {
           "https://www.mee.gov.cn/zcwj/gwywj/202205/t20220524_983032.shtml"
         ],
         [
-          "[2] HARPER D. Talking about pictures: A case for photo elicitation[J]. Visual Studies, 2002, 17(1): 13–26.",
+          "[2] 生态环境部. 生态环境部有关负责人就《新污染物治理行动方案》答记者问[EB/OL]. (2022-05-24)[2026-10-07].",
+          "https://www.mee.gov.cn/ywdt/zbft/202205/t20220524_983044.shtml"
+        ],
+        [
+          "[3] HARPER D. Talking about pictures: A case for photo elicitation[J]. Visual Studies, 2002, 17(1): 13–26.",
           "https://www.tandfonline.com/doi/abs/10.1080/14725860220137345"
         ],
         [
-          "[3] DAHLSTROM M F. Using narratives and storytelling to communicate science with nonexpert audiences[J]. Proceedings of the National Academy of Sciences, 2014, 111(Suppl 4): 13614–13620.",
+          "[4] DAHLSTROM M F. Using narratives and storytelling to communicate science with nonexpert audiences[J]. Proceedings of the National Academy of Sciences, 2014, 111(Suppl 4): 13614–13620.",
           "https://pmc.ncbi.nlm.nih.gov/articles/PMC4183170/"
         ],
         [
-          "[4] MAYER R E, MORENO R. Nine Ways to Reduce Cognitive Load in Multimedia Learning[J]. Educational Psychologist, 2003, 38(1): 43–52.",
+          "[5] MAYER R E, MORENO R. Nine Ways to Reduce Cognitive Load in Multimedia Learning[J]. Educational Psychologist, 2003, 38(1): 43–52.",
           "https://www.tandfonline.com/doi/abs/10.1207/S15326985EP3801_6"
         ],
         [
-          "[5] MESCHEDER L, DONG W, LI S, et al. Sharp Monocular View Synthesis in Less Than a Second[C/OL]//ICLR. 2026[2026-10-07].",
+          "[6] MESCHEDER L, DONG W, LI S, et al. Sharp Monocular View Synthesis in Less Than a Second[C/OL]//ICLR. 2026[2026-10-07].",
           "https://arxiv.org/abs/2512.10685"
         ],
         [
-          "[6] AGENT SKILLS. Specification[EB/OL]. [2026-10-07].",
+          "[7] AGENT SKILLS. Specification[EB/OL]. [2026-10-07].",
           "https://agentskills.io/specification"
         ],
         [
-          "[7] NAPPER I E, THOMPSON R C. Release of synthetic microplastic plastic fibres from domestic washing machines: Effects of fabric type and washing conditions[J]. Marine Pollution Bulletin, 2016, 112(1–2): 39–45.",
+          "[8] NAPPER I E, THOMPSON R C. Release of synthetic microplastic plastic fibres from domestic washing machines: Effects of fabric type and washing conditions[J]. Marine Pollution Bulletin, 2016, 112(1–2): 39–45.",
           "https://pubmed.ncbi.nlm.nih.gov/27686821/"
         ],
         [
-          "[8] MURPHY F, EWINS C, CARBONNIER F, et al. Wastewater Treatment Works (WwTW) as a Source of Microplastics in the Aquatic Environment[J]. Environmental Science & Technology, 2016, 50(11): 5800–5808.",
+          "[9] MURPHY F, EWINS C, CARBONNIER F, et al. Wastewater Treatment Works (WwTW) as a Source of Microplastics in the Aquatic Environment[J]. Environmental Science & Technology, 2016, 50(11): 5800–5808.",
           "https://pubs.acs.org/doi/10.1021/acs.est.5b05416"
         ],
         [
-          "[9] LANT N J, HAYWARD A S, PETHTHAWADU M M D, et al. Microfiber release from real soiled consumer laundry and the impact of fabric care products and washing conditions[J]. PLOS ONE, 2020, 15(6): e0233332.",
+          "[10] LANT N J, HAYWARD A S, PETHTHAWADU M M D, et al. Microfiber release from real soiled consumer laundry and the impact of fabric care products and washing conditions[J]. PLOS ONE, 2020, 15(6): e0233332.",
           "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0233332"
         ],
         [
-          "[10] THE STORY OF STUFF PROJECT. The Story of Microfibers[EB/OL]. 2017[2026-10-06].",
+          "[11] THE STORY OF STUFF PROJECT. The Story of Microfibers[EB/OL]. 2017[2026-10-06].",
           "https://wp2018.storyofstuff.org/movies/story-of-microfibers/"
         ],
         [
-          "[11] 中央美术学院. 精彩“云”课｜响应式环境：“海洋增强”1 / 景斯阳·设计学院[EB/OL]. (2020-04-03)[2026-10-07].",
+          "[12] 中央美术学院. 精彩“云”课｜响应式环境：“海洋增强”1 / 景斯阳·设计学院[EB/OL]. (2020-04-03)[2026-10-07].",
           "https://www.cafa.edu.cn/st/2020/90120394.htm"
         ],
         [
-          "[12] 俞放. 科普展品说明牌的可视化设计研究[EB/OL]. (2026-06-19)[2026-10-07].",
+          "[13] 俞放. 科普展品说明牌的可视化设计研究[EB/OL]. (2026-06-19)[2026-10-07].",
           "https://www.nnhm.org.cn/kxyj/bwgxdt/bwgxdt/4028c1089e326a16019ea63bf05e02f9.shtml"
         ]
       ],
