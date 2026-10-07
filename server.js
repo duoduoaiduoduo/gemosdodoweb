@@ -3311,7 +3311,7 @@ app.get('/api/tucao/room', (req, res) => {
 if (fs.existsSync(distRoot)) {
 
   app.use(express.static(distRoot));
-  app.get(['/', /^\/(?:awards|pdfs|journal|admin|proposal|graduation(?:\/(?:review|research|thesis))?|pasture|pingpong|tucao|vibecoding(?:\/[^/]+)?)$/], (req, res) => {
+  app.get(['/', /^\/(?:awards|pdfs|journal|admin|proposal|graduation(?:\/(?:review|research|thesis-review))?|pasture|pingpong|tucao|vibecoding(?:\/[^/]+)?)$/], (req, res) => {
     res.sendFile(path.join(distRoot, 'index.html'));
   });
 }

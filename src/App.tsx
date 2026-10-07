@@ -476,7 +476,7 @@ export default function App() {
   const isResearchLibraryRoute = pathname === '/graduation/research';
   const isGraduationRoute = pathname === '/graduation';
   const isAdvisorReviewRoute = pathname === '/graduation/review';
-  const isThesisReviewRoute = pathname === '/graduation/thesis';
+  const isThesisReviewRoute = pathname === '/graduation/thesis-review';
   const isPastureRoute = pathname === '/pasture';
   /** 隐藏页：主页不放任何入口，只能靠网址进来 */
   const isPingPongRoute = pathname === '/pingpong';

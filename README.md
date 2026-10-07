@@ -41,7 +41,7 @@
 
 ### 研究与管理
 
-- **毕业设计** `/graduation` · `/graduation/research` · `/graduation/review` · `/graduation/thesis` — 研究工作台、资料库，以及独立的开题报告和硕士论文版本、分版本批注。
+- **毕业设计** `/graduation` · `/graduation/research` · `/graduation/review` · `/graduation/thesis-review` — 研究工作台、资料库，以及独立的开题报告和硕士论文版本、分版本批注。
 - **提案** `/proposal` — PDF 阅读与实时同步批注。
 - **后台** `/admin` — 内容编辑、上传、访客统计及存储检查。
 - **私人文件中转站** `/transfer/` — 管理口令登录、分块上传、到期清理。

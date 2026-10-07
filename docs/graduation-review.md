@@ -10,7 +10,7 @@
 
 ## 独立论文阅览
 
-`/graduation/thesis` 为硕士专业学位论文导师阅览入口，首版明确标为论文大纲草案，不表示论文或研究评价已完成。开题报告继续使用 `/graduation/review`，两个界面分别读取自己的正文、版本和批注；持链接可以阅读、批注和编辑本界面最新版。
+`/graduation/thesis-review` 为硕士专业学位论文导师阅览入口，首版明确标为论文大纲草案，不表示论文或研究评价已完成。开题报告继续使用 `/graduation/review`，两个界面分别读取自己的正文、版本和批注；持链接可以阅读、批注和编辑本界面最新版。论文静态下载继续使用 `/graduation/thesis/日期/...`，与阅览路由分开，避免静态目录重定向影响直达阅读。
 
 论文 API 为 `/api/thesis-review`，运行数据保存到 `.graduation-review/thesis-annotations.json`。开题 API 与 `.graduation-review/annotations.json` 保持独立。相同的批注编号或编辑请求编号不会跨文件混用；其他界面的版本不能用来提交本界面的正文或批注。论文浏览器草稿及撤销凭据也使用独立存储前缀。
 
@@ -38,4 +38,4 @@
 
 ## 主页入口口令
 
-电脑主导航、手机菜单及首页“继续看看”中的毕业设计按钮，每次点击均弹出口令框。验证接口是 `/api/graduation-entry/verify`，只控制这次导航，不给直达页面或报告 API 加登录限制。直接访问 `/graduation`、`/graduation/review`、`/graduation/thesis` 及对应版本链接保持免口令。口令校验值仅在服务端配置中保存，不包含明文。修改口令应重新生成随机盐和 scrypt 校验值。
+电脑主导航、手机菜单及首页“继续看看”中的毕业设计按钮，每次点击均弹出口令框。验证接口是 `/api/graduation-entry/verify`，只控制这次导航，不给直达页面或报告 API 加登录限制。直接访问 `/graduation`、`/graduation/review`、`/graduation/thesis-review` 及对应版本链接保持免口令。口令校验值仅在服务端配置中保存，不包含明文。修改口令应重新生成随机盐和 scrypt 校验值。

@@ -173,10 +173,10 @@ test('production SPA fallback accepts thesis direct and version URLs without swa
   const literal=source.slice(start+prefix.length,end);
   assert.ok(literal.startsWith('/^')&&literal.endsWith('$/'));
   const whitelist=new RegExp(literal.slice(1,-1));
-  for(const address of ['/graduation/thesis','/graduation/thesis?version=thesis-outline-2026-10-07-test','/graduation','/graduation/review','/graduation/research','/awards','/vibecoding/example']){
+  for(const address of ['/graduation/thesis-review','/graduation/thesis-review?version=thesis-outline-2026-10-07-test','/graduation','/graduation/review','/graduation/research','/awards','/vibecoding/example']){
     assert.ok(whitelist.test(new URL(address,'https://example.org').pathname),address);
   }
-  for(const pathname of ['/api/thesis-review/document','/graduation/thesis-other','/graduation/thesis/chapter','/graduation/reports/missing.pdf','/assets/missing.js'])assert.equal(whitelist.test(pathname),false,pathname);
+  for(const pathname of ['/api/thesis-review/document','/graduation/thesis','/graduation/thesis/2026-10-07/outline.pdf','/graduation/thesis-review-other','/graduation/thesis-review/chapter','/graduation/reports/missing.pdf','/assets/missing.js'])assert.equal(whitelist.test(pathname),false,pathname);
   const fallback=source.slice(start,source.indexOf('\n  });',end));
   assert.ok(fallback.includes("res.sendFile(path.join(distRoot, 'index.html'))"));
   assert.ok(source.slice(source.lastIndexOf('if (fs.existsSync(distRoot))',start),start).includes('app.use(express.static(distRoot))'));

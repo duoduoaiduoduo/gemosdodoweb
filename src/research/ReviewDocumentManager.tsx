@@ -8,7 +8,7 @@ type Bundle={document:DocumentVersion;latestRevision:string;versions:{revision:s
 type Draft={baseRevision:string;sections:ReportPage[];requestId:string};
 const reviewModes={
   proposal:{apiBase:'/api/graduation-review',storagePrefix:'gemos-review',sharePath:'/graduation/review',documentName:'开题报告'},
-  thesis:{apiBase:'/api/thesis-review',storagePrefix:'gemos-thesis-review',sharePath:'/graduation/thesis',documentName:'硕士专业学位论文'},
+  thesis:{apiBase:'/api/thesis-review',storagePrefix:'gemos-thesis-review',sharePath:'/graduation/thesis-review',documentName:'硕士专业学位论文'},
 };
 const getDraft=(draftKey:string):Draft|null=>{try{const d=JSON.parse(localStorage.getItem(draftKey)||'null');return d&&typeof d.baseRevision==='string'&&typeof d.requestId==='string'&&Array.isArray(d.sections)&&d.sections.length>0&&d.sections.length<=20&&d.sections.every((s:ReportPage)=>s&&typeof s.title==='string'&&Array.isArray(s.paragraphs)&&s.paragraphs.every(p=>typeof p==='string')&&typeof s.pending==='string')?d:null;}catch{return null;}};
 function ownerKey(storagePrefix:string){const storageKey=`${storagePrefix}-owner`;let key=localStorage.getItem(storageKey);if(!key){key=crypto.randomUUID();localStorage.setItem(storageKey,key);}return key;}
@@ -55,7 +55,7 @@ export default function ReviewDocumentManager({documentKind='proposal'}:{documen
     : [];
   return <div className="review-manager">
     <nav className="review-document-nav" aria-label="毕业研究文档">
-      {[['/graduation','研究工作台'],['/graduation/review','开题报告'],['/graduation/thesis','硕士论文']].map(([href,label])=>editing||annotationPending?<span key={href} aria-disabled="true">{label}</span>:<a key={href} href={href} aria-current={href===mode.sharePath?'page':undefined}>{label}</a>)}
+      {[['/graduation','研究工作台'],['/graduation/review','开题报告'],['/graduation/thesis-review','硕士论文']].map(([href,label])=>editing||annotationPending?<span key={href} aria-disabled="true">{label}</span>:<a key={href} href={href} aria-current={href===mode.sharePath?'page':undefined}>{label}</a>)}
     </nav>
     <header className="review-version-bar">
       {editing?<><strong>编辑正文</strong><span>保存时自动分页，并保留旧版本。</span><button disabled={saving} onClick={()=>void save()}>{saving?'正在保存…':'保存新版本'}</button><button disabled={saving} onClick={()=>{setEditing(null);setError('');}}>退出编辑</button><button onClick={exportDraft}>导出修改稿</button></>:<><label>{documentKind==='thesis'?'论文版本':'报告版本'} <select aria-label={documentKind==='thesis'?'论文版本':'报告版本'} disabled={loading||annotationPending} value={bundle?.document.revision||''} onChange={e=>void load(e.target.value)}>{bundle?.versions.map(v=><option value={v.revision} key={v.revision}>{v.label} · {new Date(v.createdAt).toLocaleDateString('zh-CN')}</option>)}</select></label><button disabled={loading||annotationPending||!bundle||bundle.document.revision!==bundle.latestRevision} onClick={start}>编辑正文</button>{bundle&&bundle.document.revision!==bundle.latestRevision&&<button disabled={annotationPending} onClick={()=>void load()}>打开最新版</button>}<button disabled={loading||annotationPending||comparing||!bundle||bundle.versions[0].revision===bundle.document.revision} onClick={()=>void comparePrevious()}>{compare?'结束对照':'与上一版对照'}</button>{availableDraft&&<button disabled={annotationPending||loading} onClick={()=>{retain(availableDraft);setError('');}}>恢复未保存修改</button>}</>}
