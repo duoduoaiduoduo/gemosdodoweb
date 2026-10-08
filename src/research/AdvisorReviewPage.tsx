@@ -1,6 +1,8 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
-import type {PointerEvent as ReactPointerEvent} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import type {CSSProperties, PointerEvent as ReactPointerEvent} from 'react';
 import type {ReportPage} from './reviewDocument';
+import ReviewOutline from './ReviewOutlinePanel';
+import {buildReviewOutline} from './reviewOutline.js';
 import './advisor-review.css';
 
 type Point = {x:number;y:number};
@@ -10,7 +12,7 @@ type Tool = 'read'|'pen'|'text';
 function readOwn(ownStorage:string): string[] {try {const v=JSON.parse(localStorage.getItem(ownStorage)||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string'):[];}catch{return [];}}
 function getOwner(ownerStorage:string) {try {const previous=localStorage.getItem(ownerStorage);if(previous)return previous;const key=crypto.randomUUID();localStorage.setItem(ownerStorage,key);return key;}catch{return crypto.randomUUID();}}
 
-export default function AdvisorReviewPage({reportPages,reportRevision,versionLabel,documentTitle,outlineFormat,coverNote,apiBase='/api/graduation-review',storagePrefix='gemos-review',sharePath='/graduation/review',documentName='开题报告',onPendingChange}:{reportPages:ReportPage[];reportRevision:string;versionLabel:string;documentTitle?:string;outlineFormat?:'reference';coverNote?:string;apiBase?:string;storagePrefix?:string;sharePath?:string;documentName?:string;onPendingChange:(pending:boolean)=>void}) {
+export default function AdvisorReviewPage({reportPages,reportRevision,versionLabel,documentTitle,outlineFormat,coverNote,showOutline=false,apiBase='/api/graduation-review',storagePrefix='gemos-review',sharePath='/graduation/review',documentName='开题报告',onPendingChange}:{reportPages:ReportPage[];reportRevision:string;versionLabel:string;documentTitle?:string;outlineFormat?:'reference';coverNote?:string;showOutline?:boolean;apiBase?:string;storagePrefix?:string;sharePath?:string;documentName?:string;onPendingChange:(pending:boolean)=>void}) {
   const endpoint = `${apiBase}/${reportRevision}`;
   const ownStorage = `${storagePrefix}-own-${reportRevision}`;
   const [tool,setTool]=useState<Tool>('read');
@@ -30,6 +32,11 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
   const [zoom,setZoom]=useState('fit');
   const [scale,setScale]=useState(1);
   const viewportRef=useRef<HTMLDivElement>(null);
+  const toolbarRef=useRef<HTMLElement>(null);
+  const [toolbarHeight,setToolbarHeight]=useState(64);
+  const [outlineOpen,setOutlineOpen]=useState(false);
+  const closeOutline=useCallback(()=>setOutlineOpen(false),[]);
+  const outline=useMemo(()=>showOutline?buildReviewOutline(reportPages):[],[showOutline,reportPages]);
   const [shareStatus,setShareStatus]=useState('');
   const [selected,setSelected]=useState<string|null>(null);
   const interactionRef=useRef(false);
@@ -58,6 +65,11 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
     const update=()=>setScale(zoom==='fit'?Math.min(1,(host.clientWidth-24)/760):Number(zoom));
     update();const observer=new ResizeObserver(update);observer.observe(host);return()=>observer.disconnect();
   },[zoom]);
+  useEffect(()=>{
+    const toolbar=toolbarRef.current;if(!toolbar||!showOutline)return;
+    const update=()=>setToolbarHeight(toolbar.getBoundingClientRect().height);
+    update();const observer=new ResizeObserver(update);observer.observe(toolbar);return()=>observer.disconnect();
+  },[showOutline]);
   const save = async (operation:Operation) => {
     if(busyRef.current)return;
     pendingRef.current=operation;busyRef.current=true;setBusy(true);setFailed(false);setStatus('正在保存批注…');
@@ -94,22 +106,25 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
   const undo=()=>{const note=[...own].reverse().map(id=>notes.find(n=>n.id===id)).find(Boolean);if(note)void save({method:'DELETE',note});};
   const copyLink=async()=>{try{await navigator.clipboard.writeText(`${location.origin}${sharePath}?version=${encodeURIComponent(reportRevision)}`);setShareStatus('链接已复制');}catch{setShareStatus('请复制浏览器地址分享');}};
   const selectTool=(next:Tool)=>{setTool(next);setVisible(true);setSelected(null);};
-  return <main className="advisor-reader">
-    <header className="advisor-toolbar" aria-label="报告阅读与批注工具">
+  return <main className={`advisor-reader${outlineOpen?' outline-is-open':''}`} style={showOutline?{'--advisor-toolbar-height':`${toolbarHeight}px`} as CSSProperties:undefined}>
+    <header className="advisor-toolbar" ref={toolbarRef} aria-label="报告阅读与批注工具">
       <span className="advisor-toolbar-title">{documentName}</span>
+      {showOutline&&<button className="review-outline-toggle" aria-expanded={outlineOpen} aria-controls="thesis-outline" disabled={!!(pendingRef.current||draft||textDraft||busy)} onClick={()=>setOutlineOpen(previous=>!previous)}>目录</button>}
       <div className="advisor-tools">{([['read','阅读'],['pen','画笔'],['text','文字批注']] as [Tool,string][]).map(([id,label])=><button key={id} aria-pressed={tool===id} disabled={id!=='read'&&blocked} onClick={()=>selectTool(id)}>{label}</button>)}<button onClick={undo} disabled={blocked||!own.some(id=>notes.some(n=>n.id===id))}>撤销我的批注</button></div>
       <div className="advisor-tools"><label className="advisor-check"><input type="checkbox" checked={visible} onChange={e=>{setVisible(e.target.checked);setTool('read');}}/>显示批注</label><label><span className="advisor-sr">页面缩放</span><select aria-label="页面缩放" value={zoom} onChange={e=>setZoom(e.target.value)}><option value="fit">适合屏幕</option><option value="1">100%</option><option value="1.25">125%</option></select></label><button onClick={()=>window.print()}>打印</button><button onClick={()=>void copyLink()}>分享链接</button></div>
       <span className={`advisor-save ${failed?'is-error':''}`} role="status">{status}{shareStatus ? ` · ${shareStatus}` : ''}</span>{failed&&<button disabled={busy} onClick={()=>pendingRef.current?void save(pendingRef.current):void load()}>重试</button>}
     </header>
     <div className="advisor-instructions">{tool==='read'?'可直接阅读正文。需要圈画时选择“画笔”，文字意见可点“文字批注”后落在页面上。':tool==='pen'?'在纸面上拖动画线或圈画；触屏上下翻页请先切回“阅读”。':'点击纸面上的位置，填写文字意见。'}<span>批注保存在服务器 · 持链接可阅读、批注和修改正文</span></div>
+    <div className={showOutline?'review-reader-layout':'review-reader-content'}>
+    {showOutline&&<ReviewOutline entries={outline} toolbarHeight={toolbarHeight} open={outlineOpen} disabled={!!(pendingRef.current||draft||textDraft||busy)} onClose={closeOutline}/>}
     <div className="advisor-document" ref={viewportRef}>
       {reportPages.map((page,index)=><section className="advisor-sheet-wrap" id={`review-page-${index+1}`} key={index} style={{width:760*scale,height:980*scale}} aria-label={`第 ${index+1} 页：${page.title.replace(/（续）$/,'')}`}>
         <article className="advisor-sheet" style={{transform:`scale(${scale})`}}>
           <div className="advisor-running">信息与交互设计 · 硕士<span>{versionLabel}</span></div>
           {index===0&&(documentTitle?<><h1>{documentTitle}</h1><p className="advisor-draft-label">{coverNote||'导师审阅稿，题目拟定 · 开题日期：2026年11月13日'}</p></>:<><h1>新污染物科普方向<br/>{documentName}</h1><p className="advisor-draft-label">{coverNote||'研究讨论稿，非正式定稿 · 开题日期：2026年11月13日'}</p></>)}
           {/* Keep the original heading space so saved ink remains aligned. */}
-          <h2 style={page.title.endsWith('（续）')?{visibility:'hidden'}:undefined} aria-hidden={page.title.endsWith('（续）')||undefined}>{page.title}</h2>
-          {page.paragraphs.map((p,i)=><p className={`advisor-paragraph${outlineFormat==='reference'&&/^(?:\d+\.\d+(?:\.\d+)?\s|（\d+）)/.test(p)?' advisor-outline-heading':''}`} key={i}>{p}</p>)}
+          <h2 id={showOutline?`review-chapter-${index+1}`:undefined} style={page.title.endsWith('（续）')?{visibility:'hidden'}:undefined} aria-hidden={page.title.endsWith('（续）')||undefined}>{page.title}</h2>
+          {page.paragraphs.map((p,i)=><p id={showOutline?`review-paragraph-${index+1}-${i+1}`:undefined} className={`advisor-paragraph${outlineFormat==='reference'&&/^(?:\d+\.\d+(?:\.\d+)?\s|（\d+）)/.test(p)?' advisor-outline-heading':''}`} key={i}>{p}</p>)}
           {page.images?.map(({src,alt,caption})=><figure className="advisor-figure" key={src}><img src={src} alt={alt} width="630" height="354"/><figcaption>{caption}</figcaption></figure>)}
           {page.tables?.map(({caption,rows,widths},tableIndex)=><figure className="advisor-table" key={`${caption}-${tableIndex}`}><figcaption>{caption}</figcaption><table><colgroup>{widths.map((width,i)=><col key={i} style={{width:`${width*100}%`}}/>)}</colgroup>{rows.length>0&&<><thead><tr>{rows[0].map((cell,i)=><th scope="col" key={i}>{cell}</th>)}</tr></thead><tbody>{rows.slice(1).map((row,i)=><tr key={i}>{row.map((cell,j)=><td key={j}>{cell}</td>)}</tr>)}</tbody></>}</table></figure>)}
           {page.sourceList?<div className="advisor-source-list">{page.links?.map(([label,url])=><a className="advisor-source" href={url} key={url} target="_blank" rel="noopener noreferrer">{label}</a>)}</div>:('links' in page && page.links?.map(([label,url])=><a className="advisor-source" href={url} key={url} target="_blank" rel="noopener noreferrer">{label}</a>))}
@@ -121,6 +136,7 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
           {visible&&notes.filter(n=>n.page===index&&n.type==='text').map(n=><div key={n.id} className="advisor-text-note" style={{left:n.x,top:n.y,pointerEvents:tool==='read'?'auto':'none'}}><button className="advisor-note-content" onClick={()=>setSelected(selected===n.id?null:n.id)} aria-expanded={selected===n.id}>{n.text}</button>{selected===n.id&&own.includes(n.id)&&<button className="advisor-delete-note" disabled={blocked} onClick={()=>void save({method:'DELETE',note:n})}>删除我的这条批注</button>}</div>)}
         </article>
       </section>)}
+    </div>
     </div>
     {textDraft&&<div className="advisor-modal-backdrop"><section className="advisor-note-dialog" role="dialog" aria-modal="true" aria-labelledby="advisor-note-title" onKeyDown={e=>{if(e.key==='Escape'){setTextDraft(null);interactionRef.current=false;}if(e.key==='Tab'){const nodes=Array.from((e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('textarea,button:not(:disabled)'));const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}}}><h2 id="advisor-note-title">文字批注 · 第 {textDraft.page+1} 页</h2><textarea autoFocus aria-label="批注内容" maxLength={500} value={textDraft.text} onChange={e=>setTextDraft({...textDraft,text:e.target.value})}/><p>{textDraft.text.length} / 500</p><div><button onClick={()=>{setTextDraft(null);interactionRef.current=false;}}>取消</button><button disabled={!textDraft.text.trim()} onClick={()=>{add({id:crypto.randomUUID(),type:'text',...textDraft});setTextDraft(null);interactionRef.current=false;setTool('read');}}>保存批注</button></div></section></div>}
   </main>;

@@ -7,4 +7,33 @@ html.review-manager-mode,body.review-manager-mode{height:auto;min-height:100%;ov
 
 .advisor-sheet .advisor-outline-heading{font-family:inherit;font-weight:600;text-indent:0}
 
+.review-reader-layout{display:grid;grid-template-columns:270px minmax(0,1fr);align-items:start;gap:24px;max-width:1200px;margin:0 auto;padding:0 24px}
+.review-reader-layout>.advisor-document{min-width:0}
+.review-outline{position:sticky;top:calc(var(--advisor-toolbar-height,64px) + 16px);margin-top:22px;max-height:calc(100svh - var(--advisor-toolbar-height,64px) - 32px);display:flex;flex-direction:column;min-height:0;background:#fff;border:1px solid #e1e1e1;border-radius:6px;overflow:hidden}
+.review-outline-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 18px 13px;border-bottom:1px solid #eee;font-size:14px;flex-shrink:0}
+.review-outline-list{overflow-y:auto;min-height:0;padding:8px 8px 16px;overscroll-behavior:contain;scrollbar-width:thin}
+.review-outline-list ol{padding:0;margin:0;list-style:none}
+.advisor-reader .review-outline-list button{display:block;width:100%;border:0;border-radius:4px;background:transparent;padding:8px 10px;text-align:left;font-size:12px;line-height:1.65;color:#666;overflow-wrap:anywhere}
+.review-outline-level-1{margin-top:12px}
+.review-outline-level-1:first-child{margin-top:0}
+.advisor-reader .review-outline-level-1 button{font-size:13px;font-weight:600;color:#333}
+.advisor-reader .review-outline-level-2 button{padding-left:19px;color:#444}
+.advisor-reader .review-outline-level-3 button{padding-left:31px;font-size:11px}
+.advisor-reader .review-outline-list button:hover:not(:disabled){background:#f5f5f5}
+.advisor-reader .review-outline-list button[aria-current=location]{background:#edf2f6;color:#1c415e;box-shadow:inset 3px 0 #4d748f}
+.advisor-reader .review-outline-toggle,.advisor-reader .review-outline-close,.review-outline-backdrop{display:none}
+@media(max-width:959px){
+  .advisor-reader.outline-is-open{z-index:60}
+  .review-reader-layout{display:block;padding:0}
+  .advisor-reader .review-outline-toggle,.advisor-reader .review-outline-close{display:inline-flex;align-items:center;justify-content:center}
+  .review-outline{display:none;position:fixed;top:calc(var(--advisor-toolbar-height,64px) + 12px);bottom:16px;left:16px;width:min(350px,calc(100vw - 32px));max-height:none;margin:0;z-index:65;box-shadow:0 12px 36px #0002}
+  .review-outline.is-open{display:flex}
+  .review-outline-backdrop{display:block;position:fixed;inset:0;z-index:60;border:0!important;border-radius:0!important;background:#0004!important;touch-action:none}
+  .advisor-reader .review-outline-level-3 button{font-size:12px}
+}
+@media print{
+  .review-outline,.advisor-reader .review-outline-toggle,.review-outline-backdrop{display:none!important}
+  .review-reader-layout{display:block;max-width:none;margin:0;padding:0}
+}
+
 .review-document-nav{display:flex;justify-content:center;gap:24px;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e5e5;font-size:12px;flex-wrap:wrap}.review-document-nav a{color:#555;text-decoration:none}.review-document-nav a[aria-current=page]{color:#222;font-weight:600;text-decoration:underline;text-underline-offset:5px}.review-document-nav span[aria-disabled]{color:#aaa}.review-thesis-chapters{display:flex;justify-content:center;gap:8px;padding:12px 16px;flex-wrap:wrap;border-bottom:1px solid #e5e5e5}.review-thesis-chapters button{font-family:inherit;font-size:12px;line-height:1.5;color:#444;border:1px solid #d7d7d7;border-radius:3px;background:#fff;padding:6px 10px;cursor:pointer;min-height:32px}.advisor-sheet-wrap{scroll-margin-top:100px}@media(max-width:650px){.review-document-nav,.review-thesis-chapters{justify-content:flex-start;gap:12px}.review-thesis-chapters button{min-height:36px}.advisor-sheet-wrap{scroll-margin-top:150px}}@media print{.review-document-nav,.review-thesis-chapters{display:none!important}}
