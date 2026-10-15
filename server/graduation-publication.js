@@ -1,18 +1,18 @@
 // Controlled report release. Never reuse this revision after changing its content.
 export const graduationPublication = {
-  "revision": "proposal-2026-10-15-creation-plan-v1",
-  "baseRevision": "proposal-2026-10-07-significance-expanded-v1",
-  "label": "开题审阅稿 · 创作方案修订版",
+  "revision": "proposal-2026-10-15-research-content-v1",
+  "baseRevision": "proposal-2026-10-15-creation-plan-v1",
+  "label": "开题审阅稿 · 研究内容修订版",
   "outlineFormat": "reference",
   "title": "面向新污染物科普的照片驱动参与式交互设计研究",
   "downloads": [
     [
-      "2026-10-15 PDF · 创作方案修订版",
-      "/graduation/reports/2026-10-15/creation-plan-v1/proposal-review.pdf"
+      "2026-10-15 PDF · 研究内容修订版",
+      "/graduation/reports/2026-10-15/research-content-v1/proposal-review.pdf"
     ],
     [
-      "2026-10-15 Word · 创作方案修订版",
-      "/graduation/reports/2026-10-15/creation-plan-v1/proposal-review.docx"
+      "2026-10-15 Word · 研究内容修订版",
+      "/graduation/reports/2026-10-15/research-content-v1/proposal-review.docx"
     ]
   ],
   "sections": [
@@ -66,7 +66,7 @@ export const graduationPublication = {
       "title": "二、创作方案与研究内容（含前期创作与研究的基础与成果）",
       "paragraphs": [
         "2.1 研究内容",
-        "本研究面向有日常拍照经验的成年公众，针对新污染物与生活情境的联系难以被直观认识的问题，拟结合AI图像理解、单图三维生成与收集机制，设计面向多端的科普交互应用。用户通过自由拍摄或上传照片寻找日常线索，AI先检查图像是否可用，再依据经核对的资料，从可见物品或活动中关联一个科普主题，不以照片判断污染物实际存在。原照片转为可转动观看的三维场景并置于收藏盒中，同时按自主设计的美学模板另行生成艺术卡，模拟机器吐片的过程。关联成功时，卡片呈现主题标识与简短解释，扫码可阅读详细知识和出处；盒子则在仓库式主页中保存个人场景。照片可用即可生成盒子和艺术卡，有可靠关联时才点亮图鉴，暂以16个科普条目探索收集机制。研究将通过用户调研与原型试测，考察个人照片的熟悉感、艺术生成的期待和收集反馈如何支持参与、认识日常关联与自愿分享。",
+        "本研究以参与式交互设计为研究视角，面向有日常拍照经验的成年公众，围绕新污染物科普与公众日常生活经验之间的联系，研究科普内容组织与参与机制的设计方法。通过文献梳理、案例分析和用户调研，了解公众对新污染物来源、生活关联及相关信息的认知状况，分析其科普需求与参与障碍。重点探讨日常影像作为个人经验表达和科普参与素材的作用，研究人工智能图像理解、生成式视觉表达与游戏化设计如何同科普内容结合，以及这些设计方式与知识理解、参与动机和分享意愿之间的关系。在此基础上，梳理面向日常观察与自主参与的新污染物科普交互设计策略，开展数字产品设计实践，并通过用户评价考察相应策略的适用性。",
         "2.2 前期研究基础与成果",
         "（1）文献与案例研究",
         "已梳理新污染物治理政策、科学传播研究及交互科普案例，整理来源与案例笔记，为选择日常情境、组织科普内容和分析参与方式提供依据。",
