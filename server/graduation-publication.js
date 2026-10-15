@@ -1,18 +1,18 @@
 // Controlled report release. Never reuse this revision after changing its content.
 export const graduationPublication = {
-  "revision": "proposal-2026-10-15-research-content-v1",
-  "baseRevision": "proposal-2026-10-15-creation-plan-v1",
-  "label": "开题审阅稿 · 研究内容修订版",
+  "revision": "proposal-2026-10-15-title-v1",
+  "baseRevision": "proposal-2026-10-15-research-content-v1",
+  "label": "开题审阅稿 · 暂定题目更新版",
   "outlineFormat": "reference",
-  "title": "面向新污染物科普的照片驱动参与式交互设计研究",
+  "title": "面向新污染物科普的生成式视觉交互设计研究",
   "downloads": [
     [
-      "2026-10-15 PDF · 研究内容修订版",
-      "/graduation/reports/2026-10-15/research-content-v1/proposal-review.pdf"
+      "2026-10-15 PDF · 暂定题目更新版",
+      "/graduation/reports/2026-10-15/title-v1/proposal-review.pdf"
     ],
     [
-      "2026-10-15 Word · 研究内容修订版",
-      "/graduation/reports/2026-10-15/research-content-v1/proposal-review.docx"
+      "2026-10-15 Word · 暂定题目更新版",
+      "/graduation/reports/2026-10-15/title-v1/proposal-review.docx"
     ]
   ],
   "sections": [
