@@ -45,7 +45,7 @@ function publication(overrides={}){
   const sections=Array.from({length:6},(_,index)=>({
     title:`审阅稿第 ${index+1} 部分`,paragraphs:[`完整审阅稿正文 ${index+1}。`],pending:'',links:[],
   }));
-  sections[2].images=[{src:'/graduation/concept-01.png',alt:'照片驱动的交互流程草图',caption:'图 1：照片、空间探索与科普卡。'}];
+  sections[2].images=[{src:'/graduation/concept-01.png',alt:'照片驱动的交互流程草图',caption:'图 1：照片、空间探索与科普卡。',displayHeight:680}];
   sections[3].tables=[{caption:'表 1：研究计划',rows:[['阶段','任务'],['开题前','访谈与草图']],widths:[0.3,0.7]}];
   sections[5].sourceList=true;
   sections[5].links=Array.from({length:17},(_,index)=>[`参考文献 ${index+1}`,`https://example.org/reference/${index+1}`]);
@@ -202,7 +202,7 @@ test('the actual seven-section report retains all figures and accepts a subseque
   assert.equal(published.sections.length,7);
   assert.ok(published.sections[5].title.startsWith('六、毕业创作进度'));
   assert.ok(published.sections[6].title.startsWith('七、参考文献'));
-  assert.equal(published.pages.flatMap(p=>p.images||[]).length,1);
+  assert.equal(published.pages.flatMap(p=>p.images||[]).length,2);
   assert.equal(published.pages.flatMap(p=>p.links||[]).length,14);
   assert.equal(published.pages.flatMap(p=>p.paragraphs||[]).join(''),report.sections.flatMap(s=>s.paragraphs).join(''));
   const sections=structuredClone(published.sections);sections[0].paragraphs.unshift('后续导师意见示例。');

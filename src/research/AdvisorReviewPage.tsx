@@ -125,7 +125,11 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
           {/* Keep the original heading space so saved ink remains aligned. */}
           <h2 id={showOutline?`review-chapter-${index+1}`:undefined} style={page.title.endsWith('（续）')?{visibility:'hidden'}:undefined} aria-hidden={page.title.endsWith('（续）')||undefined}>{page.title}</h2>
           {page.paragraphs.map((p,i)=><p id={showOutline?`review-paragraph-${index+1}-${i+1}`:undefined} className={`advisor-paragraph${outlineFormat==='reference'&&/^(?:\d+\.\d+(?:\.\d+)?\s|（\d+）)/.test(p)?' advisor-outline-heading':''}`} key={i}>{p}</p>)}
-          {page.images?.map(({src,alt,caption})=><figure className="advisor-figure" key={src}><img src={src} alt={alt} width="630" height="354"/><figcaption>{caption}</figcaption></figure>)}
+          {page.images?.map(({src,alt,caption,displayHeight})=>{
+            // New tall sketches opt in; historical pages keep their 354px image geometry.
+            const height=typeof displayHeight==='number'&&Number.isFinite(displayHeight)?Math.max(354,Math.min(680,displayHeight)):354;
+            return <figure className="advisor-figure" key={src}><img src={src} alt={alt} width="630" height={height} style={{height}}/><figcaption>{caption}</figcaption></figure>;
+          })}
           {page.tables?.map(({caption,rows,widths},tableIndex)=><figure className="advisor-table" key={`${caption}-${tableIndex}`}><figcaption>{caption}</figcaption><table><colgroup>{widths.map((width,i)=><col key={i} style={{width:`${width*100}%`}}/>)}</colgroup>{rows.length>0&&<><thead><tr>{rows[0].map((cell,i)=><th scope="col" key={i}>{cell}</th>)}</tr></thead><tbody>{rows.slice(1).map((row,i)=><tr key={i}>{row.map((cell,j)=><td key={j}>{cell}</td>)}</tr>)}</tbody></>}</table></figure>)}
           {page.sourceList?<div className="advisor-source-list">{page.links?.map(([label,url])=><a className="advisor-source" href={url} key={url} target="_blank" rel="noopener noreferrer">{label}</a>)}</div>:('links' in page && page.links?.map(([label,url])=><a className="advisor-source" href={url} key={url} target="_blank" rel="noopener noreferrer">{label}</a>))}
           <p className="advisor-pending">{page.pending}</p>

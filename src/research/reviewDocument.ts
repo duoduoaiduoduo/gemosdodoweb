@@ -4,7 +4,7 @@ export type ReportPage = {
   paragraphs:string[];
   pending:string;
   links?:string[][];
-  images?:{src:string;alt:string;caption:string}[];
+  images?:{src:string;alt:string;caption:string;displayHeight?:number}[];
   tables?:{caption:string;rows:string[][];widths:number[]}[];
   sourceList?:boolean;
 };
