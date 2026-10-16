@@ -64,7 +64,7 @@ export function createGraduationReview(file, {publication,publications,initialDo
         if(!section||typeof section.title!=='string'||!section.title.trim()||section.title.length>80||typeof section.pending!=='string'||section.pending.length>400||!Array.isArray(section.paragraphs)||section.paragraphs.length>maxSectionParagraphs||section.paragraphs.some(p=>typeof p!=='string'||p.length>10000)||section.paragraphs.join('').length>maxSectionCharacters)return res.status(400).json({error:'请检查章节标题与正文长度'});
         // Reference links are preserved from the previous version; editing text cannot introduce executable URLs.
         const previous=all.at(-1).sections[clean.length];
-        clean.push({title:section.title.trim(),paragraphs:section.paragraphs.filter(p=>p.trim()),pending:section.pending,links:previous.links||[],...(previous.images?{images:previous.images}:{}),...(previous.tables?{tables:previous.tables}:{}),...(previous.sourceList?{sourceList:true}:{})});
+        clean.push({title:section.title.trim(),paragraphs:section.paragraphs.filter(p=>p.trim()),pending:section.pending,links:previous.links||[],...(previous.images?{images:previous.images}:{}),...(previous.tables?{tables:previous.tables}:{}),...(previous.sourceList?{sourceList:true}:{}),...(previous.keepHeadingsWithNext?{keepHeadingsWithNext:true}:{})});
       }
       if(clean.every(s=>!s.paragraphs.length))return res.status(400).json({error:'正文不能为空'});
       const previous=all.at(-1);

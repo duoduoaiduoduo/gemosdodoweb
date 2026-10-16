@@ -12,7 +12,19 @@ export function paginateSections(sections){
     let page={title:section.title,paragraphs:[],pending:'',links:[]};
     let available=pages.length===0?500:690;
     const flush=()=>{pages.push(page);page={title:`${section.title}（续）`,paragraphs:[],pending:'',links:[]};available=690;};
-    for(const paragraph of section.paragraphs){
+    const isHeading=text=>/^(?:\d+\.\d+(?:\.\d+)?\s|（\d+）)/.test(text);
+    for(let paragraphIndex=0;paragraphIndex<section.paragraphs.length;paragraphIndex++){
+      const paragraph=section.paragraphs[paragraphIndex];
+      // A version may opt in without changing historical or other section layouts.
+      if(section.keepHeadingsWithNext&&isHeading(paragraph)){
+        let groupHeight=0;
+        for(let next=paragraphIndex;next<section.paragraphs.length;next++){
+          const text=Array.from(section.paragraphs[next]).slice(0,240).join('');
+          groupHeight+=lines(text)*32+18;
+          if(!isHeading(section.paragraphs[next]))break;
+        }
+        if(Math.min(groupHeight,690)>available&&page.paragraphs.length)flush();
+      }
       // Split unusually long paragraphs without dropping or changing characters.
       const chars=Array.from(paragraph);
       for(let i=0;i<chars.length;i+=240){const text=chars.slice(i,i+240).join('');const height=lines(text)*32+18;if(height>available&&page.paragraphs.length)flush();page.paragraphs.push(text);available-=height;}

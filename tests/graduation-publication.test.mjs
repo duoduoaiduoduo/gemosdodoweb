@@ -7,6 +7,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {createGraduationReview,REVIEW_REVISION} from '../server/graduation-review.js';
 import {graduationPublication} from '../server/graduation-publication.js';
+import {paginateSections} from '../server/review-pagination.js';
 
 const OWNER='11111111-1111-1111-1111-111111111111';
 const PUBLICATION_REVISION='publication-2026-10-06-test';
@@ -46,6 +47,7 @@ function publication(overrides={}){
     title:`审阅稿第 ${index+1} 部分`,paragraphs:[`完整审阅稿正文 ${index+1}。`],pending:'',links:[],
   }));
   sections[2].images=[{src:'/graduation/concept-01.png',alt:'照片驱动的交互流程草图',caption:'图 1：照片、空间探索与科普卡。',displayHeight:680}];
+  sections[1].keepHeadingsWithNext=true;
   sections[3].tables=[{caption:'表 1：研究计划',rows:[['阶段','任务'],['开题前','访谈与草图']],widths:[0.3,0.7]}];
   sections[5].sourceList=true;
   sections[5].links=Array.from({length:17},(_,index)=>[`参考文献 ${index+1}`,`https://example.org/reference/${index+1}`]);
@@ -139,6 +141,7 @@ test('text edits inherit controlled media, references, title and downloads while
     section.tables=[{caption:'替换表格',rows:[['恶意表格']],widths:[1]}];
     section.links=[['替换引用','javascript:alert(1)']];
     section.sourceList=false;
+    section.keepHeadingsWithNext=false;
   }
   const payload={baseRevision:PUBLICATION_REVISION,ownerKey:OWNER,requestId:'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
     sections,title:'恶意覆盖标题',downloads:[['恶意下载','javascript:alert(1)']]};
@@ -152,6 +155,7 @@ test('text edits inherit controlled media, references, title and downloads while
   saved.document.sections.forEach((section,index)=>{
     for(const key of ['images','tables','links'])assert.deepEqual(section[key]||[],published.sections[index][key]||[],`section ${index} ${key} is inherited`);
     assert.equal(Boolean(section.sourceList),Boolean(published.sections[index].sourceList),`section ${index} source-list layout is inherited`);
+    assert.equal(Boolean(section.keepHeadingsWithNext),Boolean(published.sections[index].keepHeadingsWithNext),`section ${index} heading layout is inherited`);
   });
   assert.ok(!JSON.stringify(saved.document).includes('javascript:'));
   assert.deepEqual((await h.get('/document?revision='+PUBLICATION_REVISION)).document,published);
@@ -160,6 +164,16 @@ test('text edits inherit controlled media, references, title and downloads while
   const restarted=await h.start();
   assert.equal((await h.get('/document',restarted)).document.revision,saved.document.revision);
   assert.equal(h.read().documents.length,3);
+});
+
+test('heading pagination opt-in keeps an outline and its text together without changing the legacy layout',()=>{
+  const section={title:'方法',paragraphs:['甲'.repeat(120),'乙'.repeat(120),'丙'.repeat(120),'4.1 基本思路','（1）用户调查','问'.repeat(80)],pending:'',links:[]};
+  const legacy=paginateSections([section]);
+  assert.equal(legacy[0].paragraphs.at(-1),'4.1 基本思路');
+  const updated=paginateSections([{...section,keepHeadingsWithNext:true}]);
+  assert.deepEqual(updated[1].paragraphs.slice(0,3),section.paragraphs.slice(3));
+  assert.equal(updated.flatMap(p=>p.paragraphs).join(''),section.paragraphs.join(''));
+  assert.deepEqual(paginateSections([section]),legacy);
 });
 
 test('old and published revision annotations remain isolated and keep old page geometry',async t=>{
