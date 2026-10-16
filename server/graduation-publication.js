@@ -1,18 +1,18 @@
 // Controlled report release. Never reuse this revision after changing its content.
 export const graduationPublication = {
-  "revision": "proposal-2026-10-16-terminology-v1",
-  "baseRevision": "proposal-2026-10-16-outreach-focus-v1",
-  "label": "开题审阅稿 · 正式表述校订版",
+  "revision": "proposal-2026-10-16-sketch-redesign-v1",
+  "baseRevision": "proposal-2026-10-16-terminology-v1",
+  "label": "开题审阅稿 · 方案草图重绘版",
   "outlineFormat": "reference",
   "title": "面向新污染物科普的生成式视觉交互设计研究",
   "downloads": [
     [
-      "2026-10-16 PDF · 正式表述校订版",
-      "/graduation/reports/2026-10-16/terminology-v1/proposal-review.pdf"
+      "2026-10-16 PDF · 方案草图重绘版",
+      "/graduation/reports/2026-10-16/sketch-redesign-v1/proposal-review.pdf"
     ],
     [
-      "2026-10-16 Word · 正式表述校订版",
-      "/graduation/reports/2026-10-16/terminology-v1/proposal-review.docx"
+      "2026-10-16 Word · 方案草图重绘版",
+      "/graduation/reports/2026-10-16/sketch-redesign-v1/proposal-review.docx"
     ]
   ],
   "sections": [
@@ -87,22 +87,22 @@ export const graduationPublication = {
         "本创作拟设计面向多端的新污染物科普数字应用，将日常观察、生成式视觉表达与图鉴收集相结合。以用户自选的生活照片为创作素材，将原照转为三维场景纳入收藏盒，同时依据美学模板另行生成风格化卡片。依据可靠资料关联科普主题后，在卡片与知识页中呈现生活关联、简要解释和资料出处，并以图鉴记录收集的主题。通过生成结果的视觉吸引、个人作品的收藏回看与自主分享，尝试激发公众持续观察的兴趣，使新污染物科普融入日常生活与交流。",
         "3.2 方案草图",
         "草图分别呈现照片的双路生成关系与关键界面。风格化卡片拟以美学模板和技能包（Skill）组织生成规则[13]，科普文字与出处采用经核对的内容。图中仅示意布局、操作与反馈，视觉风格和条目范围将结合调研细化。",
-        "图1 日常照片的双路生成与科普主题关联（概念草图）",
-        "图2 收藏、观察、生成结果与知识页的界面关系（线框草图）"
+        "图1 作品整体形态、双路生成与交互分镜（方案草图）",
+        "图2 收藏仓库、自由取景、生成成果与知识阅读（界面草图）"
       ],
       "pending": "",
       "links": [],
       "images": [
         {
-          "src": "/graduation/reports/2026-10-16/terminology-v1/03-generation-flow.png",
-          "alt": "图1 日常照片的双路生成与科普主题关联（概念草图）",
-          "caption": "图1 日常照片的双路生成与科普主题关联（概念草图）",
-          "displayHeight": 560
+          "src": "/graduation/reports/2026-10-16/sketch-redesign-v1/03-generation-flow.png",
+          "alt": "图1 作品整体形态、双路生成与交互分镜（方案草图）",
+          "caption": "图1 作品整体形态、双路生成与交互分镜（方案草图）",
+          "displayHeight": 680
         },
         {
-          "src": "/graduation/reports/2026-10-16/terminology-v1/04-interface-sketches.png",
-          "alt": "图2 收藏、观察、生成结果与知识页的界面关系（线框草图）",
-          "caption": "图2 收藏、观察、生成结果与知识页的界面关系（线框草图）",
+          "src": "/graduation/reports/2026-10-16/sketch-redesign-v1/04-interface-sketches.png",
+          "alt": "图2 收藏仓库、自由取景、生成成果与知识阅读（界面草图）",
+          "caption": "图2 收藏仓库、自由取景、生成成果与知识阅读（界面草图）",
           "displayHeight": 680
         }
       ]
