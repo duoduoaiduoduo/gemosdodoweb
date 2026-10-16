@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1770" viewBox="0 0 1500 1770">
+<title>关键界面初步草图</title>
+<desc>开题阶段概念草图，布局与视觉风格待细化。普通照片提供科普线索，不用于化学检测。有效照片分别生成三维场景和风格化卡片；只有可靠主题关联才点亮图鉴。</desc>
+<rect width="1500" height="1770" fill="white"/>
+<text x="60" y="35" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="44" font-weight="600" fill="#202020">关键界面初步草图</text>
+<text x="60" y="99" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">概念草图 · 布局与视觉风格待细化，内容与数据仅作界面示意</text>
+<text x="110" y="164" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="600" fill="#202020">01 / 收藏仓库与观察入口</text>
+<text x="810" y="164" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="600" fill="#202020">02 / 自由取景与拍摄</text>
+<rect x="110" y="220" width="580" height="640" rx="24" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="140" y="245" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">收藏仓库</text>
+<text x="140" y="303" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">我的观察 · 图鉴 3 / 16（暂定）</text>
+<polyline points="164,395 268.72,370 318,398 213.28,424 164,395" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="164,395 164,453 213.28,478 318,452 318,398" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="213.28,424 213.28,478" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="176,406 200.96,424 200.96,458 176,441 176,406" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linejoin="round"/>
+<text x="174" y="488" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">厨房记录</text>
+<polyline points="434,395 538.72,370 588,398 483.28,424 434,395" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="434,395 434,453 483.28,478 588,452 588,398" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="483.28,424 483.28,478" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="446,406 470.96,424 470.96,458 446,441 446,406" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linejoin="round"/>
+<text x="444" y="488" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">窗边一角</text>
+<polyline points="164,575 268.72,550 318,578 213.28,604 164,575" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="164,575 164,633 213.28,658 318,632 318,578" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="213.28,604 213.28,658" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="176,586 200.96,604 200.96,638 176,621 176,586" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linejoin="round"/>
+<text x="174" y="668" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">洗衣角落</text>
+<polyline points="434,575 538.72,550 588,578 483.28,604 434,575" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="434,575 434,633 483.28,658 588,632 588,578" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="483.28,604 483.28,658" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="446,586 470.96,604 470.96,638 446,621 446,586" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linejoin="round"/>
+<text x="444" y="668" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">今日新拍</text>
+<polyline points="135,750 665,750" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linejoin="round"/>
+<rect x="140" y="777" width="170" height="57" rx="12" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="165.0" y="789" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">上传照片</text>
+<ellipse cx="400.0" cy="785.0" rx="45.0" ry="27.0" fill="#f5f5f5" stroke="#202020" stroke-width="2"/>
+<ellipse cx="399.5" cy="784.0" rx="17.5" ry="14.0" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="370" y="820" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">观察</text>
+<text x="535" y="795" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">图鉴</text>
+<rect x="810" y="220" width="580" height="640" rx="24" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="840" y="245" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">自由观察</text>
+<text x="840" y="303" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">寻找日常生活的科普线索</text>
+<rect x="840" y="365" width="520" height="295" rx="4" fill="#f5f5f5" stroke="#a8a8a8" stroke-width="2"/>
+<polyline points="855,595 1345,595" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linejoin="round"/>
+<rect x="895" y="485" width="190" height="105" rx="5" fill="white" stroke="#626262" stroke-width="2"/>
+<rect x="1095" y="533" width="116" height="62" rx="5" fill="white" stroke="#626262" stroke-width="2"/>
+<polyline points="1153,533 1153,450 1126,433" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<ellipse cx="1127.0" cy="439.0" rx="15.0" ry="9.0" fill="white" stroke="#626262" stroke-width="2"/>
+<ellipse cx="1167.5" cy="480.0" rx="17.5" ry="9.0" fill="white" stroke="#626262" stroke-width="2"/>
+<polyline points="905,390 865,390 865,430" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="1295,390 1335,390 1335,430" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="905,635 865,635 865,595" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="1295,635 1335,635 1335,595" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<text x="840" y="684" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">取景提示：看清物品与场景</text>
+<ellipse cx="1099.5" cy="789.5" rx="42.5" ry="42.5" fill="white" stroke="#202020" stroke-width="3"/>
+<ellipse cx="1099.5" cy="789.5" rx="32.5" ry="32.5" fill="#f5f5f5" stroke="#626262" stroke-width="2"/>
+<text x="840" y="775" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">相册</text>
+<text x="1235" y="775" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">返回</text>
+<text x="110" y="938" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="600" fill="#202020">03 / 三维场景与风格化卡片</text>
+<text x="810" y="938" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="600" fill="#202020">04 / 主题说明与知识入口</text>
+<rect x="110" y="994" width="580" height="670" rx="24" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="140" y="1019" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">生成结果</text>
+<text x="140" y="1078" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">一张原照片，两份独立作品</text>
+<text x="140" y="1137" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="600" fill="#202020">三维场景</text>
+<text x="424" y="1137" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="600" fill="#202020">风格化卡片</text>
+<rect x="140" y="1189" width="238" height="224" rx="8" fill="#f5f5f5" stroke="#a8a8a8" stroke-width="2"/>
+<polyline points="170,1258 287.64,1233 343,1261 225.36,1287 170,1258" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="170,1258 170,1339 225.36,1364 343,1338 343,1261" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="225.36,1287 225.36,1364" fill="none" stroke="#626262" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="182,1269 211.51999999999998,1287 211.51999999999998,1344 182,1327 182,1269" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linejoin="round"/>
+<rect x="424" y="1189" width="236" height="224" rx="6" fill="white" stroke="#202020" stroke-width="2"/>
+<rect x="441" y="1206" width="202" height="116" rx="3" fill="#f5f5f5" stroke="#a8a8a8" stroke-width="2"/>
+<polyline points="451,1305 507,1241 555,1275 634,1228" fill="none" stroke="#626262" stroke-width="3" stroke-linejoin="round"/>
+<ellipse cx="598.5" cy="1233.5" rx="14.5" ry="14.5" fill="white" stroke="#626262" stroke-width="2"/>
+<polyline points="444,1343 576,1343" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="444,1368 609,1368" fill="none" stroke="#a8a8a8" stroke-width="2" stroke-linejoin="round"/>
+<text x="140" y="1440" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">如有关联：卡片增加主题标记、简短说</text>
+<text x="140" y="1482" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">明与知识码。</text>
+<rect x="140" y="1544" width="238" height="57" rx="12" fill="#f5f5f5" stroke="#202020" stroke-width="2"/>
+<text x="199.0" y="1556" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">保存作品</text>
+<rect x="424" y="1544" width="236" height="57" rx="12" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="482.0" y="1556" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">自愿分享</text>
+<text x="140" y="1611" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">无可靠关联时仍保留两份作品</text>
+<rect x="810" y="994" width="580" height="670" rx="24" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="840" y="1019" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">科普图鉴</text>
+<ellipse cx="879.0" cy="1120.0" rx="39.0" ry="39.0" fill="#f5f5f5" stroke="#626262" stroke-width="2"/>
+<text x="849" y="1107" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">主题</text>
+<text x="940" y="1094" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="34" font-weight="600" fill="#202020">本次关联主题</text>
+<text x="940" y="1141" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">关联不等于检测结果</text>
+<text x="840" y="1214" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="600" fill="#202020">为什么与这张照片有关？</text>
+<text x="840" y="1276" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">说明可见生活线索与主题的关系，并保</text>
+<text x="840" y="1319" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">留适用条件。</text>
+<rect x="840" y="1387" width="300" height="57" rx="12" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="885.0" y="1399" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">查看依据与来源</text>
+<rect x="1195" y="1383" width="151" height="130" rx="5" fill="#f5f5f5" stroke="#626262" stroke-width="2"/>
+<text x="1216" y="1413" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">知识码</text>
+<text x="1221" y="1459" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">占位</text>
+<text x="1180" y="1530" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">扫码知识入口</text>
+<rect x="840" y="1554" width="300" height="57" rx="12" fill="#f5f5f5" stroke="#202020" stroke-width="2"/>
+<text x="930.0" y="1566" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">继续观察</text>
+<text x="110" y="1710" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">三维场景承担观看与收藏；卡片及图鉴承担主题解释与后续阅读。</text>
+</svg>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1310" viewBox="0 0 1500 1310">
+<title>照片生成、科普关联与收集流程</title>
+<desc>开题阶段概念草图，布局与视觉风格待细化。普通照片提供科普线索，不用于化学检测。有效照片分别生成三维场景和风格化卡片；只有可靠主题关联才点亮图鉴。</desc>
+<rect width="1500" height="1310" fill="white"/>
+<text x="60" y="35" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="44" font-weight="600" fill="#202020">照片生成、科普关联与收集流程</text>
+<text x="60" y="99" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">概念草图 · 两条生成路径独立；主题关联以经核对资料为依据</text>
+<rect x="470" y="160" width="560" height="94" rx="14" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="495" y="182" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">拍摄或上传生活照片</text>
+<polyline points="750,254 750,296" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="750,296 757.0,283.0 743.0,283.0" fill="#202020"/>
+<rect x="470" y="300" width="560" height="140" rx="14" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="495" y="322" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">图像可用性检查</text>
+<text x="495" y="384" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">画面是否包含可用内容？</text>
+<polyline points="470,355 395,355" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="395,355 408.0,362.0 408.0,348.0" fill="#202020"/>
+<text x="414" y="309" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">否</text>
+<rect x="60" y="300" width="330" height="140" rx="14" fill="white" stroke="#202020" stroke-width="2"/>
+<text x="85" y="322" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">重新取景</text>
+<text x="85" y="384" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">遮挡、空白等</text>
+<polyline points="225,300 225,207 460,207" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="460,207 447.0,200.0 447.0,214.0" fill="#202020"/>
+<polyline points="750,440 750,502" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<text x="775" y="457" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">是：使用有效原照片</text>
+<polyline points="750,502 270,502 270,555" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="270,555 277.0,542.0 263.0,542.0" fill="#202020"/>
+<polyline points="750,502 750,555" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="750,555 757.0,542.0 743.0,542.0" fill="#202020"/>
+<polyline points="750,502 1230,502 1230,555" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="1230,555 1237.0,542.0 1223.0,542.0" fill="#202020"/>
+<rect x="60" y="560" width="420" height="230" rx="14" fill="#f5f5f5" stroke="#202020" stroke-width="2"/>
+<text x="85" y="582" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">原照生成三维场景</text>
+<text x="85" y="644" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">估计原照场景的空间</text>
+<text x="85" y="688" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">可转动观看，保存收藏</text>
+<rect x="540" y="560" width="420" height="230" rx="14" fill="#f5f5f5" stroke="#202020" stroke-width="2"/>
+<text x="565" y="582" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">生成风格化卡片</text>
+<text x="565" y="644" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">按设计者美学模板生成</text>
+<text x="565" y="688" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">模拟卡片输出，保存作品</text>
+<rect x="1020" y="560" width="420" height="230" rx="14" fill="#f5f5f5" stroke="#202020" stroke-width="2"/>
+<text x="1045" y="582" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">关联一个科普主题</text>
+<text x="1045" y="644" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">结合可见物品、场景线索</text>
+<text x="1045" y="688" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">核对资料，判断关联依据</text>
+<text x="60" y="817" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="600" fill="#202020">有效照片均生成三维场景与风格化卡片。</text>
+<polyline points="1230,790 1230,870 385,870 385,910" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="385,910 392.0,897.0 378.0,897.0" fill="#202020"/>
+<polyline points="1230,870 1115,870 1115,910" fill="none" stroke="#202020" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="1115,910 1122.0,897.0 1108.0,897.0" fill="#202020"/>
+<rect x="60" y="915" width="650" height="235" rx="14" fill="#f5f5f5" stroke="#202020" stroke-width="2"/>
+<text x="85" y="937" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">有可靠关联</text>
+<text x="85" y="999" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">卡片加入主题标记、关联说明与知识码</text>
+<text x="85" y="1043" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">点亮 1 个对应科普图鉴条目</text>
+<rect x="790" y="915" width="650" height="235" rx="14" fill="#f5f5f5" stroke="#202020" stroke-width="2"/>
+<text x="815" y="937" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="36" font-weight="600" fill="#202020">无可靠关联</text>
+<text x="815" y="999" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">仍保留三维场景与风格化卡片</text>
+<text x="815" y="1043" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="32" font-weight="400" fill="#202020">不附污染结论，不点亮图鉴</text>
+<text x="60" y="1172" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#202020">图鉴暂定 16 个科普条目；收集、回看与自愿分享后，可继续观察。</text>
+<text x="60" y="1224" dominant-baseline="text-before-edge" font-family="Hiragino Sans GB, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="400" fill="#626262">照片仅提供生活线索，不用于确认污染物存在、测量含量或评估健康风险。</text>
+</svg>
