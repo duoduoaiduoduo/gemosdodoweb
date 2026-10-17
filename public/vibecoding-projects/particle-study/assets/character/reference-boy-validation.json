@@ -1,0 +1,67 @@
+{
+  "bytes": 5711640,
+  "vertices": 50854,
+  "triangles": 93474,
+  "joints": 53,
+  "bindIdentityMaxError": 4.536898656759547e-07,
+  "restJsonMatrixMaxError": 4.455064488428917e-07,
+  "normalMinimumLength": 0.9999998807907104,
+  "weightsMaximumSumError": 1.7881393432617188e-07,
+  "bounds": [
+    [
+      -0.39504843950271606,
+      0.12999999523162842,
+      -0.16445130109786987
+    ],
+    [
+      0.39504846930503845,
+      1.3855808973312378,
+      0.25944918394088745
+    ]
+  ],
+  "extensions": [
+    "KHR_materials_specular"
+  ],
+  "materials": [
+    {
+      "name": "skin | child photographic albedo",
+      "alphaMode": "OPAQUE"
+    },
+    {
+      "name": "hair | warm dark brown fibers",
+      "alphaMode": "OPAQUE"
+    },
+    {
+      "name": "hair | photographed dark brown strands",
+      "alphaMode": "MASK"
+    },
+    {
+      "name": "shoe | worn gray canvas",
+      "alphaMode": "OPAQUE"
+    },
+    {
+      "name": "shoe_sole | warm worn rubber",
+      "alphaMode": "OPAQUE"
+    },
+    {
+      "name": "cloth_shorts | faded olive rough twill",
+      "alphaMode": "OPAQUE"
+    },
+    {
+      "name": "cloth_tshirt | warm off-white rough cotton",
+      "alphaMode": "OPAQUE"
+    },
+    {
+      "name": "Eli | anatomical body.eyebrow001",
+      "alphaMode": "MASK"
+    },
+    {
+      "name": "Eli | anatomical body.eyelashes01",
+      "alphaMode": "MASK"
+    },
+    {
+      "name": "Eli | anatomical body.low-poly",
+      "alphaMode": "OPAQUE"
+    }
+  ]
+}

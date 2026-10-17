@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#9acee8">
+  <title>流形 · 滑入混沌</title>
+  <meta name="description" content="流动花草中的无尽滑板。镜头连续深入同一混沌体，跟随男孩穿行花草；支持键盘与触屏转向、跳跃和真实光圈景深。">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="流形 · 滑入混沌">
+  <meta property="og:description" content="草木，成流。探索流动的花草流形，或滑入其中，跟随男孩穿行花草。支持转向、跳跃、暂停和画面调节。">
+  <meta property="og:url" content="https://gemosdodo.art/vibecoding/particle-study">
+  <meta property="og:image" content="https://gemosdodo.art/vibecoding-projects/particle-study/cover.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="./style.css?v=flower-ratio-v17">
+</head>
+<body>
+  <main class="studio" id="studio">
+    <canvas id="scene" aria-label="实时 WebGPU 弯曲草叶与花朵组成的流动植被；拖动旋转，滚动缩放" tabindex="0"></canvas>
+    <header class="topbar chrome">
+      <a class="brand" href="./" aria-label="流形首页"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span>流形<span class="brand-separator"> / </span><span class="brand-subtitle">PARTICLE STUDY</span></span></a>
+      <button class="ride-entry" id="rideEntry" aria-pressed="false" disabled><span id="rideEntryLabel">滑入混沌</span><span id="rideEntryArrow" aria-hidden="true">↗</span></button>
+      <div class="engine"><span class="live-dot" id="liveDot"></span><span id="engineLabel">正在初始化</span><span class="engine-fps" id="fps"></span></div>
+    </header>
+    <div class="ride-readout chrome" id="rideReadout" hidden><span>在混沌中滑行</span><strong id="rideDistance">0 m</strong><span id="rideAirborne" hidden>腾空</span></div>
+    <div class="loading" id="loading"><span class="loading-orbit"></span><p>让草叶舒展</p></div>
+    <div class="error" id="error" role="alert" hidden><span class="error-label">无法启动 WebGPU</span><h1>当前浏览器尚未提供可用的 GPU。</h1><p id="errorMessage">请在支持 WebGPU 的浏览器中打开这个演示。</p><button class="text-button" id="retry">重新尝试 <span>↗</span></button></div>
+    <section class="settings chrome" id="settings" aria-label="草叶与花朵参数" hidden>
+      <div class="panel-heading"><span>画面控制</span><button class="icon-button" id="closeSettings" aria-label="关闭参数面板">×</button></div>
+      <label class="setting"><span>对焦位置<output id="focusPositionOutput">30%</output></span><input id="focusPosition" type="range" min="-1.2" max="1.2" step="0.02" value="-0.48" aria-label="对焦位置" aria-valuetext="30%，从近景到远景"><span class="focus-range-labels" aria-hidden="true"><span>近景</span><span>远景</span></span></label>
+      <label class="setting"><span>花朵比例<output id="flowerRatioOutput">100%</output></span><input id="flowerRatio" type="range" min="0" max="2" step="0.02" value="1" aria-label="花朵比例" aria-valuetext="100%，当前花量"><span class="focus-range-labels" aria-hidden="true"><span>纯草</span><span>100% 为当前花量</span><span>更多花</span></span></label>
+      <label class="setting"><span>流动速度<output id="speedOutput">1.00</output></span><input id="speed" type="range" min="0.15" max="2.2" step="0.05" value="1" aria-label="流动速度"></label>
+      <label class="setting"><span>翻卷强度<output id="turbulenceOutput">1.00</output></span><input id="turbulence" type="range" min="0.5" max="1.7" step="0.02" value="1" aria-label="翻卷强度"></label>
+      <label class="setting"><span>松散程度<output id="dispersionOutput">0.00</output></span><input id="dispersion" type="range" min="0" max="0.8" step="0.02" value="0" aria-label="松散程度"></label>
+      <label class="setting"><span>植株尺度<output id="pointSizeOutput">1.00</output></span><input id="pointSize" type="range" min="0.6" max="1.8" step="0.02" value="1" aria-label="植株尺度"></label>
+      <div class="quality-row"><span>细节</span><div class="segmented" role="group" aria-label="植被细节"><button id="qualityNormal" data-quality="normal" aria-pressed="false">流畅</button><button id="qualityHigh" data-quality="high" aria-pressed="true">精细</button></div></div>
+      <button class="reset-button" id="reset">恢复参考形态 <span>↺</span></button>
+    </section>
+    <footer class="bottom chrome">
+      <div class="caption"><span class="piece-number">实验 001</span><h1>草木，成流。</h1><p>拖动旋转 · 滚动缩放</p></div>
+      <nav class="toolbar" aria-label="播放与显示控制">
+        <button id="playPause" aria-label="暂停动画" title="空格：暂停 / 继续"><svg id="pauseIcon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5v9m5-9v9"/></svg><svg id="playIcon" viewBox="0 0 16 16" aria-hidden="true" hidden><path d="m5 3 7 5-7 5Z"/></svg><span id="playLabel">暂停</span></button>
+        <span class="divider"></span>
+        <button id="openSettings" aria-controls="settings" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 12h10M6 2v4m4 4v4"/></svg><span>参数</span></button>
+        <button id="capture" title="保存当前画面"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5h2l1-2h4l1 2h2v8H3Z"/><circle cx="8" cy="9" r="2.1"/></svg><span>保存</span></button>
+        <button id="focus" aria-label="进入专注模式" title="F：专注模式"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v3m7-3h3v3M3 10v3h3m7-3v3h-3"/></svg><span>专注</span></button>
+      </nav>
+    </footer>
+    <div class="ride-touch chrome" id="rideTouch" hidden><div><button id="steerLeft" aria-label="向左转向">←</button><button id="steerRight" aria-label="向右转向">→</button></div><button id="rideJump" aria-label="跳跃"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 11 5-5 5 5M12 6v12M5 20h14"/></svg><span>跳跃</span></button></div>
+    <button class="exit-focus" id="exitFocus" aria-label="退出专注模式" hidden>退出专注 <span>Esc</span></button>
+    <div class="toast" id="toast" role="status" hidden></div>
+  </main>
+  <script type="module" src="./app.js?v=flower-ratio-v17"></script>
+</body>
+</html>
