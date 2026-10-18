@@ -1,4 +1,5 @@
-import { createRenderer } from './renderer.js?v=flower-ratio-v17';
+import { createRenderer } from './renderer.js?v=mobile-controls-v18';
+import { DEFAULT_PARAMETERS as defaults } from './parameters.js?v=mobile-controls-v18';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('scene');
@@ -12,7 +13,6 @@ let focused = false;
 let toastTimer;
 let riding = false, rideRequested = false, dragSteer = 0, leftHeld = false, rightHeld = false;
 const pressed = new Set();
-const defaults = { speed: 1, turbulence: 1, dispersion: 0, pointSize: 1, focusPosition: -0.48, flowerRatio: 1, quality: 'high', yaw: 0, pitch: 0, zoom: 1 };
 const params = { ...defaults };
 
 function updateReadout(key, value) {
@@ -83,7 +83,13 @@ function toggleRide() {
 
 function settings(value) {
   $('settings').hidden = !value;
+  $('studio').classList.toggle('settings-open', value);
   $('openSettings').setAttribute('aria-expanded', String(value));
+  if (value) {
+    clearInput();
+    $('settings').scrollTop = 0;
+    $('closeSettings').focus({ preventScroll: true });
+  }
 }
 
 function focus(value) {
@@ -97,15 +103,19 @@ function focus(value) {
 function reset() {
   rideRequested = riding = false; clearInput(); updateRideUI();
   Object.assign(params, defaults);
-  for (const key of ['speed', 'turbulence', 'dispersion', 'pointSize', 'focusPosition', 'flowerRatio']) {
-    $(key).value = defaults[key];
-    updateReadout(key, defaults[key]);
-  }
-  selectQuality('high');
-  renderer?.setParameters(params);
   renderer?.reset();
+  syncControls();
+  renderer?.setParameters(params);
   setPaused(false);
-  toast('已恢复参考形态');
+  toast('已恢复默认参数');
+}
+
+function syncControls() {
+  for (const key of ['speed', 'turbulence', 'dispersion', 'pointSize', 'focusPosition', 'flowerRatio']) {
+    $(key).value = params[key];
+    updateReadout(key, params[key]);
+  }
+  selectQuality(params.quality);
 }
 
 function selectQuality(quality) {
@@ -244,8 +254,8 @@ canvas.addEventListener('wheel', (event) => {
 }, { passive: false });
 canvas.addEventListener('dblclick', () => focus(!focused));
 document.addEventListener('keydown', (event) => {
-  if (event.target instanceof HTMLInputElement) return;
   if (event.code === 'Escape') { focus(false); settings(false); return; }
+  if (event.target instanceof HTMLInputElement) return;
   if (event.code === 'KeyF' && !event.repeat) { focus(!focused); return; }
   if (event.target instanceof HTMLButtonElement || event.target instanceof HTMLAnchorElement) return;
   if ((riding || rideRequested) && ['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(event.code)) { event.preventDefault(); pressed.add(event.code); updateSteer(); }
@@ -261,4 +271,5 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) clearInput();
   renderer?.setPaused(document.hidden || paused);
 });
+syncControls();
 start();

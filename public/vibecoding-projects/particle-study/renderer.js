@@ -4,8 +4,10 @@ import { createSkaterModel, RIDER_VERTEX_STRIDE } from './character-model.js?v=f
 import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL } from './shaders.js?v=flower-ratio-v17';
 import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES } from './botanical-renderer.js?v=flower-ratio-v17';
 import { GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT, GRASS_INDICES, FLOWER_INDICES } from './botanical.js?v=flower-ratio-v17';
+import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=mobile-controls-v18';
 
-const INITIAL = Object.freeze({speed: 1, turbulence: 1, dispersion: 0, pointSize: 1, focusPosition: -0.48, flowerRatio: 1, zoom: 1, quality: 'high', yaw: 0, pitch: 0});
+// Keep the focus slider's existing calibration in the skating camera.
+const RIDE_FOCUS_REFERENCE = -0.48;
 const MAX_PARTICLES = 48000;
 const QUALITY_COUNTS = { high: MAX_PARTICLES, normal: 28000, low: 18000 };
 const LENS_COUNTS = { high: 24, normal: 12, low: 8 };
@@ -218,7 +220,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       const cameraDistance = 3.58/parameters.zoom;
       currentCamera = viewCamera(macro,rideState.camera,rideBlend,cameraDistance);
       const focusPoint = vAdd(rideState.position||[0,0,0],vScale(rideState.up||[0,1,0],.20));
-      const riderFocus = Math.max(.04,vDot(vSub(currentCamera.position,focusPoint),currentCamera.back)+(parameters.focusPosition-INITIAL.focusPosition)*.18);
+      const riderFocus = Math.max(.04,vDot(vSub(currentCamera.position,focusPoint),currentCamera.back)+(parameters.focusPosition-RIDE_FOCUS_REFERENCE)*.18);
       const focusDistance = (cameraDistance+parameters.focusPosition)*(1-rideBlend)+riderFocus*rideBlend;
       const pupilScale = (APERTURE_RADIUS*(1-rideBlend)+.024*rideBlend)/APERTURE_RADIUS;
       const space=rideState.space;
