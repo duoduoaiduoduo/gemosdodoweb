@@ -44,7 +44,7 @@
 
 `server/graduation-background-refinement-publication.js` 接续追加 `proposal-2026-10-18-background-v2`，只删去 1.1 中科普法与 Markowitz 实验的两处表述，并将末段明确为以数字媒介承载科普、以人工智能辅助个性化适配和多样化表达。两份资料及链接仍保留在参考资料中，其他正文和附件不变；开题 publications 按原稿、背景 v1、背景 v2 的顺序应用。
 
-`server/graduation-background-source-publication.js` 接续追加背景 v3，仅在首段写明2022年3月30日发布会实录的完整标题，并将[15]紧接对应转述句；其余文字、引用资料及附件沿用 v2。
+`server/graduation-background-source-publication.js` 接续追加背景 v3，仅在首段写明2022年3月30日发布会实录的完整标题；背景 v4 将[15]移至实录名称后，避免固定分页的文本拆分切开引用编号。其余文字、引用资料及附件沿用 v2。
 
 `server/thesis-publication.js` 保留纯大纲修订，`server/thesis-literature-publication.js` 接续文献部分初稿。论文按 `publications` 的顺序追加版本，沿用匹配基础版本、发布前备份与重启幂等机制；空存储也能完整建立初始大纲、纯大纲和文献初稿的历史。文献初稿只展开 1.1—1.3 与 2.1—2.2，其余保留目录，24 项引用与原文入口随本版保存。旧版正文和导出不变。论文对照按章节标题匹配，删去前言时不会使后续章节错位。
 

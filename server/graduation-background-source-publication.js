@@ -17,3 +17,16 @@ export const graduationBackgroundSourcePublication={
   label:'开题审阅稿 · 1.1出处补充',
   sections,
 };
+
+// Keep the citation beside its named source, away from a fixed-page text split.
+const citedSections=structuredClone(graduationBackgroundSourcePublication.sections);
+citedSections[0].paragraphs[index]=citedSections[0].paragraphs[index]
+  .replace('发布会》实录，','发布会》实录[15]，')
+  .replace('多个环节。[15]这些特点','多个环节。这些特点');
+export const graduationBackgroundSourceCitationPublication={
+  ...graduationBackgroundSourcePublication,
+  baseRevision:graduationBackgroundSourcePublication.revision,
+  revision:'proposal-2026-10-18-background-v4',
+  label:'开题审阅稿 · 1.1出处核订',
+  sections:citedSections,
+};
