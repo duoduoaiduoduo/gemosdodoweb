@@ -1,5 +1,5 @@
-import { sharedWGSL } from './shaders.js?v=fire-v25c';
-import { fractureWGSL } from './leaf-fracture.js?v=fire-v25c';
+import { sharedWGSL } from './shaders.js?v=fire-v26a';
+import { fractureWGSL } from './leaf-fracture.js?v=fire-v26a';
 
 // A small persistent pool of incandescent fragments, rather than a looping
 // particle texture. A fragment leaves an actual leaf, then keeps its own
@@ -13,7 +13,7 @@ struct Ember {
   positionAge: vec4f,
   velocityLife: vec4f,
   thermal: vec4f, // reference size, temperature, kind/mass (>=2 ash), seed
-  orientation: vec4f, // world-space fragment normal at release, tumble rate
+  orientation: vec4f, // ash: normal/tumble; spark: recent acceleration/shutter seconds
 };
 struct EmberSettings { dt: f32, time: f32, spawning: f32, frame: f32 };
 @group(0) @binding(6) var<uniform> emberSettings: EmberSettings;
@@ -74,6 +74,11 @@ fn advance(@builtin(global_invocation_id) invocation: vec3u) {
   var velocity=mix(ember.velocityLife.xyz,targetVelocity,response);
   let flutter=sin(age*(13.0+ember.thermal.w*5.0)+ember.thermal.w*38.0);
   velocity+=cross(up,velocity+vec3f(0.031,0.0,0.018))*flutter*mix(flake,0.8+flake,select(0.0,1.0,isAsh))*dt*1.8;
+  if(!isAsh){
+    let acceleration=(velocity-ember.velocityLife.xyz)/max(0.001,dt);
+    let bounded=acceleration*min(1.0,6.0/max(0.0001,length(acceleration)));
+    ember.orientation=vec4f(mix(ember.orientation.xyz,bounded,1.0-exp(-dt*10.0)),ember.orientation.w);
+  }
   ember.positionAge=vec4f(position+velocity*dt,age);
   ember.velocityLife=vec4f(velocity,ember.velocityLife.w);
   ember.thermal.y*=exp(-dt*select(mix(0.21,0.17,flake),1.45,isAsh));
@@ -162,9 +167,9 @@ fn detach(@builtin(global_invocation_id) invocation: vec3u) {
   var ember: Ember;
   ember.positionAge=vec4f(position,0.0);
   ember.velocityLife=vec4f(velocity,mix(3.2,5.1,random(seed+10u))+flake*0.45);
-  ember.thermal=vec4f(mix(0.98,1.75,pow(random(seed+11u),1.5))+flake*0.45,
+  ember.thermal=vec4f(mix(0.50,0.84,pow(random(seed+11u),1.6))+flake*0.12,
     mix(0.98,1.22,random(seed+12u)),flake,random(seed+13u));
-  ember.orientation=vec4f(releaseNormal,0.0);
+  ember.orientation=vec4f(0.0,0.0,0.0,mix(0.028,0.060,random(seed+15u)));
   embers[index]=ember;
 }
 @compute @workgroup_size(64)
@@ -224,21 +229,54 @@ struct EmberVertex {
   @location(2) life: vec2f,
   @location(3) normal: vec3f,
   @location(4) world: vec3f,
+  @location(5) @interpolate(flat) sparkShape: vec2f,
 };
+// Tiny luminous chips retain subpixel aperture sampling, but their circle of
+// confusion is capped so a fine short streak cannot become a large round disc.
+// Scale the entire sampled pupil from its full radius, rather than clamping
+// each pupil sample onto the rim. Sensor jitter and the real depth stay intact.
+fn sparkProjection(position: vec3f) -> vec4f {
+  let viewPosition=worldToView(position);
+  let distance=3.58/max(0.65,u.settings.w);
+  let depth=distance-viewPosition.z;
+  let focusDepth=max(u.camera.w,0.012);
+  let aspect=u.viewport.x/u.viewport.y;
+  let focal=mix(1.93*min(1.0,aspect),1.90,u.extra.x);
+  let pupilRadius=mix(0.11,0.024,u.extra.x);
+  let cocCss=pupilRadius*abs(1.0/focusDepth-1.0/max(0.015,depth))*focal*u.viewport.y/(2.0*max(0.1,u.camera.z));
+  let pupil=u.lens.xy*min(1.0,0.80/max(0.0001,cocCss));
+  let offAxis=viewPosition.xy-pupil+pupil*depth/focusDepth;
+  let jitter=u.lens.zw*2.0/u.viewport.xy;
+  let nearPlane=mix(0.1,0.012,u.extra.x);
+  return vec4f(offAxis*vec2f(focal/aspect,focal)+jitter*depth,
+    10.0/(10.0-nearPlane)*depth-10.0*nearPlane/(10.0-nearPlane),depth);
+}
+fn sparkFlicker(age: f32,seed: f32) -> f32 {
+  let p=vec3f(seed*43.7+0.5,seed*17.3+4.2,seed*67.1+8.4);
+  let slow=noise(p+vec3f(age*4.3,age*1.2,0.0));
+  let uneven=noise(p*1.71+vec3f(0.0,age*13.7,age*3.1));
+  let fast=noise(p*3.13+vec3f(age*29.3,0.0,-age*7.2));
+  let breath=smoothstep(-0.55,0.48,slow*0.50+uneven*0.72);
+  let flare=pow(smoothstep(0.06,0.48,uneven*0.70+fast*0.45),2.0);
+  return 0.13+breath*0.85+flare*0.88;
+}
 @vertex fn emberVertex(@builtin(vertex_index) vertex: u32,@builtin(instance_index) index: u32) -> EmberVertex {
   let corners=array<vec2f,6>(vec2f(-1.0,-1.0),vec2f(1.0,-1.0),vec2f(-1.0,1.0),vec2f(-1.0,1.0),vec2f(1.0,-1.0),vec2f(1.0,1.0));
   let ember=embers[index];
   var result: EmberVertex;
   result.position=vec4f(2.0,2.0,2.0,1.0);
-  result.local=corners[vertex]*3.4;
+  let corner=corners[vertex%6u];
+  result.local=corner;
   result.thermal=ember.thermal;
   result.life=vec2f(ember.positionAge.w,max(0.001,ember.velocityLife.w));
   result.normal=vec3f(0.0,1.0,0.0);
   result.world=ember.positionAge.xyz;
+  result.sparkShape=vec2f(0.0);
   if(ember.velocityLife.w<=0.0||ember.positionAge.w>=ember.velocityLife.w){return result;}
   let clip=cameraProjection(ember.positionAge.xyz);
   if(clip.w<=0.015){return result;}
   if(ember.thermal.z>=2.0){
+    if(vertex>=6u){return result;}
     // Actual world-oriented, tumbling thin flakes. Their projected width and
     // illumination change as each fragment turns edge-on to the lens and sun.
     let seed=ember.thermal.w;
@@ -251,7 +289,7 @@ struct EmberVertex {
     let aspect=u.viewport.x/u.viewport.y;
     let focal=mix(1.93*min(1.0,aspect),1.90,u.extra.x);
     let worldSize=ember.thermal.x*2.0*3.58*u.camera.z/(focal*u.viewport.y);
-    let q=corners[vertex];
+    let q=corner;
     let shape=vec2f(q.x*(0.82+q.y*0.10),q.y*(0.76+q.x*0.12));
     let offset=across*shape.x+along*shape.y*mix(1.0,1.65,seed);
     result.position=cameraProjection(ember.positionAge.xyz+offset*worldSize);
@@ -259,17 +297,34 @@ struct EmberVertex {
     result.normal=normal;
     return result;
   }
-  let tail=cameraProjection(ember.positionAge.xyz-ember.velocityLife.xyz/180.0);
-  let screenMotion=(clip.xy/clip.w-tail.xy/max(tail.w,0.015))*u.viewport.xy*0.5;
+  let head=sparkProjection(ember.positionAge.xyz);
+  let baseShutter=min(ember.orientation.w,max(0.0,ember.positionAge.w));
+  let past=ember.positionAge.xyz-ember.velocityLife.xyz*baseShutter+ember.orientation.xyz*(0.5*baseShutter*baseShutter);
+  let tail=sparkProjection(past);
+  let screenMotion=(head.xy/head.w-tail.xy/max(tail.w,0.015))*u.viewport.xy*0.5;
   let motionLength=length(screenMotion);
-  let along=select(vec2f(0.0,1.0),screenMotion/max(0.001,motionLength),motionLength>0.001);
+  // Four connected sections follow the recent accelerated trajectory. The
+  // footprint is only 1–2 CSS pixels across, with a 7 px maximum short tail.
+  let shutter=baseShutter*min(1.0,7.0*u.camera.z/max(0.0001,motionLength));
+  let segment=vertex/6u;
+  let t=(f32(segment)+select(0.0,1.0,corner.y>0.0))*0.25;
+  let ago=shutter*(1.0-t);
+  let position=ember.positionAge.xyz-ember.velocityLife.xyz*ago+ember.orientation.xyz*(0.5*ago*ago);
+  let center=sparkProjection(position);
+  let velocity=ember.velocityLife.xyz-ember.orientation.xyz*ago;
+  let next=sparkProjection(position+velocity*0.005);
+  let tangent=(next.xy/next.w-center.xy/center.w)*u.viewport.xy;
+  let along=select(vec2f(0.0,1.0),tangent/max(0.0001,length(tangent)),length(tangent)>0.0001);
   let across=vec2f(-along.y,along.x);
-  let turn=0.87+0.13*sin(ember.positionAge.w*(10.0+ember.thermal.w*5.0)+ember.thermal.w*32.0);
-  let pixelRadius=ember.thermal.x*clamp(3.58/clip.w,0.35,5.0)*u.camera.z*turn;
-  let stretch=1.0+min(1.35,motionLength/max(pixelRadius,0.15));
-  let local=result.local;
-  let offset=(across*local.x+along*local.y*stretch)*pixelRadius;
-  result.position=clip+vec4f(offset*vec2f(2.0,2.0)/u.viewport.xy*clip.w,0.0,0.0);
+  let turn=0.72+0.28*smoothstep(-0.65,0.65,noise(vec3f(ember.thermal.w*31.0,ember.positionAge.w*8.7,2.4)));
+  let halfWidth=ember.thermal.x*clamp(3.58/head.w,0.35,4.0)*u.camera.z*turn;
+  let taper=mix(0.055,1.0,pow(t,0.72))*mix(1.0,0.40,smoothstep(0.85,1.0,t));
+  let tip=along*halfWidth*0.9*smoothstep(0.80,1.0,t);
+  let offset=across*corner.x*halfWidth*taper+tip;
+  result.position=center+vec4f(offset*vec2f(2.0,2.0)/u.viewport.xy*center.w,0.0,0.0);
+  result.local=vec2f(corner.x,t);
+  result.sparkShape=vec2f(shutter,max(0.001,length(screenMotion)));
+
   return result;
 }
 @fragment fn emberFragment(input: EmberVertex) -> @location(0) vec4f {
@@ -282,8 +337,8 @@ struct EmberVertex {
   let torn=abs(q.x)*(0.87+q.y*0.09)+0.055*sin(q.y*12.0+seed*31.0)-0.89;
   let signedEdge=max(max(torn,abs(q.y)-0.91),split);
   let ashFootprint=max(0.035,fwidth(signedEdge));
-  let distance=length(input.local);
-  let footprint=max(0.075,fwidth(distance));
+  let acrossFootprint=max(0.035,fwidth(q.x));
+  let alongFootprint=max(0.006,fwidth(q.y));
   if(input.thermal.z>=2.0){
     let coverage=1.0-smoothstep(-ashFootprint,ashFootprint,signedEdge);
     let fade=smoothstep(0.0,0.045,age)*(1.0-smoothstep(0.76,1.0,fraction));
@@ -300,40 +355,38 @@ struct EmberVertex {
     let alpha=coverage*fade*0.92;
     return vec4f((body+glow)*alpha,alpha);
   }
-  // A compact white-hot centre sits inside a saturated orange chip, with a
-  // thin carbon rim. The rim survives against white; radiance and a restrained
-  // halo keep the same tiny fragment legible against black and bright flames.
+  // No radial distance or billboard glow: a torn incandescent sliver leads
+  // a narrow recent-motion trace whose intensity and width fall toward its end.
   let whiteBackdrop=select(0.0,1.0,u.worldForward.w>0.5&&u.worldForward.w<1.5);
-  let chipAngle=atan2(q.y,q.x);
-  let chipDistance=distance*(1.0+0.09*sin(chipAngle*3.0+seed*18.0));
-  let edge=1.0-smoothstep(1.02-footprint,1.26+footprint,chipDistance);
-  let shell=1.0-smoothstep(mix(0.66,0.53,whiteBackdrop)-footprint,
-    mix(0.94,0.83,whiteBackdrop)+footprint,chipDistance);
-  let core=1.0-smoothstep(mix(0.23,0.14,whiteBackdrop)-footprint*0.45,
-    mix(0.51,0.35,whiteBackdrop)+footprint*0.45,chipDistance);
-  let halo=exp(-distance*distance*1.55)*mix(0.12,0.024,whiteBackdrop);
-  let fade=smoothstep(0.0,0.025,age)*(1.0-smoothstep(0.78,1.0,fraction));
-  let red=vec3f(2.60,0.055,0.001);
-  let orange=vec3f(5.60,0.60,0.012);
-  let gold=vec3f(10.0,4.2,0.65);
-  var color=mix(red,orange,smoothstep(0.18,0.63,temperature));
-  color=mix(color,gold,smoothstep(0.75,1.14,temperature));
-  // White backing reveals the hot material's orange carbon body; keeping a
-  // smaller hot centre and less green radiance stops it washing into pink.
-  let whiteCore=mix(vec3f(2.0,0.045,0.001),vec3f(6.5,1.05,0.045),smoothstep(0.25,1.14,temperature));
+  let t=clamp(q.y,0.0,1.0);
+  let jagged=q.x+0.10*sin(t*28.0+seed*43.0)+0.055*sin(t*61.0+seed*17.0);
+  let width=abs(jagged);
+  let body=1.0-smoothstep(0.55-acrossFootprint,0.96+acrossFootprint,width);
+  let core=1.0-smoothstep(0.12-acrossFootprint*0.35,0.41+acrossFootprint*0.35,width);
+  let thread=1.0-smoothstep(0.30-acrossFootprint*0.5,0.67+acrossFootprint*0.5,width);
+  let head=smoothstep(0.55-alongFootprint,0.84+alongFootprint,t)
+    *(1.0-smoothstep(0.97-alongFootprint*0.25,1.025,t));
+  let tail=pow(t,1.65)*smoothstep(0.01,0.11,t)*(1.0-head*0.75);
+  let fade=smoothstep(0.0,0.018,age)*(1.0-smoothstep(0.76,1.0,fraction));
+  let heat=smoothstep(0.11,0.31,temperature);
+  let flicker=sparkFlicker(age,seed);
+  let previousFlicker=sparkFlicker(max(0.0,age-input.sparkShape.x*(1.0-t)),seed);
+  let red=vec3f(3.6,0.065,0.001);
+  let orange=vec3f(8.0,0.78,0.014);
+  let gold=vec3f(15.0,5.7,0.62);
+  var color=mix(red,orange,smoothstep(0.18,0.66,temperature));
+  color=mix(color,gold,smoothstep(0.73,1.14,temperature));
+  let whiteCore=mix(vec3f(3.0,0.055,0.001),vec3f(9.0,1.30,0.04),smoothstep(0.24,1.14,temperature));
   color=mix(color,whiteCore,whiteBackdrop);
-  let flutter=mix(0.85,1.0,0.5+0.5*sin(age*23.0+seed*41.0));
-  let intensity=fade*flutter*smoothstep(0.11,0.31,temperature);
-  let shellHeat=smoothstep(0.22,0.83,temperature);
-  let luminousShell=mix(vec3f(2.5,0.07,0.001),vec3f(5.2,0.43,0.008),shellHeat);
-  let materialShell=mix(vec3f(0.36,0.009,0.0005),vec3f(1.7,0.105,0.0018),shellHeat);
-  let shellColor=mix(luminousShell,materialShell,whiteBackdrop);
-  let carbonColor=mix(vec3f(0.19,0.017,0.0015),vec3f(0.052,0.0045,0.0008),whiteBackdrop);
-  let carbon=carbonColor*max(0.0,edge-shell)*fade;
-  let emission=(color*core*2.4+shellColor*max(0.0,shell-core)*1.7
-    +vec3f(4.2,0.32,0.004)*halo)*intensity+carbon;
-  let opacity=(edge*mix(0.96,1.0,whiteBackdrop)+halo*0.12)*fade;
-  return vec4f(emission,opacity);
+  let bodyColor=mix(vec3f(4.8,0.28,0.003),vec3f(1.10,0.045,0.001),whiteBackdrop);
+  let trailColor=mix(vec3f(4.0,0.12,0.0015),vec3f(0.75,0.020,0.0006),whiteBackdrop);
+  let intensity=fade*heat;
+  let emission=(color*core*head*2.8+bodyColor*max(0.0,body-core)*head)*flicker*intensity
+    +trailColor*thread*tail*previousFlicker*intensity*0.64;
+  let carbon=mix(vec3f(0.13,0.009,0.001),vec3f(0.035,0.002,0.0004),whiteBackdrop)
+    *max(0.0,body-core)*head*fade;
+  let opacity=clamp(body*head*0.97+thread*tail*0.68,0.0,1.0)*fade;
+  return vec4f(emission+carbon,opacity);
 }
 `;
 
@@ -364,13 +417,13 @@ export async function createEmberParticles(device, {
     {binding:6,visibility:GPUShaderStage.VERTEX|GPUShaderStage.FRAGMENT,buffer:{type:'uniform'}},
   ]});
   const computeModule=device.createShaderModule({label:'Detached hot leaf fragment dynamics',code:computeWGSL});
-  const renderModule=device.createShaderModule({label:'Incandescent chip cores, orange shells and carbon rims',code:renderWGSL});
+  const renderModule=device.createShaderModule({label:'Fine incandescent slivers and curved short exposure traces',code:renderWGSL});
   const pipelineLayout=device.createPipelineLayout({bindGroupLayouts:[computeLayout]});
   const [advancePipeline,detachPipeline,ashPipeline,renderPipeline]=await Promise.all([
     device.createComputePipelineAsync({label:'Advect and cool live embers',layout:pipelineLayout,compute:{module:computeModule,entryPoint:'advance'}}),
     device.createComputePipelineAsync({label:'Release glowing chips from hot posed leaf strips',layout:pipelineLayout,compute:{module:computeModule,entryPoint:'detach'}}),
     device.createComputePipelineAsync({label:'Late powder released by detached leaf strips',layout:pipelineLayout,compute:{module:computeModule,entryPoint:'detachAsh'}}),
-    device.createRenderPipelineAsync({label:'MSAA aperture-resolved glowing fragments',layout:device.createPipelineLayout({bindGroupLayouts:[renderLayout]}),
+    device.createRenderPipelineAsync({label:'MSAA fine spark trails with bounded tiny-chip defocus',layout:device.createPipelineLayout({bindGroupLayouts:[renderLayout]}),
       vertex:{module:renderModule,entryPoint:'emberVertex'},
       fragment:{module:renderModule,entryPoint:'emberFragment',targets:[{format,blend:{color:{srcFactor:'one',dstFactor:'one-minus-src-alpha',operation:'add'},alpha:{srcFactor:'one',dstFactor:'one-minus-src-alpha',operation:'add'}}}]},
       primitive:{topology:'triangle-list',cullMode:'none'},
@@ -430,7 +483,7 @@ export async function createEmberParticles(device, {
       if(destroyed||remaining<=0){return;}
       pass.setPipeline(renderPipeline);
       pass.setBindGroup(0,renderGroup,[sampleIndex*256]);
-      pass.draw(6,CAPACITY);
+      pass.draw(24,CAPACITY);
     },
     async readStats(){
       if(destroyed||statsPending){return null;}
