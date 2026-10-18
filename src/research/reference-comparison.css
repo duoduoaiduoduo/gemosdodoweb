@@ -1,0 +1,43 @@
+.reference-comparison-dialog{width:calc(100vw - 40px);max-width:1520px;height:calc(100svh - 40px);max-height:100svh;margin:auto;padding:0;border:1px solid #d7d7d7;border-radius:7px;background:#fff;color:#222;overflow:hidden;overscroll-behavior:contain;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;box-shadow:0 16px 60px #0003}
+.reference-comparison-dialog[open]{display:flex;flex-direction:column}
+.reference-comparison-dialog::backdrop{background:#0005}
+.reference-comparison-header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 24px;border-bottom:1px solid #e5e5e5;flex-shrink:0}
+.reference-comparison-header h2{font-size:19px;font-weight:600;margin:0 0 5px;line-height:1.5}
+.reference-comparison-header p{font-size:12px;line-height:1.6;color:#777;margin:0}
+.reference-comparison-controls{display:flex;align-items:center;gap:14px;padding:12px 24px;border-bottom:1px solid #e7e7e7;flex-wrap:wrap;flex-shrink:0}
+.reference-comparison-controls label{display:flex;align-items:center;gap:10px;font-size:12px;min-width:0;max-width:100%}
+.reference-comparison-controls select{max-width:min(600px,calc(100vw - 180px));text-overflow:ellipsis}
+.reference-comparison-controls>span{font-size:11px;color:#888}
+.reference-comparison-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:1;min-height:0;overflow:hidden}
+.reference-comparison-column{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid #e4e4e4}
+.reference-comparison-column:last-child{border-right:0}
+.reference-comparison-column>header{padding:17px 22px 15px;background:#fafafa;border-bottom:1px solid #e8e8e8;flex-shrink:0;min-height:141px}
+.reference-comparison-column>header h3{font-size:15px;font-weight:600;line-height:1.5;margin:0 0 9px}
+.reference-comparison-column>header p{font-size:12px;line-height:1.7;margin:0;color:#666;overflow-wrap:anywhere}
+.reference-comparison-column>header small{display:block;margin-top:8px;font-size:10px;color:#888}
+.reference-comparison-scroll{position:relative;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:23px 22px 45px;flex:1;min-height:0;scrollbar-gutter:stable}
+.reference-comparison-scroll h4{font-size:16px;line-height:1.8;font-weight:600;margin:0 0 22px;overflow-wrap:anywhere}
+.reference-comparison-scroll p{font-family:"Songti SC","STSong","SimSun",serif;font-size:15px;line-height:2;margin:0 0 18px;white-space:pre-wrap;overflow-wrap:anywhere}
+.reference-comparison-scroll p.reference-paragraph-heading{font-family:inherit;font-size:14px;font-weight:600;line-height:1.9;margin-top:21px}
+.reference-comparison-scroll figure{margin:24px 0}
+.reference-comparison-scroll figure img{display:block;width:100%;height:auto;background:#fff;border:1px solid #eee}
+.reference-comparison-scroll figcaption{font-size:11px;line-height:1.8;margin-top:9px;color:#888;text-align:center}
+.reference-comparison-scroll table{border-collapse:collapse;width:100%;font-size:12px;line-height:1.9;table-layout:fixed}
+.reference-comparison-scroll th,.reference-comparison-scroll td{border:1px solid #ddd;text-align:left;vertical-align:top;padding:8px;overflow-wrap:anywhere}
+.reference-comparison-scroll th{background:#f5f5f5;font-weight:600}
+.reference-comparison-scroll p.reference-comparison-empty,.reference-comparison-scroll p.reference-comparison-pending{font-family:inherit;font-size:13px;line-height:1.9;color:#888}
+.reference-comparison-loading{grid-column:span 2;align-self:start;padding:28px 24px;font-size:13px;color:#777;line-height:1.8}
+.reference-comparison-footer{padding:10px 24px;border-top:1px solid #e7e7e7;font-size:11px;color:#888;line-height:1.7;flex-shrink:0}
+.reference-comparison-mobile-tabs{display:none}
+@media(max-width:800px){
+ .reference-comparison-dialog{width:calc(100vw - 16px);height:calc(100svh - 16px);border-radius:5px}
+ .reference-comparison-header{padding:14px 16px;gap:12px}.reference-comparison-header h2{font-size:18px}.reference-comparison-header p{font-size:11px}
+ .reference-comparison-controls{padding:10px 16px;gap:8px 12px}.reference-comparison-controls label{width:100%;gap:9px}.reference-comparison-controls select{flex:1;min-width:0;max-width:calc(100% - 65px)}
+ .reference-comparison-mobile-tabs{display:flex;gap:7px;padding:10px 16px;border-bottom:1px solid #e7e7e7;flex-shrink:0}.reference-comparison-mobile-tabs button{flex:1}
+ .reference-comparison-columns{display:flex}.reference-comparison-column{display:none;border:0;width:100%}.reference-comparison-column.is-mobile-active{display:flex}
+ .reference-comparison-column.is-mobile-active ~ .reference-comparison-loading{display:none}
+ .reference-comparison-column>header{padding:14px 18px;min-height:0}.reference-comparison-column>header p{font-size:11px}.reference-comparison-column>header small{margin-top:5px}
+ .reference-comparison-scroll{padding:18px 18px 35px}.reference-comparison-scroll p{font-size:16px}.reference-comparison-loading{padding:20px 18px}.reference-comparison-loading:not(:first-child){max-width:100%}
+ .reference-comparison-footer{padding:9px 16px;font-size:10px}
+}
+@media print{.reference-comparison-dialog{display:none!important}}

@@ -2,6 +2,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {CSSProperties, PointerEvent as ReactPointerEvent} from 'react';
 import type {ReportPage} from './reviewDocument';
 import ReviewOutline from './ReviewOutlinePanel';
+import ReferenceComparison from './ReferenceComparisonPanel';
 import {buildReviewOutline} from './reviewOutline.js';
 import './advisor-review.css';
 
@@ -12,7 +13,7 @@ type Tool = 'read'|'pen'|'text';
 function readOwn(ownStorage:string): string[] {try {const v=JSON.parse(localStorage.getItem(ownStorage)||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string'):[];}catch{return [];}}
 function getOwner(ownerStorage:string) {try {const previous=localStorage.getItem(ownerStorage);if(previous)return previous;const key=crypto.randomUUID();localStorage.setItem(ownerStorage,key);return key;}catch{return crypto.randomUUID();}}
 
-export default function AdvisorReviewPage({reportPages,reportRevision,versionLabel,documentTitle,outlineFormat,coverNote,showOutline=false,apiBase='/api/graduation-review',storagePrefix='gemos-review',sharePath='/graduation/review',documentName='开题报告',onPendingChange}:{reportPages:ReportPage[];reportRevision:string;versionLabel:string;documentTitle?:string;outlineFormat?:'reference';coverNote?:string;showOutline?:boolean;apiBase?:string;storagePrefix?:string;sharePath?:string;documentName?:string;onPendingChange:(pending:boolean)=>void}) {
+export default function AdvisorReviewPage({reportPages,reportRevision,versionLabel,documentTitle,outlineFormat,coverNote,showOutline=false,referenceSections,apiBase='/api/graduation-review',storagePrefix='gemos-review',sharePath='/graduation/review',documentName='开题报告',onPendingChange}:{reportPages:ReportPage[];reportRevision:string;versionLabel:string;documentTitle?:string;outlineFormat?:'reference';coverNote?:string;showOutline?:boolean;referenceSections?:ReportPage[];apiBase?:string;storagePrefix?:string;sharePath?:string;documentName?:string;onPendingChange:(pending:boolean)=>void}) {
   const endpoint = `${apiBase}/${reportRevision}`;
   const ownStorage = `${storagePrefix}-own-${reportRevision}`;
   const [tool,setTool]=useState<Tool>('read');
@@ -109,6 +110,7 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
   return <main className={`advisor-reader${outlineOpen?' outline-is-open':''}`} style={showOutline?{'--advisor-toolbar-height':`${toolbarHeight}px`} as CSSProperties:undefined}>
     <header className="advisor-toolbar" ref={toolbarRef} aria-label="报告阅读与批注工具">
       <span className="advisor-toolbar-title">{documentName}</span>
+      {referenceSections&&<ReferenceComparison pages={reportPages} sections={referenceSections} title={documentTitle||documentName} disabled={!!(pendingRef.current||draft||textDraft||busy)}/>}
       {showOutline&&<button className="review-outline-toggle" aria-expanded={outlineOpen} aria-controls="thesis-outline" disabled={!!(pendingRef.current||draft||textDraft||busy)} onClick={()=>setOutlineOpen(previous=>!previous)}>目录</button>}
       <div className="advisor-tools">{([['read','阅读'],['pen','画笔'],['text','文字批注']] as [Tool,string][]).map(([id,label])=><button key={id} aria-pressed={tool===id} disabled={id!=='read'&&blocked} onClick={()=>selectTool(id)}>{label}</button>)}<button onClick={undo} disabled={blocked||!own.some(id=>notes.some(n=>n.id===id))}>撤销我的批注</button></div>
       <div className="advisor-tools"><label className="advisor-check"><input type="checkbox" checked={visible} onChange={e=>{setVisible(e.target.checked);setTool('read');}}/>显示批注</label><label><span className="advisor-sr">页面缩放</span><select aria-label="页面缩放" value={zoom} onChange={e=>setZoom(e.target.value)}><option value="fit">适合屏幕</option><option value="1">100%</option><option value="1.25">125%</option></select></label><button onClick={()=>window.print()}>打印</button><button onClick={()=>void copyLink()}>分享链接</button></div>
