@@ -5,31 +5,69 @@ function lines(text) {
   for(const ch of text){if(ch==='\n'){count++;units=0;continue;}const width=ch.charCodeAt(0)>255?2:1;if(units+width>68){count++;units=0;}units+=width;}
   return count;
 }
+const PAGE_HEIGHT=690;
+const paragraphHeight=text=>lines(text)*32+18;
+const isHeading=text=>Array.from(text).length<=80&&!/[\n。！？!?；;]/u.test(text)&&/^(?:\d+\.\d+(?:\.\d+)?\s|[（(]\d+[）)])/u.test(text);
+
+// Find a real page break, rather than turning a fixed character count into a
+// new paragraph. Code-point slices preserve emoji and all original text.
+function fragmentEnd(chars,start,available){
+  let low=1,high=chars.length-start,best=0;
+  while(low<=high){
+    const length=Math.floor((low+high)/2);
+    if(paragraphHeight(chars.slice(start,start+length).join(''))<=available){best=length;low=length+1;}
+    else high=length-1;
+  }
+  return start+best;
+}
 export function paginateSections(sections){
   const pages=[];
   for(const section of sections){
     const rich=Boolean(section.images?.length||section.tables?.length||section.sourceList||(section.links?.length||0)>2);
     let page={title:section.title,paragraphs:[],pending:'',links:[]};
     let available=pages.length===0?500:690;
-    const flush=()=>{pages.push(page);page={title:`${section.title}（续）`,paragraphs:[],pending:'',links:[]};available=690;};
-    const isHeading=text=>/^(?:\d+\.\d+(?:\.\d+)?\s|（\d+）)/.test(text);
+    const flush=()=>{pages.push(page);page={title:`${section.title}（续）`,paragraphs:[],pending:'',links:[]};available=PAGE_HEIGHT;};
+    const keepHeadings=section.keepHeadingsWithNext!==false;
+    let openingParagraph=-1;
     for(let paragraphIndex=0;paragraphIndex<section.paragraphs.length;paragraphIndex++){
       const paragraph=section.paragraphs[paragraphIndex];
-      // A version may opt in without changing historical or other section layouts.
-      if(section.keepHeadingsWithNext&&isHeading(paragraph)){
-        let groupHeight=0;
+      if(!paragraph.length)continue;
+      // New pages keep consecutive headings with the following paragraph. If
+      // that group exceeds a whole page, reserve at least two opening lines.
+      if(keepHeadings&&isHeading(paragraph)&&(paragraphIndex===0||!isHeading(section.paragraphs[paragraphIndex-1]))){
+        let headingHeight=0,bodyHeight=0,bodyIndex=-1;
         for(let next=paragraphIndex;next<section.paragraphs.length;next++){
-          const text=Array.from(section.paragraphs[next]).slice(0,240).join('');
-          groupHeight+=lines(text)*32+18;
-          if(!isHeading(section.paragraphs[next]))break;
+          const text=section.paragraphs[next];
+          if(!isHeading(text)){bodyHeight=paragraphHeight(text);bodyIndex=next;break;}
+          headingHeight+=paragraphHeight(text);
         }
-        if(Math.min(groupHeight,690)>available&&page.paragraphs.length)flush();
+        const mustSplit=headingHeight+bodyHeight>PAGE_HEIGHT;
+        const groupHeight=headingHeight+(mustSplit?Math.min(bodyHeight,82):bodyHeight);
+        if(mustSplit)openingParagraph=bodyIndex;
+        if(Math.min(groupHeight,PAGE_HEIGHT)>available&&page.paragraphs.length)flush();
+        if(groupHeight>available&&!page.paragraphs.length)openingParagraph=bodyIndex;
       }
-      // Split unusually long paragraphs without dropping or changing characters.
+      const height=paragraphHeight(paragraph);
+      if(height<=available){page.paragraphs.push(paragraph);available-=height;continue;}
+      const keepOpening=paragraphIndex===openingParagraph;
+      // A paragraph that fits a fresh page moves there intact. Only a genuine
+      // page boundary may split prose, including the shorter cover-page area.
+      if(page.paragraphs.length&&!keepOpening){
+        flush();
+        if(height<=available){page.paragraphs.push(paragraph);available-=height;continue;}
+      }
       const chars=Array.from(paragraph);
-      for(let i=0;i<chars.length;i+=240){const text=chars.slice(i,i+240).join('');const height=lines(text)*32+18;if(height>available&&page.paragraphs.length)flush();page.paragraphs.push(text);available-=height;}
+      let start=0;
+      while(start<chars.length){
+        const end=fragmentEnd(chars,start,available);
+        if(end===start){flush();continue;}
+        const text=chars.slice(start,end).join('');
+        if(start>0)(page.continuationParagraphs||=[]).push(page.paragraphs.length);
+        page.paragraphs.push(text);available-=paragraphHeight(text);start=end;
+        if(start<chars.length)flush();
+      }
     }
-    const footerCost=lines(section.pending)*26+44+(section.links?.length?35:0);
+    const footerCost=(section.pending?lines(section.pending)*26+44:0)+(!rich&&section.links?.length?35:0);
     if(footerCost>available&&page.paragraphs.length)flush();
     page.pending=section.pending;page.links=rich?[]:section.links||[];
     if(page.paragraphs.length||page.pending||!rich)pages.push(page);

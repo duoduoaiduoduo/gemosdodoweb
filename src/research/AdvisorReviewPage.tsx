@@ -126,7 +126,7 @@ export default function AdvisorReviewPage({reportPages,reportRevision,versionLab
           {index===0&&(documentTitle?<><h1>{documentTitle}</h1><p className="advisor-draft-label">{coverNote||'导师审阅稿，题目拟定 · 开题日期：2026年11月13日'}</p></>:<><h1>新污染物科普方向<br/>{documentName}</h1><p className="advisor-draft-label">{coverNote||'研究讨论稿，非正式定稿 · 开题日期：2026年11月13日'}</p></>)}
           {/* Keep the original heading space so saved ink remains aligned. */}
           <h2 id={showOutline?`review-chapter-${index+1}`:undefined} style={page.title.endsWith('（续）')?{visibility:'hidden'}:undefined} aria-hidden={page.title.endsWith('（续）')||undefined}>{page.title}</h2>
-          {page.paragraphs.map((p,i)=><p id={showOutline?`review-paragraph-${index+1}-${i+1}`:undefined} className={`advisor-paragraph${outlineFormat==='reference'&&/^(?:\d+\.\d+(?:\.\d+)?\s|（\d+）)/.test(p)?' advisor-outline-heading':''}`} key={i}>{p}</p>)}
+          {page.paragraphs.map((p,i)=><p id={showOutline?`review-paragraph-${index+1}-${i+1}`:undefined} className={`advisor-paragraph${page.continuationParagraphs?.includes(i)?' advisor-paragraph-continuation':''}${outlineFormat==='reference'&&/^(?:\d+\.\d+(?:\.\d+)?\s|（\d+）)/.test(p)?' advisor-outline-heading':''}`} key={i}>{p}</p>)}
           {page.images?.map(({src,alt,caption,displayHeight})=>{
             // New tall sketches opt in; historical pages keep their 354px image geometry.
             const height=typeof displayHeight==='number'&&Number.isFinite(displayHeight)?Math.max(354,Math.min(680,displayHeight)):354;

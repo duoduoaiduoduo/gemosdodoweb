@@ -166,14 +166,14 @@ test('text edits inherit controlled media, references, title and downloads while
   assert.equal(h.read().documents.length,3);
 });
 
-test('heading pagination opt-in keeps an outline and its text together without changing the legacy layout',()=>{
+test('new pagination keeps headings with their text while preserving an explicit layout opt-out',()=>{
   const section={title:'方法',paragraphs:['甲'.repeat(120),'乙'.repeat(120),'丙'.repeat(120),'4.1 基本思路','（1）用户调查','问'.repeat(80)],pending:'',links:[]};
-  const legacy=paginateSections([section]);
+  const legacy=paginateSections([{...section,keepHeadingsWithNext:false}]);
   assert.equal(legacy[0].paragraphs.at(-1),'4.1 基本思路');
-  const updated=paginateSections([{...section,keepHeadingsWithNext:true}]);
+  const updated=paginateSections([section]);
   assert.deepEqual(updated[1].paragraphs.slice(0,3),section.paragraphs.slice(3));
   assert.equal(updated.flatMap(p=>p.paragraphs).join(''),section.paragraphs.join(''));
-  assert.deepEqual(paginateSections([section]),legacy);
+  assert.deepEqual(paginateSections([{...section,keepHeadingsWithNext:false}]),legacy);
 });
 
 test('old and published revision annotations remain isolated and keep old page geometry',async t=>{
