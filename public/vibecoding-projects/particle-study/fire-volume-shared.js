@@ -1,4 +1,4 @@
-import { sharedWGSL } from './shaders.js?v=fire-v24b';
+import { sharedWGSL } from './shaders.js?v=fire-v25c';
 export const VOLUME_SIZE = 80;
 export const SOURCE_STRIDE = 8;
 export const volumeCommon = sharedWGSL + /* wgsl */ `

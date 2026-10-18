@@ -1,5 +1,5 @@
-import { createRenderer } from './renderer.js?v=fire-v24b';
-import { DEFAULT_PARAMETERS as defaults } from './parameters.js?v=fire-v24b';
+import { createRenderer } from './renderer.js?v=fire-v25c';
+import { DEFAULT_PARAMETERS as defaults } from './parameters.js?v=fire-v25c';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('scene');
@@ -189,6 +189,7 @@ function syncControls() {
     updateReadout(key, params[key]);
   }
   selectQuality(params.quality);
+  selectBackground(params.background);
 }
 
 function selectQuality(quality) {
@@ -197,6 +198,19 @@ function selectQuality(quality) {
     button.setAttribute('aria-pressed', String(button.dataset.quality === quality));
   });
   renderer?.setParameters({ quality });
+}
+
+function selectBackground(background) {
+  if (!['sky', 'white', 'black'].includes(background)) return;
+  params.background = background;
+  $('studio').dataset.background = background;
+  document.querySelectorAll('button[data-background]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.background === background));
+  });
+  document.querySelector('meta[name="theme-color"]').content = {
+    sky: '#9acee8', white: '#ffffff', black: '#000000',
+  }[background];
+  renderer?.setParameters({ background });
 }
 
 async function start() {
@@ -269,6 +283,9 @@ $('reset').addEventListener('click', reset);
 $('retry').addEventListener('click', start);
 $('qualityHigh').addEventListener('click', () => selectQuality('high'));
 $('qualityNormal').addEventListener('click', () => selectQuality('normal'));
+document.querySelectorAll('button[data-background]').forEach((button) => {
+  button.addEventListener('click', () => selectBackground(button.dataset.background));
+});
 $('rideEntry').addEventListener('click', toggleRide);
 $('fireSeed').addEventListener('click', (event) => {
   if (suppressFireClick && event.detail !== 0) return;

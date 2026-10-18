@@ -13,7 +13,7 @@ struct Uniforms {
   domainForward: vec4f, // xyz sphere chart forward, w chart metric scale
   domainNormal: vec4f, // xyz sphere chart normal, w flower density relative to reference
   worldRight: vec4f,
-  worldForward: vec4f,
+  worldForward: vec4f, // xyz chart forward, w backdrop: 0 sky, 1 white, 2 black
   worldUp: vec4f, // w radial height scale
   rideOrigin: vec4f, // xyz unfolding center, w continuous unfold
   riderContact: vec4f, // xyz board wheel contact, w visibility
@@ -185,6 +185,8 @@ fn srgbToLinear(color: vec3f) -> vec3f {
   return select(pow((color+0.055)/1.055,vec3f(2.4)),color/12.92,color<=vec3f(0.04045));
 }
 fn referenceBackground(uv: vec2f) -> vec3f {
+  if(u.worldForward.w>1.5){return vec3f(0.0);}
+  if(u.worldForward.w>0.5){return vec3f(1.0);}
   let sky = vec3f(0.6039,0.8078,0.9098);
   let haze = vec3f(0.9373,0.9804,0.9882);
   let blueAmount = (1.0-smoothstep(0.0,0.85,uv.y))*mix(0.40,1.0,smoothstep(0.0,1.0,uv.x));
@@ -194,6 +196,7 @@ fn referenceBackground(uv: vec2f) -> vec3f {
   return mix(macroSky,microSky,u.rideOrigin.w);
 }
 fn referenceSunRadiance(uv: vec2f) -> vec3f {
+  if(u.worldForward.w>0.5){return vec3f(0.0);}
   let alignment=dot(backgroundWorldRay(uv),referenceSunDirection());
   let angleSquared=max(0.0,2.0*(1.0-alignment));
   // The solar disk and atmospheric halo stay in linear HDR until the same

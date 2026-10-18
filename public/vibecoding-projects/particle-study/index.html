@@ -12,10 +12,10 @@
   <meta property="og:url" content="https://gemosdodo.art/vibecoding/particle-study">
   <meta property="og:image" content="https://gemosdodo.art/vibecoding-projects/particle-study/cover.jpg">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="./style.css?v=fire-v24b">
+  <link rel="stylesheet" href="./style.css?v=fire-v25c">
 </head>
 <body>
-  <main class="studio" id="studio">
+  <main class="studio" id="studio" data-background="sky">
     <canvas id="scene" aria-label="实时 WebGPU 弯曲草叶与花朵组成的流动植被；拖动旋转，滚动缩放" tabindex="0"></canvas>
     <header class="topbar chrome">
       <a class="brand" href="./" aria-label="流形首页"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span>流形<span class="brand-separator"> / </span><span class="brand-subtitle">PARTICLE STUDY</span></span></a>
@@ -27,6 +27,7 @@
     <div class="error" id="error" role="alert" hidden><span class="error-label">无法启动 WebGPU</span><h1>当前浏览器尚未提供可用的 GPU。</h1><p id="errorMessage">请在支持 WebGPU 的浏览器中打开这个演示。</p><button class="text-button" id="retry">重新尝试 <span>↗</span></button></div>
     <section class="settings chrome" id="settings" aria-label="草叶与花朵参数" hidden>
       <div class="panel-heading"><span>画面控制</span><button class="icon-button" id="closeSettings" aria-label="关闭参数面板">×</button></div>
+      <div class="quality-row background-row"><span>背景</span><div class="segmented" role="group" aria-label="画面背景"><button data-background="sky" aria-pressed="true">天空</button><button data-background="white" aria-pressed="false">纯白</button><button data-background="black" aria-pressed="false">纯黑</button></div></div>
       <label class="setting"><span>对焦位置<output id="focusPositionOutput">8%</output></span><input id="focusPosition" type="range" min="-1.2" max="1.2" step="0.02" value="-1.00" aria-label="对焦位置" aria-valuetext="8%，从近景到远景"><span class="focus-range-labels" aria-hidden="true"><span>近景</span><span>远景</span></span></label>
       <label class="setting"><span>花朵比例<output id="flowerRatioOutput">188%</output></span><input id="flowerRatio" type="range" min="0" max="2" step="0.02" value="1.88" aria-label="花朵比例" aria-valuetext="188%，以当前花量为100%"><span class="focus-range-labels" aria-hidden="true"><span>纯草</span><span>100% 为当前花量</span><span>更多花</span></span></label>
       <label class="setting"><span>流动速度<output id="speedOutput">1.00</output></span><input id="speed" type="range" min="0.15" max="2.2" step="0.05" value="1" aria-label="流动速度"></label>
@@ -61,6 +62,6 @@
     <button class="exit-focus" id="exitFocus" aria-label="退出专注模式" hidden>退出专注 <span>Esc</span></button>
     <div class="toast" id="toast" role="status" hidden></div>
   </main>
-  <script type="module" src="./app.js?v=fire-v24b"></script>
+  <script type="module" src="./app.js?v=fire-v25c"></script>
 </body>
 </html>

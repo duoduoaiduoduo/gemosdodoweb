@@ -111,3 +111,54 @@
   .is-focused .fire-tools{bottom:calc(80px + env(safe-area-inset-bottom,0px));top:auto}
 }
 @media(prefers-reduced-motion:reduce){.fire-tools,.fire-seed,.fire-regrow{transition:none}.fire-seed-icon,.fire-cursor-flame{animation:none!important}}
+
+/* Solid backgrounds also carry the controls, including the phone's sticky header. */
+.background-row{margin-bottom:24px}
+.background-row .segmented button{min-width:42px}
+.studio[data-background=white]{background:#fff;color-scheme:light}
+.studio[data-background=white] .settings,.studio[data-background=white] .panel-heading{background:#fffffff5}
+.studio[data-background=white] .settings{border-color:#dbe4de;box-shadow:0 10px 50px #233c2b0d}
+.studio[data-background=white] .toolbar{background:#ffffffc9;border-color:#dbe4de}
+.studio[data-background=white] .ride-entry{background:#fffffff0;border-color:#dbe4de}
+.studio[data-background=black]{background:#000;color:#e1eae4;color-scheme:dark}
+.studio[data-background=black] .brand,.studio[data-background=black] .caption{color:#dce8df}
+.studio[data-background=black] .engine,.studio[data-background=black] .ride-readout{color:#b5c8bb}
+.studio[data-background=black] .live-dot{background:#718578}
+.studio[data-background=black] .live-dot.active{background:#a5d99d;box-shadow:0 0 8px #a5d99d40}
+.studio[data-background=black] .mark i{background:#b2cdb9}
+.studio[data-background=black] .toolbar{background:#171e19d9;border-color:#d1e2d426;box-shadow:0 3px 22px #0003}
+.studio[data-background=black] .toolbar button:hover{background:#f0fff014}
+.studio[data-background=black] .toolbar button[aria-expanded=true]{background:#e3f5e422}
+.studio[data-background=black] .divider{background:#d7ead424}
+.studio[data-background=black] .settings,.studio[data-background=black] .panel-heading{background:#161c18f7}
+.studio[data-background=black] .settings{border-color:#d8e9da29;box-shadow:0 10px 50px #0005}
+.studio[data-background=black] .panel-heading{border-bottom-color:#d8e9da14}
+.studio[data-background=black] .panel-heading::before{background:#cadbce40}
+.studio[data-background=black] .setting>span{color:#c2d0c6}
+.studio[data-background=black] .setting input{background:#c1d1c433;accent-color:#b6d4bc}
+.studio[data-background=black] .setting input::-webkit-slider-thumb{background:#b6d4bc;box-shadow:0 0 0 4px #b6d4bc0b}
+.studio[data-background=black] .setting input::-moz-range-thumb{background:#b6d4bc}
+.studio[data-background=black] .segmented{background:#d4edd00b}
+.studio[data-background=black] .segmented button{opacity:.64}
+.studio[data-background=black] .segmented button[aria-pressed=true]{background:#dcebdd;color:#233d2b;opacity:1;box-shadow:0 1px 4px #0002}
+.studio[data-background=black] .reset-button{border-color:#d3e3d51f;color:#b8cbbf}
+.studio[data-background=black] .ride-entry,.studio[data-background=black] .ride-touch button{background:#1a251edb;border-color:#d4e8d82b;color:#d0e3d5;box-shadow:0 3px 24px #0003}
+.studio[data-background=black] .ride-entry:hover,.studio[data-background=black] .ride-entry[aria-pressed=true],.studio[data-background=black] .ride-touch button.held,.studio[data-background=black] .ride-touch button:active{background:#2c3d30ed}
+.studio[data-background=black] .fire-hint{color:#cbd6c7}
+.studio[data-background=black] .fire-seed{background:linear-gradient(135deg,#35281ee6,#241a10e6);border-color:#eac28b38;color:#efc88f;box-shadow:0 3px 24px #0003,inset 0 1px 0 #ffe4b60a}
+.studio[data-background=black] .fire-seed:hover:not(:disabled){background:#3c2a17ed}
+.studio[data-background=black] .fire-seed[aria-pressed=true]{background:linear-gradient(135deg,#593814ed,#3c2410e6);border-color:#f5bb6866;box-shadow:0 0 30px #f4b94c16,inset 0 1px 0 #ffe4b614}
+.studio[data-background=black] .fire-mode-dot{background:#f7bd67}
+.studio[data-background=black] .fire-regrow{background:#1b281fd9;border-color:#d5e9d52b;color:#c3d7c5}
+.studio[data-background=black] .fire-regrow:hover:not(:disabled){background:#2a3c2bed}
+.studio[data-background=black] .fire-regrow[data-growing=true]{border-color:#afcfa845;background-image:linear-gradient(90deg,#91b77b40 var(--growth-progress,0%),transparent var(--growth-progress,0%))}
+.studio[data-background=black] .exit-focus{background:#18221bd9;border-color:#cce2ce29;color:#d7e9dc}
+.studio[data-background=black] .toast{background:#d4e7d8ed;color:#203a29}
+.studio[data-background=black] .loading{color:#c0d3c5}
+.studio[data-background=black] .loading-orbit{border-color:#b6d1bf26;border-top-color:#b6d1bf}
+.studio[data-background=black] .error{background:#18231def;border-color:#d6ecd22b}
+.studio[data-background=black] button:focus-visible,.studio[data-background=black] a:focus-visible,.studio[data-background=black] canvas:focus-visible{outline-color:#c8dfcd}
+@media(max-width:650px),(max-height:540px) and (orientation:landscape){
+  .background-row .segmented button{padding-right:13px;padding-left:13px}
+  .studio[data-background=black] .setting input{background:linear-gradient(#c1d1c433,#c1d1c433) center/100% 2px no-repeat}
+}

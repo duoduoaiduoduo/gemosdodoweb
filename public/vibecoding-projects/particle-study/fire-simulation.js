@@ -1,4 +1,4 @@
-import { sharedWGSL } from './shaders.js?v=fire-v24b';
+import { sharedWGSL } from './shaders.js?v=fire-v25c';
 
 export const FIRE_WIDTH = 64;
 export const FIRE_HEIGHT = 32;

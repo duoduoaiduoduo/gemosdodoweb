@@ -1,15 +1,15 @@
 import { createChaosRide } from './chaos-ride.js?v=flower-ratio-v17';
 import { RIDE_HEIGHT_SCALE } from './ride-space.js?v=flower-ratio-v17';
 import { createSkaterModel, RIDER_VERTEX_STRIDE } from './character-model.js?v=flower-ratio-v17';
-import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL, depthResolveWGSL, fxaaWGSL } from './shaders.js?v=fire-v24b';
-import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES, GRASS_RENDER_INDICES as GRASS_INDICES } from './botanical-renderer.js?v=fire-v24b';
-import { createFireSimulation } from './fire-simulation.js?v=fire-v24b';
-import { createFireVisuals } from './fire-visuals.js?v=fire-v24b';
-import { createEmberParticles } from './ember-particles.js?v=fire-v24b';
-import { createLeafAsh } from './leaf-ash.js?v=fire-v24b';
-import { createLeafFracture } from './leaf-fracture.js?v=fire-v24b';
+import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL, depthResolveWGSL, fxaaWGSL } from './shaders.js?v=fire-v25c';
+import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES, GRASS_RENDER_INDICES as GRASS_INDICES } from './botanical-renderer.js?v=fire-v25c';
+import { createFireSimulation } from './fire-simulation.js?v=fire-v25c';
+import { createFireVisuals } from './fire-visuals.js?v=fire-v25c';
+import { createEmberParticles } from './ember-particles.js?v=fire-v25c';
+import { createLeafAsh } from './leaf-ash.js?v=fire-v25c';
+import { createLeafFracture } from './leaf-fracture.js?v=fire-v25c';
 import { GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT, FLOWER_INDICES, GRASS_INDICES as GRASS_ORIGINAL_INDICES } from './botanical.js?v=flower-ratio-v17';
-import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=fire-v24b';
+import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=fire-v25c';
 
 // Keep the focus slider's existing calibration in the skating camera.
 const RIDE_FOCUS_REFERENCE = -0.48;
@@ -298,7 +298,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       uniformData.set([...(space?.domainForward||[0,0,1]),3.0],36);
       uniformData.set([...(space?.domainNormal||[0,1,0]),parameters.flowerRatio],40);
       uniformData.set([...(space?.worldRight||[1,0,0]),fractureIndexing?1:0],44);
-      uniformData.set([...(space?.worldForward||[0,0,1]),0],48);
+      uniformData.set([...(space?.worldForward||[0,0,1]),({sky:0,white:1,black:2}[parameters.background]||0)],48);
       uniformData.set([...(space?.worldUp||[0,1,0]),RIDE_HEIGHT_SCALE],52);
       uniformData.set([...(space?.origin||[0,0,0]),unfold],56);
       uniformData.set([...(rideState.position||[0,0,0]),rideState.visibility||0],60);
@@ -398,7 +398,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       canvas.dataset.fireRendering='branching-reaction-sheets-v21';
       canvas.dataset.grassIndexing=fractureIndexing?'fracture-120':'intact-70';
       canvas.dataset.vegetationBurning='hinged-char-leaf-detachment-v24';
-      canvas.dataset.emberRendering='leaf-fragments-to-fine-ash-v24';
+      canvas.dataset.emberRendering='incandescent-chip-cores-v25';
       canvas.dataset.regrowing=String(fireSimulation.regrowing);
       canvas.dataset.growthProgress=String(fireSimulation.growthProgress);
       canvas.dataset.igniterActive=String(igniter.active);
@@ -430,6 +430,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
         for (const [key, value] of Object.entries(partial)) {
           if (!allowed.has(key)) continue;
           if (key === 'quality') { if (QUALITY_COUNTS[value]) parameters.quality = value; }
+          else if (key === 'background') { if (['sky','white','black'].includes(value)) parameters.background = value; }
           else if (Number.isFinite(Number(value))) parameters[key] = Number(value);
         }
         parameters.speed = Math.min(3, Math.max(0, parameters.speed)); parameters.zoom = Math.min(1.7, Math.max(0.65, parameters.zoom));

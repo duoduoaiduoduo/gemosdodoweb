@@ -6,6 +6,7 @@ export const DEFAULT_PARAMETERS = Object.freeze({
   focusPosition: -1.00,
   flowerRatio: 1.88,
   quality: 'normal',
+  background: 'sky',
   yaw: 0,
   pitch: 0,
   zoom: 1,
