@@ -1,12 +1,12 @@
 import { createChaosRide } from './chaos-ride.js?v=flower-ratio-v17';
 import { RIDE_HEIGHT_SCALE } from './ride-space.js?v=flower-ratio-v17';
 import { createSkaterModel, RIDER_VERTEX_STRIDE } from './character-model.js?v=flower-ratio-v17';
-import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL } from './shaders.js?v=fire-v19';
-import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES } from './botanical-renderer.js?v=fire-v19';
-import { createFireSimulation } from './fire-simulation.js?v=fire-v19';
-import { createFireVisuals } from './fire-visuals.js?v=fire-v19';
+import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL } from './shaders.js?v=fire-v20c';
+import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES } from './botanical-renderer.js?v=fire-v20c';
+import { createFireSimulation } from './fire-simulation.js?v=fire-v20c';
+import { createFireVisuals } from './fire-visuals.js?v=fire-v20c';
 import { GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT, GRASS_INDICES, FLOWER_INDICES } from './botanical.js?v=flower-ratio-v17';
-import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=mobile-controls-v18';
+import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=fire-v20c';
 
 // Keep the focus slider's existing calibration in the skating camera.
 const RIDE_FOCUS_REFERENCE = -0.48;
@@ -66,12 +66,13 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
   window.__particleState = diagnostic;
   let device, context, animationId, resizeObserver, skaterModel, fireSimulation, fireVisuals;
   const igniter={x:0.5,y:0.5,active:false};
+  let fireVolumeClear=true;
   let fireStats={burnedFraction:0,heatAverage:0,activeCells:0,smokeAverage:0,fuelAverage:1},fireGeneration=0,fireStatsDirty=false;
-  const clearCombustion=()=>{igniter.active=false;fireGeneration++;fireStatsDirty=true;fireStats={burnedFraction:0,heatAverage:0,activeCells:0,smokeAverage:0,fuelAverage:1};fireSimulation.clear();};
+  const clearCombustion=()=>{igniter.active=false;fireGeneration++;fireStatsDirty=true;fireStats={burnedFraction:0,heatAverage:0,activeCells:0,smokeAverage:0,fuelAverage:1};fireSimulation.clear();fireVolumeClear=true;};
   let disposed = false, paused = false, simulationTime = startTime, lastTimestamp = 0;
   let initializeParticles = true, geometryDirty = true, resetFilm = true, totalFilmSamples = 0, filmWrite = 0, displayIndex = 0;
   let geometryRevision = 0;
-  let sceneTexture, sumTexture, depthTexture, heatTexture, filmTextures = [];
+  let sceneTexture, sumTexture, depthTexture, filmTextures = [];
   let uniforms, sampleUniforms, particles, viewParticles, meshVertices, meshIndices, sunTexture, riderVertices;
   const captures = [];
   const captureFrame = (event) => { if (typeof event.detail === 'function') captures.push(event.detail); };
@@ -85,7 +86,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     console.error('[WebGPU particle study]', error);
   };
   const destroyTargets = () => {
-    for (const target of [sceneTexture, sumTexture, depthTexture, heatTexture, ...filmTextures]) target?.destroy();
+    for (const target of [sceneTexture, sumTexture, depthTexture, ...filmTextures]) target?.destroy();
   };
 
   try {
@@ -115,12 +116,12 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
         if (message.type === 'warning') console.warn(message.message);
       }
     }
-    uniforms = device.createBuffer({size: 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST});
+    uniforms = device.createBuffer({size: 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC});
     sampleUniforms = device.createBuffer({size: MAX_LENS * 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST});
     particles = device.createBuffer({size: MAX_PARTICLES * 64, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST});
     viewParticles = device.createBuffer({size: MAX_PARTICLES * 64, usage: GPUBufferUsage.STORAGE});
     fireSimulation=await createFireSimulation(device,{uniforms,plants:viewParticles,maxParticles:MAX_PARTICLES});
-    fireVisuals=await createFireVisuals(device,{sampleUniforms,plants:viewParticles,fireState:fireSimulation.stateBuffer,format:'rgba16float',depthFormat:'depth32float',maxLens:MAX_LENS});
+    fireVisuals=await createFireVisuals(device,{uniforms,plants:viewParticles,fireState:fireSimulation.stateBuffer,format:'rgba16float'});
     skaterModel = await createSkaterModel(device);
     ride.setPoseSampler(skaterModel.samplePose);
     riderVertices = skaterModel.vertices;
@@ -138,7 +139,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     const storageEntry = (binding, visibility, type) => ({binding, visibility, buffer: {type}});
     const computeLayout = device.createBindGroupLayout({entries: [uniformEntry(GPUShaderStage.COMPUTE), storageEntry(1, GPUShaderStage.COMPUTE, 'storage')]});
     const projectLayout = device.createBindGroupLayout({entries: [uniformEntry(GPUShaderStage.COMPUTE), storageEntry(1, GPUShaderStage.COMPUTE, 'read-only-storage'), storageEntry(2, GPUShaderStage.COMPUTE, 'storage')]});
-    const geometryLayout = device.createBindGroupLayout({entries: [uniformEntry(GPUShaderStage.COMPUTE),storageEntry(1,GPUShaderStage.COMPUTE,'read-only-storage'),storageEntry(2,GPUShaderStage.COMPUTE,'storage'),storageEntry(3,GPUShaderStage.COMPUTE,'read-only-storage')]});
+    const geometryLayout = device.createBindGroupLayout({entries: [uniformEntry(GPUShaderStage.COMPUTE),storageEntry(1,GPUShaderStage.COMPUTE,'read-only-storage'),storageEntry(2,GPUShaderStage.COMPUTE,'storage'),storageEntry(3,GPUShaderStage.COMPUTE,'read-only-storage'),storageEntry(4,GPUShaderStage.COMPUTE,'read-only-storage')]});
     const characterEntries = [{binding:4,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'float',viewDimension:'2d-array'}},
       {binding:5,visibility:GPUShaderStage.FRAGMENT,sampler:{type:'filtering'}}, storageEntry(6,GPUShaderStage.VERTEX,'read-only-storage')];
     const shadowLayout = device.createBindGroupLayout({entries: [uniformEntry(GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT),storageEntry(1,GPUShaderStage.VERTEX,'read-only-storage'),...characterEntries]});
@@ -152,7 +153,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     const makePipelineLayout = (layout) => device.createPipelineLayout({bindGroupLayouts: [layout]});
     const computeGroup = device.createBindGroup({layout: computeLayout, entries: [{binding: 0, resource: {buffer: uniforms}}, {binding: 1, resource: {buffer: particles}}]});
     const projectGroup = device.createBindGroup({layout: projectLayout, entries: [{binding: 0, resource: {buffer: uniforms}}, {binding: 1, resource: {buffer: particles}}, {binding: 2, resource: {buffer: viewParticles}}]});
-    const geometryGroup = device.createBindGroup({layout:geometryLayout,entries:[{binding:0,resource:{buffer:uniforms}},{binding:1,resource:{buffer:viewParticles}},{binding:2,resource:{buffer:meshVertices}},{binding:3,resource:{buffer:fireSimulation.stateBuffer}}]});
+    const geometryGroup = device.createBindGroup({layout:geometryLayout,entries:[{binding:0,resource:{buffer:uniforms}},{binding:1,resource:{buffer:viewParticles}},{binding:2,resource:{buffer:meshVertices}},{binding:3,resource:{buffer:fireSimulation.stateBuffer}},{binding:4,resource:{buffer:fireSimulation.growthBuffer}}]});
     const characterResources=[{binding:4,resource:skaterModel.texture.createView({dimension:'2d-array'})},{binding:5,resource:skaterModel.sampler},{binding:6,resource:{buffer:skaterModel.jointBuffer}}];
     const shadowGroup = device.createBindGroup({layout:shadowLayout,entries:[{binding:0,resource:{buffer:uniforms}},{binding:1,resource:{buffer:meshVertices}},...characterResources]});
     const renderGroup = device.createBindGroup({layout: renderLayout, entries: [{binding: 0, resource: {buffer: sampleUniforms, offset: 0, size: 256}}, {binding: 1, resource: {buffer: meshVertices}},
@@ -192,11 +193,11 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       const texture = (label) => device.createTexture({label, size: [width, height], format: 'rgba16float', usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING});
       sceneTexture = texture('One lens ray view'); sumTexture = texture('Current frame aperture integral');
       filmTextures = [texture('Stationary film A'), texture('Stationary film B')];
-      depthTexture = device.createTexture({size: [width, height], format: 'depth32float', usage: GPUTextureUsage.RENDER_ATTACHMENT});
-      heatTexture=device.createTexture({label:'Buoyant heat refraction',size:[Math.max(2,Math.ceil(width/2)),Math.max(2,Math.ceil(height/2))],format:'rgba16float',usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});
+      depthTexture = device.createTexture({size: [width, height], format: 'depth32float', usage: GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});
+      fireVisuals.resize({width,height,depthTexture});
       accumulateGroup = postGroup(accumulateLayout, [sceneTexture]);
       historyGroups = [postGroup(historyLayout, [sumTexture, filmTextures[1]]), postGroup(historyLayout, [sumTexture, filmTextures[0]])];
-      compositeGroups = filmTextures.map((film) => postGroup(compositeLayout, [film,heatTexture]));
+      compositeGroups = filmTextures.map((film) => postGroup(compositeLayout, [film,fireVisuals.texture]));
       resetFilm = true; totalFilmSamples = 0; filmWrite = 0; displayIndex = 0;
       diagnostic.width = width; diagnostic.height = height;
     };
@@ -213,7 +214,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       if (!simulationStationary) simulationTime += elapsed * parameters.speed;
       rideState = ride.update(paused ? 0 : elapsed,{time:simulationTime,params:parameters});
       const rideBlend = Math.max(0,Math.min(1,rideState.blend||0));
-      const stationary = simulationStationary && !(rideBlend>0 && !paused) && !((fireSimulation.active || igniter.active) && !paused);
+      const stationary = simulationStationary && !(rideBlend>0 && !paused) && !((fireSimulation.active || fireVisuals.active || igniter.active) && !paused);
       if (!stationary) totalFilmSamples = 0;
       if (lightingTween) {
         const previousYaw=lightingYaw,previousPitch=lightingPitch;
@@ -243,7 +244,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       const flowerCount = Math.ceil(count/FLOWER_ROOT_STRIDE);
       const uniqueVertexCount = count*GRASS_VERTEX_COUNT+flowerCount*FLOWER_VERTEX_COUNT+CRUST_VERTEX_COUNT;
       const coverageScale = Math.sqrt(MAX_PARTICLES / count);
-      const lensCount = (rideBlend>.01 || fireSimulation.active) && !stationary ? ({high:12,normal:8,low:8}[parameters.quality]||12) : (LENS_COUNTS[parameters.quality]||MAX_LENS);
+      const lensCount = (rideBlend>.01 || fireSimulation.active || fireVisuals.active) && !stationary ? ({high:12,normal:8,low:8}[parameters.quality]||12) : (LENS_COUNTS[parameters.quality]||MAX_LENS);
       const needsIntegral = !stationary || totalFilmSamples < STILL_SAMPLES || initializeParticles;
       const historyWeight = totalFilmSamples ? lensCount / (totalFilmSamples + lensCount) : 1;
       uniformData.set([width, height, simulationTime, count, parameters.turbulence, parameters.dispersion, parameters.pointSize * coverageScale, parameters.zoom,
@@ -265,6 +266,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
           sampleData.set(uniformData, i * FLOAT_STRIDE);
           const pupil=lensSample((stationary ? totalFilmSamples : 0)+i);
           pupil[0]*=pupilScale; pupil[1]*=pupilScale;
+          if ((fireSimulation.active || fireVisuals.active || igniter.active) && i===lensCount-1) { pupil[0]=0;pupil[1]=0;pupil[2]=0;pupil[3]=0; }
           sampleData.set(pupil,i*FLOAT_STRIDE+16);
         }
         device.queue.writeBuffer(sampleUniforms, 0, sampleData);
@@ -273,6 +275,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
           const compute = encoder.beginComputePass(); compute.setPipeline(computePipeline); compute.setBindGroup(0, computeGroup); compute.dispatchWorkgroups(Math.ceil(count / 256));
           compute.setPipeline(projectPipeline); compute.setBindGroup(0, projectGroup); compute.dispatchWorkgroups(Math.ceil(count / 256)); compute.end();
           fireSimulation.encode(encoder,{dt:paused?0:elapsed,time:simulationTime,count,igniter});
+          fireVisuals.encode(encoder,{dt:paused?0:elapsed,count,active:fireSimulation.active||igniter.active,regrowing:fireSimulation.regrowing,clear:fireVolumeClear});fireVolumeClear=false;
           const geometry=encoder.beginComputePass();geometry.setPipeline(geometryPipeline);geometry.setBindGroup(0,geometryGroup);geometry.dispatchWorkgroups(Math.ceil(uniqueVertexCount/128));geometry.end();
           geometryDirty = false;
           canvas.dataset.geometryRevision = String(++geometryRevision);
@@ -290,7 +293,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
         }
         for (let i = 0; i < lensCount; i++) {
           const scene = encoder.beginRenderPass({colorAttachments: [{view: sceneTexture.createView(), clearValue: {r: 0, g: 0, b: 0, a: 0}, loadOp: 'clear', storeOp: 'store'}],
-            depthStencilAttachment: {view: depthTexture.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'discard'}});
+            depthStencilAttachment: {view: depthTexture.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store'}});
           scene.setPipeline(scenePipeline); scene.setBindGroup(0, renderGroup, [i * 256]); scene.setIndexBuffer(meshIndices,'uint16');
           scene.drawIndexed(GRASS_INDICES.length,count,0,0,0);
           scene.drawIndexed(FLOWER_INDICES.length,flowerCount,GRASS_INDICES.length,0,count);
@@ -298,7 +301,6 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
           if(unfold>.35) scene.drawIndexed(GRASS_INDICES.length,count,0,0,count+flowerCount+1);
           if(unfold>.35) scene.drawIndexed(FLOWER_INDICES.length,flowerCount*(parameters.flowerRatio>1 ? 5 : 2),GRASS_INDICES.length,0,2*count+flowerCount+1);
           if (riderVertexCount) {scene.setPipeline(riderPipeline);scene.setBindGroup(0,renderGroup,[i*256]);scene.setVertexBuffer(0,riderVertices);scene.setIndexBuffer(skaterModel.indexBuffer,'uint32');scene.drawIndexed(skaterModel.indexCount);}
-          if(fireSimulation.active)fireVisuals.draw(scene,{sampleIndex:i,count});
           scene.end();
           const sum = encoder.beginRenderPass({colorAttachments: [{view: sumTexture.createView(), clearValue: {r: 0, g: 0, b: 0, a: 0}, loadOp: i === 0 ? 'clear' : 'load', storeOp: 'store'}]});
           sum.setPipeline(accumulatePipeline); sum.setBindGroup(0, accumulateGroup); sum.draw(3); sum.end();
@@ -309,8 +311,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
         totalFilmSamples = stationary ? totalFilmSamples + lensCount : 0;
         initializeParticles = false;
       }
-      const heat=encoder.beginRenderPass({colorAttachments:[{view:heatTexture.createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:0}}]});
-      if(fireSimulation.active)fireVisuals.drawHeat(heat,{sampleIndex:0,count});heat.end();
+      if(needsIntegral)fireVisuals.render(encoder);
       const output = encoder.beginRenderPass({colorAttachments: [{view: context.getCurrentTexture().createView(), loadOp: 'clear', storeOp: 'store', clearValue: {r: 0, g: 0, b: 0, a: 1}}]});
       output.setPipeline(compositePipeline); output.setBindGroup(0, compositeGroups[displayIndex]); output.draw(3); output.end();
       device.queue.submit([encoder.finish()]);
@@ -329,6 +330,9 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       canvas.dataset.focusDistance = focusDistance.toFixed(3); canvas.dataset.unfold=unfold.toFixed(4);
       canvas.dataset.ridePush = (rideState.push||0).toFixed(4);
       canvas.dataset.fireActive=String(fireSimulation.active);
+      canvas.dataset.fireRendering='persistent-3d-volume-v20';
+      canvas.dataset.regrowing=String(fireSimulation.regrowing);
+      canvas.dataset.growthProgress=String(fireSimulation.growthProgress);
       canvas.dataset.igniterActive=String(igniter.active);
       canvas.dataset.strokeForce = (rideState.strokeForce||0).toFixed(4);
       Object.assign(canvas.dataset,{riding:String(Boolean(rideState.active)),transitioning:String(Boolean(rideState.transitioning)),rideBlend:rideBlend.toFixed(4),rideDistance:(rideState.distance||0).toFixed(4),rideSpeed:(rideState.speed||0).toFixed(4),airborne:String(Boolean(rideState.airborne)),jumps:String(rideState.jumps||0),riderVertices:String(riderVertexCount),riderPosition:JSON.stringify(rideState.position||null),riderUp:JSON.stringify(rideState.up||null),cameraPosition:JSON.stringify(currentCamera.position),cameraTarget:JSON.stringify(currentCamera.target),worldBody:'original-continuous-particles',rideSteer:(rideState.steer||0).toFixed(3),surfaceLayer:String(rideState.supportLayer||0),surfaceCoverage:(rideState.supportCoverage??1).toFixed(3),outerCoverage:(rideState.outerCoverage??1).toFixed(3),supportBlend:(rideState.shellBlend||0).toFixed(3)});
@@ -336,15 +340,16 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       if (timestamp - fpsStart >= 750) {
         diagnostic.fps = Math.round(fpsFrames * 1000 / (timestamp - fpsStart)); canvas.dataset.fps = String(diagnostic.fps); diagnostic.parameters = { ...parameters };
         const generation=fireGeneration;
-        if(fireSimulation.active || fireStats.burnedFraction>0 || fireStatsDirty)fireSimulation.readStats().then(stats=>{if(stats&&!disposed&&generation===fireGeneration){fireStats=stats;fireStatsDirty=false;canvas.dataset.burnedFraction=stats.burnedFraction.toFixed(4);canvas.dataset.fireHeat=stats.heatAverage.toFixed(4);canvas.dataset.fireCells=String(stats.activeCells);canvas.dataset.fuel=stats.fuelAverage.toFixed(4);}});
+        if(fireSimulation.active || fireStats.burnedFraction>0 || fireStatsDirty)fireSimulation.readStats().then(stats=>{if(stats&&!disposed&&generation===fireGeneration){fireStats=stats;fireStatsDirty=false;canvas.dataset.burnedFraction=stats.burnedFraction.toFixed(4);canvas.dataset.fireHeat=stats.heatAverage.toFixed(4);canvas.dataset.fireCells=String(stats.activeCells);canvas.dataset.fuel=stats.fuelAverage.toFixed(4);canvas.dataset.growthAverage=stats.growthAverage.toFixed(4);canvas.dataset.moisture=stats.moistureAverage.toFixed(4);}});
         canvas.dataset.burnedFraction=fireStats.burnedFraction.toFixed(4);
-        onStats?.({fps: diagnostic.fps, particleCount: count, time: simulationTime, paused, fireActive:fireSimulation.active, burnedFraction:fireStats.burnedFraction, riding:Boolean(rideState.active),transitioning:Boolean(rideState.transitioning),rideBlend,distance:rideState.distance||0,speed:rideState.speed||0,airborne:Boolean(rideState.airborne),jumps:rideState.jumps||0}); fpsFrames = 0; fpsStart = timestamp;
+        onStats?.({fps: diagnostic.fps, particleCount: count, time: simulationTime, paused, fireActive:fireSimulation.active, burnedFraction:fireStats.burnedFraction, regrowing:fireSimulation.regrowing,growthProgress:fireSimulation.growthProgress, riding:Boolean(rideState.active),transitioning:Boolean(rideState.transitioning),rideBlend,distance:rideState.distance||0,speed:rideState.speed||0,airborne:Boolean(rideState.airborne),jumps:rideState.jumps||0}); fpsFrames = 0; fpsStart = timestamp;
       }
     };
     diagnostic.ready = true; animationId = requestAnimationFrame(render); onReady?.({renderer: 'webgpu', particleCount: MAX_PARTICLES});
     return {
       setIgniter(value){Object.assign(igniter,{x:Math.max(0,Math.min(1,Number(value.x)||0)),y:Math.max(0,Math.min(1,Number(value.y)||0)),active:Boolean(value.active)});if(igniter.active)resetFilm=true;},
       clearFire(){clearCombustion();geometryDirty=true;resetFilm=true;},
+      regrowFire(){if(!fireSimulation.regrow())return false;igniter.active=false;fireGeneration++;fireStatsDirty=true;geometryDirty=true;resetFilm=true;return true;},
       enterRide() { ride.enter({time:simulationTime,params:parameters});resetFilm=true; },
       exitRide() { ride.exit();resetFilm=true; },
       setInput(input) { ride.setInput(input); },

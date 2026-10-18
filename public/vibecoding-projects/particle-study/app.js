@@ -1,5 +1,5 @@
-import { createRenderer } from './renderer.js?v=fire-v19';
-import { DEFAULT_PARAMETERS as defaults } from './parameters.js?v=mobile-controls-v18';
+import { createRenderer } from './renderer.js?v=fire-v20c';
+import { DEFAULT_PARAMETERS as defaults } from './parameters.js?v=fire-v20c';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('scene');
@@ -13,6 +13,7 @@ let focused = false;
 let toastTimer;
 let riding = false, rideRequested = false, dragSteer = 0, leftHeld = false, rightHeld = false;
 let fireMode = false, fireUsed = false, fireCanvasPointer = null, fireToolDrag = null, suppressFireClick = false;
+let fireRegrowing = false, fireGrowthProgress = 0, fireGrowthSeen = false, suppressBurnedStats = false;
 const pressed = new Set();
 const params = { ...defaults };
 
@@ -66,11 +67,19 @@ function updateRideUI() {
 
 function updateFireUI() {
   $('studio').classList.toggle('is-igniting', fireMode);
+  $('studio').classList.toggle('is-regrowing', fireRegrowing);
+  $('fireSeed').disabled = !renderer || fireRegrowing || !$('error').hidden;
   $('fireSeed').setAttribute('aria-pressed', String(fireMode));
-  $('fireSeed').setAttribute('aria-label', fireMode ? '退出点火模式，恢复旋转' : '拖动火种到草木，或点击进入点火模式');
+  $('fireSeed').setAttribute('aria-label', fireRegrowing ? '草木正在重新生长' : fireMode ? '退出点火模式，恢复旋转' : '拖动火种到草木，或点击进入点火模式');
   $('fireSeedLabel').textContent = fireMode ? '收起火种' : '火种';
-  $('fireHint').textContent = fireMode ? '按住草木，让火焰蔓延' : '拖动火种，点燃草木';
-  $('fireRegrow').disabled = !renderer || !fireUsed;
+  $('fireHint').textContent = fireRegrowing ? '草木正在重新生长' : fireMode ? '按住草木，让火焰蔓延' : '拖动火种，点燃草木';
+  const regrowLabel = fireRegrowing ? `生长中 · ${Math.round(fireGrowthProgress * 100)}%` : '重新生长';
+  $('fireRegrow').querySelector('span').textContent = regrowLabel;
+  $('fireRegrow').setAttribute('aria-label', regrowLabel);
+  $('fireRegrow').setAttribute('aria-busy', String(fireRegrowing));
+  $('fireRegrow').dataset.growing = String(fireRegrowing);
+  $('fireRegrow').style.setProperty('--growth-progress', `${fireGrowthProgress * 100}%`);
+  $('fireRegrow').disabled = !renderer || !fireUsed || fireRegrowing;
 }
 
 function stopIgniter() {
@@ -80,7 +89,7 @@ function stopIgniter() {
 }
 
 function setFireMode(value) {
-  if (value && (!renderer || !$('settings').hidden)) return;
+  if (value && (!renderer || fireRegrowing || !$('settings').hidden)) return;
   stopIgniter();
   fireMode = value;
   if (value) {
@@ -96,7 +105,7 @@ function setFireMode(value) {
 }
 
 function applyFirePoint(event) {
-  if (!renderer || !fireMode || !$('settings').hidden || document.hidden) return stopIgniter();
+  if (!renderer || fireRegrowing || !fireMode || !$('settings').hidden || document.hidden) return stopIgniter();
   const rect = canvas.getBoundingClientRect();
   const x = (event.clientX - rect.left) / rect.width;
   const y = (event.clientY - rect.top) / rect.height;
@@ -111,6 +120,7 @@ function applyFirePoint(event) {
   $('fireCursor').style.top = `${event.clientY - studioRect.top}px`;
   $('fireCursor').hidden = false;
   renderer.setIgniter?.({ x, y, active: true });
+  suppressBurnedStats = false;
   if (!fireUsed) { fireUsed = true; updateFireUI(); }
 }
 
@@ -162,7 +172,8 @@ function focus(value) {
 }
 
 function reset() {
-  setFireMode(false); fireUsed = false; renderer?.clearFire?.(); updateFireUI();
+  setFireMode(false); fireUsed = fireRegrowing = fireGrowthSeen = false; fireGrowthProgress = 0;
+  suppressBurnedStats = true; renderer?.clearFire?.(); updateFireUI();
   rideRequested = riding = false; clearInput(); updateRideUI();
   Object.assign(params, defaults);
   renderer?.reset();
@@ -191,7 +202,8 @@ function selectQuality(quality) {
 async function start() {
   $('error').hidden = true;
   $('loading').hidden = false;
-  stopIgniter(); fireToolDrag = null; fireMode = fireUsed = false;
+  stopIgniter(); fireToolDrag = null; fireMode = fireUsed = fireRegrowing = fireGrowthSeen = false;
+  fireGrowthProgress = 0; suppressBurnedStats = false;
   renderer?.destroy();
   renderer = undefined; rideRequested = riding = false; updateRideUI();
   $('rideEntry').disabled = true;
@@ -209,7 +221,17 @@ async function start() {
         riding = Boolean(stats.riding || stats.rideBlend > 0.001);
         $('rideDistance').textContent = `${Math.floor(stats.distance || 0).toLocaleString()} m`;
         $('rideAirborne').hidden = !stats.airborne;
-        if (stats.burnedFraction > 0 && !fireUsed) { fireUsed = true; updateFireUI(); }
+        let fireUIChanged = false;
+        if (stats.regrowing === true) {
+          const progress = Math.max(fireGrowthProgress, Math.min(1, Math.max(0, Number(stats.growthProgress) || 0)));
+          fireUIChanged = !fireRegrowing || progress !== fireGrowthProgress;
+          fireRegrowing = fireGrowthSeen = true; fireGrowthProgress = progress;
+        } else if (fireRegrowing && fireGrowthSeen && stats.regrowing === false) {
+          fireRegrowing = fireGrowthSeen = fireUsed = false; fireGrowthProgress = 0;
+          suppressBurnedStats = true; fireUIChanged = true;
+        }
+        if (!fireRegrowing && !suppressBurnedStats && stats.burnedFraction > 0 && !fireUsed) { fireUsed = true; fireUIChanged = true; }
+        if (fireUIChanged) updateFireUI();
         updateRideUI();
       },
       onError: showError,
@@ -254,7 +276,7 @@ $('fireSeed').addEventListener('click', (event) => {
   canvas.focus({ preventScroll: true });
 });
 $('fireSeed').addEventListener('pointerdown', (event) => {
-  if (!renderer || event.button !== 0) return;
+  if (!renderer || fireRegrowing || event.button !== 0) return;
   suppressFireClick = false;
   fireToolDrag = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
   $('fireSeed').setPointerCapture(event.pointerId);
@@ -279,8 +301,12 @@ $('fireSeed').addEventListener('pointerup', releaseFireTool);
 $('fireSeed').addEventListener('pointercancel', releaseFireTool);
 $('fireSeed').addEventListener('lostpointercapture', releaseFireTool);
 $('fireRegrow').addEventListener('click', () => {
-  stopIgniter(); renderer?.clearFire?.(); fireUsed = false; updateFireUI();
-  toast('草木重新生长'); canvas.focus({ preventScroll: true });
+  if (!renderer || fireRegrowing) return;
+  stopIgniter(); setFireMode(false); fireToolDrag = null;
+  if (!renderer.regrowFire?.()) return;
+  fireRegrowing = true; fireGrowthSeen = false; fireGrowthProgress = 0;
+  suppressBurnedStats = true; updateFireUI(); setPaused(false);
+  canvas.focus({ preventScroll: true });
 });
 $('rideJump').addEventListener('pointerdown', event => { event.preventDefault(); if (!paused) renderer?.jump(); });
 for (const [id, side] of [['steerLeft', 'left'], ['steerRight', 'right']]) {

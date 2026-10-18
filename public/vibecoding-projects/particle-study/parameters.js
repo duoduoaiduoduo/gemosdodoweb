@@ -3,7 +3,7 @@ export const DEFAULT_PARAMETERS = Object.freeze({
   turbulence: 1,
   dispersion: 0,
   pointSize: 1.8,
-  focusPosition: -0.92,
+  focusPosition: -1.00,
   flowerRatio: 1.88,
   quality: 'normal',
   yaw: 0,

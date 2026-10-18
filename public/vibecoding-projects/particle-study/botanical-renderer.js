@@ -1,5 +1,5 @@
-import { sharedWGSL } from './shaders.js?v=fire-v19';
-import { fireFieldWGSL } from './fire-simulation.js?v=fire-v19';
+import { sharedWGSL } from './shaders.js?v=fire-v20c';
+import { fireFieldWGSL } from './fire-simulation.js?v=fire-v20c';
 import { botanicalWGSL, GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT } from './botanical.js?v=flower-ratio-v17';
 
 export const FLOWER_ROOT_STRIDE = 16;
@@ -83,6 +83,7 @@ export const geometryWGSL = sharedWGSL + botanicalWGSL + meshWGSL + fireFieldWGS
 @group(0) @binding(1) var<storage,read> plants: array<Particle>;
 @group(0) @binding(2) var<storage,read_write> mesh: array<MeshVertex>;
 @group(0) @binding(3) var<storage,read> fireField: array<vec4f>;
+@group(0) @binding(4) var<storage,read> plantRecovery: array<vec4f>;
 @compute @workgroup_size(128)
 fn generate(@builtin(global_invocation_id) invocation: vec3u) {
   let count = u32(u.viewport.w);
@@ -131,12 +132,27 @@ fn generate(@builtin(global_invocation_id) invocation: vec3u) {
   if (!flower && instance%32u==0u) {
     vertex.position=mix(vertex.position,particle.position.xyz,flowerGrowth(instance));
   }
-  let combustion=fireField[fireCell(rideDirection(instance))];
-  let charAmount=clamp(combustion.z,0.0,1.0);
-  let wilt=charAmount*charAmount;
+  let cell=fireCell(rideDirection(instance));
+  let combustion=fireField[cell];
+  let recovery=plantRecovery[cell];
+  let damaged=clamp(combustion.z,0.0,1.0);
+  // Separate plants and separate parts of a blade scorch at different times.
+  // A narrow brown drying front reaches the tips before the stem loses support.
+  let resilience=mix(-0.10,0.14,random(instance*91u+577u));
+  let botanicalChar=clamp((damaged-resilience*smoothstep(0.0,0.18,damaged))/0.90,0.0,1.0);
+  let t=clamp(vertex.uv.y,0.0,1.0);
+  let charAmount=clamp(botanicalChar+(t-0.45)*0.20*smoothstep(0.01,0.16,damaged),0.0,1.0)*(1.0-recovery.y);
+  let wilt=smoothstep(0.12,1.0,botanicalChar);
   let stem=vertex.position-particle.position.xyz;
-  vertex.position=particle.position.xyz+stem*(1.0-wilt*0.76)
-    -particle.normal.xyz*(0.075*wilt*vertex.uv.y*vertex.uv.y);
+  let bendAxis=botanicalNormal(cross(particle.normal.xyz,vec3f(0.32,0.87,0.39)),vec3f(1.0,0.0,0.0));
+  let curl=wilt*t*t*(0.045+0.055*random(instance*71u+63u));
+  let growth=clamp(recovery.x,0.035,1.0);
+  vertex.position=particle.position.xyz+(stem*(1.0-wilt*0.62*(1.0-recovery.y))
+    -particle.normal.xyz*curl+bendAxis*curl*0.44)*growth;
+  let dehydrated=(1.0-smoothstep(0.06,0.27,recovery.z))*smoothstep(0.04,0.45,recovery.w)*(1.0-recovery.y);
+  vertex.color=mix(vertex.color,vertex.color*vec3f(1.04,0.66,0.27),dehydrated*0.67);
+  let fresh=smoothstep(0.01,0.15,recovery.y)*(1.0-smoothstep(0.60,1.0,growth));
+  vertex.color=mix(vertex.color,vertex.color*vec3f(0.75,1.25,0.51)+vec3f(0.012,0.027,0.002),fresh*0.65);
   let packedLight=u32(clamp(vertex.visibility,0.0,1.0)*255.0)
     | (u32(clamp(combustion.x,0.0,1.0)*255.0)<<8u)
     | (u32(charAmount*255.0)<<16u);

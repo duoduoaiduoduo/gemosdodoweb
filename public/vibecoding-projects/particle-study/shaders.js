@@ -410,7 +410,7 @@ export const historyWGSL = sharedWGSL + fullscreenWGSL + /* wgsl */ `
 
 export const compositeWGSL = sharedWGSL + fullscreenWGSL + /* wgsl */ `
 @group(0) @binding(1) var film: texture_2d<f32>;
-@group(0) @binding(2) var heatFilm: texture_2d<f32>;
+@group(0) @binding(2) var gasFilm: texture_2d<f32>;
 
 fn linearToSrgb(color: vec3f) -> vec3f {
   let value = max(color,vec3f(0.0));
@@ -418,11 +418,16 @@ fn linearToSrgb(color: vec3f) -> vec3f {
 }
 
 @fragment fn fragment(input: FullscreenOutput) -> @location(0) vec4f {
-  let heatSize=vec2i(textureDimensions(heatFilm,0));
-  let heatPixel=clamp(vec2i(input.uv*vec2f(heatSize)),vec2i(0),heatSize-vec2i(1));
-  let heat=textureLoad(heatFilm,heatPixel,0);
-  let refraction=clamp(heat.xy,vec2f(-0.008),vec2f(0.008));
-  let uv=clamp(input.uv+refraction,vec2f(0.0),vec2f(0.999999));
+  let uv=input.uv;
+  let gasSize=vec2i(textureDimensions(gasFilm,0));
+  let gasCoord=uv*vec2f(gasSize)-0.5;
+  let gasPixel=vec2i(floor(gasCoord));
+  let fraction=fract(gasCoord);
+  let ga=textureLoad(gasFilm,clamp(gasPixel,vec2i(0),gasSize-1),0);
+  let gb=textureLoad(gasFilm,clamp(gasPixel+vec2i(1,0),vec2i(0),gasSize-1),0);
+  let gc=textureLoad(gasFilm,clamp(gasPixel+vec2i(0,1),vec2i(0),gasSize-1),0);
+  let gd=textureLoad(gasFilm,clamp(gasPixel+vec2i(1,1),vec2i(0),gasSize-1),0);
+  let gas=mix(mix(ga,gb,fraction.x),mix(gc,gd,fraction.x),fraction.y);
   let size = vec2i(textureDimensions(film,0));
   let pixel = clamp(vec2i(uv*u.viewport.xy),vec2i(0),size-vec2i(1));
   let sceneColor = textureLoad(film,pixel,0);
@@ -434,7 +439,8 @@ fn linearToSrgb(color: vec3f) -> vec3f {
   let backgroundRadiance = backgroundLinear/(vec3f(1.0)-0.16*backgroundLinear)+referenceSunRadiance(uv);
   let combined = max(sceneColor.rgb,vec3f(0.0))*max(u.extra.z,0.01)
     +backgroundRadiance*(1.0-alpha);
-  let toned = combined/(vec3f(1.0)+0.16*combined);
+  let radiance=combined*(1.0-clamp(gas.a,0.0,1.0))+max(gas.rgb,vec3f(0.0));
+  let toned = radiance/(vec3f(1.0)+0.16*radiance);
   return vec4f(linearToSrgb(toned),1.0);
 }
 `;
