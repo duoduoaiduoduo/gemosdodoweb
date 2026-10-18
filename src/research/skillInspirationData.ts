@@ -23,8 +23,18 @@ export type SkillInspirationItem = {
   titleVariants?: string[]
 }
 
+type PersonalInspirationNote = {
+  id: string
+  title: string
+  recordedAt: string
+  originalIdea: string
+  points: readonly {title:string;text:string}[]
+  links?: readonly {label:string;url:string}[]
+  status: string
+}
+
 // Personal ideas stay separate from external cases and formal proposal content.
-export const personalInspirationNotes = [
+export const personalInspirationNotes: readonly PersonalInspirationNote[] = [
   {
     id: 'ai-personalized-science-communication',
     title: 'AI定制化科普',
@@ -35,6 +45,22 @@ export const personalInspirationNotes = [
       {title: 'AI的定位是降本增效', text: '希望借助AI降低定制化科普的制作成本、提高效率，让生活关联的内容与表达更容易实现。'},
     ],
     status: '个人灵感 · 待展开，尚未写入开题报告或论文',
+  },
+  {
+    id: 'everyday-behavior-personalized-science-sharing',
+    title: '从日常行为切入的个性化科普与传播',
+    recordedAt: '2026-10-18',
+    originalIdea: '科普需要一个切入点，需要一个出发点。……我需要用一种很巧妙的方式来结合。',
+    points: [
+      {title: '先从大众熟悉的行为接近观众', text: '我认为科普首先要有普遍、容易参与的入口，利用大众几乎都会有的日常行为接近观众，再展开与观众个人生活相关、对个人有吸引力的科普。这是对“AI定制化科普”的进一步思考，具体切入哪一种行为还可以继续探索。'},
+      {title: 'AI与Vibecoding的吸引力', text: '我认为AI与Vibecoding在现阶段对观众有吸引力，可以作为接近观众的契机。与此同时，AI仍承担降低定制化科普制作成本、提高效率的作用。'},
+      {title: '实验一：偏交互的方式', text: '我做了两个实验。第一种偏交互体验，目前观察到它更多吸引关注技术美学、与我专业方向相近的人。'},
+      {title: '实验二：通过有趣的动画直接科普', text: '第二种偏向利用有趣的动画直接展开科普，对应下面的新污染物动画实验。我观察到这一种的观众来源更加广泛，也感觉类似形式在抖音上比较常见。'},
+      {title: '播放量与受众范围分别记录', text: '目前第一种的播放量更高；第二种的观众来源看起来更广。这两点先作为我对当前实验的观察保留，尚未整理成有具体数值、平台条件和受众统计支持的研究结论。'},
+      {title: '接下来想探索的结合方式', text: '如何巧妙结合交互体验与动画科普，既保留个性化参与的吸引力，又让更广泛的观众容易接近内容？希望把大众日常行为的入口、与个人有关的科普，以及有趣、愿意传播的表达连接起来，具体形式继续推敲。'},
+    ],
+    links: [{label: '第二种实验：新污染物动画科普', url: 'https://gemosdodo.art/vibecoding?focus=vibe_20261018_boomerang_new_pollutants'}],
+    status: '个人灵感与初步实验观察 · 待继续展开，尚未写入开题报告或论文',
   },
 ] as const;
 

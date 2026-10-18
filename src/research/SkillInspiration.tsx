@@ -55,6 +55,7 @@ export default function SkillInspiration() {
         <h3>{note.title}</h3>
         <blockquote>{note.originalIdea}</blockquote>
         <dl>{note.points.map(point=><div key={point.title}><dt>{point.title}</dt><dd>{point.text}</dd></div>)}</dl>
+        {Boolean(note.links?.length)&&<div className="si-personal-links">{note.links!.map(link=><a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">{link.label}<ArrowUpRight size={14} aria-hidden="true"/></a>)}</div>}
         <p className="si-personal-status">{note.status}</p>
       </article>)}
     </section>
