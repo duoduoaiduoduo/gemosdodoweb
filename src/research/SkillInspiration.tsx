@@ -1,6 +1,6 @@
 import {useMemo, useState} from 'react';
 import {ArrowDown, ArrowUpRight, Bookmark, Check, ChevronDown, Download, Image as ImageIcon, Search} from 'lucide-react';
-import {skillInspirationImportInfo, skillInspirationItems} from './skillInspirationData';
+import {personalInspirationNotes, skillInspirationImportInfo, skillInspirationItems} from './skillInspirationData';
 import type {SkillInspirationItem} from './skillInspirationData';
 import './skill-inspiration.css';
 
@@ -40,13 +40,24 @@ export default function SkillInspiration() {
   const resetResults = () => {setVisibleCount(pageSize);setExpanded(null);};
   const resetFilters = () => {setQuery('');setCategory('全部');setPlatform('全部平台');resetResults();};
   const exportCollection = () => {
-    const content={collection:'Skill模板与灵感案例',status:'独立收藏，未纳入论文',importInfo:skillInspirationImportInfo,items:skillInspirationItems};
+    const content={collection:'Skill模板与灵感案例',status:'独立收藏，未纳入论文',personalNotes:personalInspirationNotes,importInfo:skillInspirationImportInfo,items:skillInspirationItems};
     const url=URL.createObjectURL(new Blob([JSON.stringify(content,null,2)],{type:'application/json;charset=utf-8'}));
-    const anchor=document.createElement('a');anchor.href=url;anchor.download='Skill模板与灵感案例-2026-10-15.json';anchor.click();
+    const exportDate=[skillInspirationImportInfo.importedAt,...personalInspirationNotes.map(note=>note.recordedAt)].sort().at(-1);
+    const anchor=document.createElement('a');anchor.href=url;anchor.download=`Skill模板与灵感案例-${exportDate}.json`;anchor.click();
     setTimeout(()=>URL.revokeObjectURL(url),1000);setExported(true);
   };
   return <div className="rl-content si-content">
     <section className="si-intro" aria-labelledby="si-intro-title"><div className="si-intro-symbol"><Bookmark size={24} strokeWidth={1.5} aria-hidden="true"/></div><div><span className="rl-label">独立案例收藏 · 尚未写入论文</span><h2 id="si-intro-title">先收藏，再慢慢拆解。</h2><p>把你发来的 Skill、提示词、照片玩法和传播案例放在这里。分类先依据收藏标题，具体内容、作者和使用方法留待核读；后续收到图片与模板，会继续补在对应条目中。</p></div></section>
+    <section className="si-personal-notes" aria-labelledby="si-personal-title">
+      <h2 id="si-personal-title">个人灵感记录</h2>
+      {personalInspirationNotes.map(note=><article key={note.id} id={note.id}>
+        <div className="si-personal-meta"><span>构思记录</span><time dateTime={note.recordedAt}>{dateLabel(note.recordedAt)}</time></div>
+        <h3>{note.title}</h3>
+        <blockquote>{note.originalIdea}</blockquote>
+        <dl>{note.points.map(point=><div key={point.title}><dt>{point.title}</dt><dd>{point.text}</dd></div>)}</dl>
+        <p className="si-personal-status">{note.status}</p>
+      </article>)}
+    </section>
     <div className="si-summary" aria-label="本次整理情况"><p><strong>{skillInspirationItems.length}</strong><span>条去重收藏</span></p><p><strong>{skillInspirationImportInfo.sourceFiles}</strong><span>份文字合集</span></p><p><strong>{skillInspirationImportInfo.duplicates}</strong><span>条重复已合并</span></p><p><strong>{skillInspirationImportInfo.missingLinks}</strong><span>条空链接待补</span></p></div>
     <section className="si-browser" aria-label="浏览灵感收藏">
       <div className="si-toolbar"><label className="si-search"><Search size={18} aria-hidden="true"/><input type="search" aria-label="搜索灵感收藏" placeholder="找一个玩法：拼贴、旅行、Skill、排版…" value={query} onChange={event=>{setQuery(event.target.value);resetResults();}}/></label><label className="si-platform-filter"><span className="si-sr-only">筛选平台</span><select aria-label="筛选平台" value={platform} onChange={event=>{setPlatform(event.target.value);resetResults();}}>{platforms.map(name=><option key={name}>{name}</option>)}</select></label><button type="button" className="si-export" onClick={exportCollection}>{exported?<Check size={16} aria-hidden="true"/>:<Download size={16} aria-hidden="true"/>}{exported?'已导出全部':'导出全部收藏'}</button></div>

@@ -23,6 +23,21 @@ export type SkillInspirationItem = {
   titleVariants?: string[]
 }
 
+// Personal ideas stay separate from external cases and formal proposal content.
+export const personalInspirationNotes = [
+  {
+    id: 'ai-personalized-science-communication',
+    title: 'AI定制化科普',
+    recordedAt: '2026-10-18',
+    originalIdea: '新污染物这个东西他必须要和我们周围产生联系，而且AI的作用其实就是作为降本增效的。',
+    points: [
+      {title: '科普与周围生活建立联系', text: '希望新污染物科普与用户身边的生活情境产生联系，让科普内容与个人日常有关。'},
+      {title: 'AI的定位是降本增效', text: '希望借助AI降低定制化科普的制作成本、提高效率，让生活关联的内容与表达更容易实现。'},
+    ],
+    status: '个人灵感 · 待展开，尚未写入开题报告或论文',
+  },
+] as const;
+
 export const skillInspirationImportInfo = {
   "rawEntries": 160,
   "linkedEntries": 134,
