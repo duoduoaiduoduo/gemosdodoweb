@@ -1,5 +1,5 @@
-import { sharedWGSL } from './shaders.js?v=fire-v21g';
-import { fireFieldWGSL } from './fire-simulation.js?v=fire-v21g';
+import { sharedWGSL } from './shaders.js?v=fire-v22b';
+import { fireFieldWGSL } from './fire-simulation.js?v=fire-v22b';
 import { botanicalWGSL, GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT } from './botanical.js?v=flower-ratio-v17';
 
 export const FLOWER_ROOT_STRIDE = 16;
@@ -64,6 +64,18 @@ fn flowerGrowth(instance: u32) -> f32 {
   if (instance%32u==0u) { return referenceGrowth; }
   let extraGrowth=flowerCoverage(instance,max(ratio-1.0,0.0));
   return mix(extraGrowth,referenceGrowth,smoothstep(0.35,0.85,u.rideOrigin.w));
+}
+// The same material front drives deformation and shading. Thin margins and
+// tips lose their moisture first; the midrib and root remain supported longer.
+// Progress is persistent fuel damage, rather than a time-based colour pulse.
+fn botanicalBurnPhase(progress: f32, t: f32, w: f32, part: f32) -> f32 {
+  let thinSurface=part<0.5 || (part>1.5 && part<2.5) || part>3.5;
+  let marginAdvance=select(0.0,0.095*pow(clamp(abs(w),0.0,1.0),4.0),thinSurface);
+  let axialDelay=select(0.96,0.86,part>1.5 && part<2.5);
+  return progress*1.36-(1.0-clamp(t,0.0,1.0))*axialDelay-0.10+marginAdvance;
+}
+fn botanicalLocalChar(phase: f32) -> f32 {
+  return smoothstep(0.018,0.21,phase);
 }
 fn sunDirection() -> vec3f {
   return referenceSunDirection();
@@ -136,13 +148,16 @@ fn generate(@builtin(global_invocation_id) invocation: vec3u) {
   let combustion=fireField[cell];
   let recovery=plantRecovery[cell];
   let damaged=clamp(combustion.z,0.0,1.0);
-  // Separate plants and separate parts of a blade scorch at different times.
-  // A narrow brown drying front reaches the tips before the stem loses support.
-  let resilience=mix(-0.10,0.14,random(instance*91u+577u));
-  let botanicalChar=clamp((damaged-resilience*smoothstep(0.0,0.18,damaged))/0.90,0.0,1.0);
+  // Separate plants and blades enter the front at different times. The
+  // variation vanishes at both endpoints, so healthy plants and fully spent
+  // fuel retain their exact states through a complete burn/regrowth cycle.
+  let blade=vertexIndex/14u;
+  let resilience=mix(-0.10,0.12,random(instance*91u+577u));
+  let bladeDelay=select(mix(-0.075,0.075,random(instance*53u+blade*17u+709u)),0.0,flower);
+  let progress=clamp(damaged+(resilience+bladeDelay)*4.0*damaged*(1.0-damaged),0.0,1.0)*(1.0-recovery.y);
   let t=clamp(vertex.uv.y,0.0,1.0);
-  let charAmount=clamp(botanicalChar+(t-0.45)*0.20*smoothstep(0.01,0.16,damaged),0.0,1.0)*(1.0-recovery.y);
-  let wilt=smoothstep(0.12,1.0,botanicalChar);
+  let localChar=botanicalLocalChar(botanicalBurnPhase(progress,t,vertex.uv.x,vertex.part));
+  let wilt=smoothstep(0.10,0.98,localChar);
   let stem=vertex.position-particle.position.xyz;
   let bendAxis=botanicalNormal(cross(particle.normal.xyz,vec3f(0.32,0.87,0.39)),vec3f(1.0,0.0,0.0));
   let curl=wilt*t*t*(0.045+0.055*random(instance*71u+63u));
@@ -155,7 +170,7 @@ fn generate(@builtin(global_invocation_id) invocation: vec3u) {
   vertex.color=mix(vertex.color,vertex.color*vec3f(0.75,1.25,0.51)+vec3f(0.012,0.027,0.002),fresh*0.65);
   let packedLight=u32(clamp(vertex.visibility,0.0,1.0)*255.0)
     | (u32(clamp(combustion.x,0.0,1.0)*255.0)<<8u)
-    | (u32(charAmount*255.0)<<16u);
+    | (u32(progress*255.0)<<16u);
   mesh[index].position = vec4f(vertex.position,f32(packedLight));
   mesh[index].detail = vec4u(pack2x16snorm(octEncode(vertex.normal)),pack2x16float(vertex.uv),
     pack2x16float(vertex.color.rg),pack2x16float(vec2f(vertex.color.b,vertex.part+vertex.seed*0.1)));
@@ -281,6 +296,15 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
   let dx=dpdx(input.surface.xy)*atlasSize;
   let dy=dpdy(input.surface.xy)*atlasSize;
   let textureLod=max(0.0,0.5*log2(max(max(dot(dx,dx),dot(dy,dy)),0.000001)));
+  // Evaluate these derivatives before material returns. Analytic coverage
+  // preserves a thin ember's energy when a leaf is narrower than one pixel.
+  let burnT=clamp(input.uv.y,0.0,1.0);
+  let burnW=clamp(abs(input.uv.x),0.0,1.0);
+  let burnProgress=clamp(input.combustion.z,0.0,1.0);
+  let burnPhase=botanicalBurnPhase(burnProgress,burnT,burnW,input.material.x);
+  let phaseFootprint=max(fwidth(burnPhase),0.0025);
+  let widthFootprint=max(fwidth(burnW),0.003);
+  let lengthFootprint=max(fwidth(burnT),0.001);
   let geometricNormal = normalize(input.normal);
   let normal = select(-geometricNormal,geometricNormal,frontFacing);
   let sun = sunDirection();
@@ -366,7 +390,7 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
   let w = clamp(abs(input.uv.x),0.0,1.0);
   let midrib = exp(-w*18.0);
   var color = input.color;
-  let charAmount=clamp(input.combustion.z,0.0,1.0);
+  let charAmount=botanicalLocalChar(burnPhase);
   let heat=clamp(input.combustion.x,0.0,1.0);
   var thickness = 0.46;
   var localAO = 1.0;
@@ -397,8 +421,10 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
   }
   let scorch=smoothstep(0.025,0.72,charAmount);
   let toasted=color*vec3f(0.88,0.47,0.16);
-  color=mix(color,toasted,smoothstep(0.0,0.2,charAmount));
-  let ash=smoothstep(0.84,1.0,charAmount)*smoothstep(-0.15,0.65,noise(input.viewPosition*85.0));
+  let dryFront=smoothstep(-0.22,0.025,burnPhase)*smoothstep(0.015,0.11,burnProgress);
+  color=mix(color,toasted,dryFront);
+  let ash=smoothstep(0.78,1.0,burnProgress)*(1.0-smoothstep(0.16,0.58,heat))
+    *smoothstep(-0.15,0.65,noise(input.viewPosition*85.0));
   color=mix(color,mix(vec3f(0.006,0.0045,0.0038),vec3f(0.10,0.095,0.087),ash),scorch);
   transmissionWeight*=1.0-scorch;
   let skyAmount = 0.5+0.5*dot(normal,skyUp);
@@ -418,10 +444,29 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
   let indirect=sky*skyVisibility*mix(1.0,1.15,u.rideOrigin.w);
   let sunlitTint=mix(vec3f(1.0),vec3f(1.10,1.025,0.88),u.rideOrigin.w*nl*sunVis*select(0.0,1.0,leaf));
   var radiance=color*sunlitTint*(indirect+direct+meadowBounce)+transmitted+skyTransmitted*(1.0-scorch)+sunColor*sheen*sunVis*(1.0-scorch);
-  let coalTexture=smoothstep(0.25,0.70,noise(input.viewPosition*145.0+vec3f(0.0,u.viewport.z*0.8,0.0)));
-  let cracks=pow(coalTexture,4.0)*smoothstep(0.08,0.42,charAmount);
-  let ember=pow(heat,3.0)*charAmount*(0.012+cracks*0.65);
-  radiance+=vec3f(1.65,0.15,0.006)*ember;
+  // Incandescence belongs to the moving boundary between intact tissue and
+  // carbon, with short-lived embers just behind it. It never outlines a whole
+  // unburnt blade, nor remains luminous after the local heat has dissipated.
+  let frontWidth=0.019;
+  let frontDistance=abs(burnPhase-0.073);
+  let front=(1.0-smoothstep(frontWidth,frontWidth+phaseFootprint,frontDistance))
+    *frontWidth/(frontWidth+phaseFootprint*0.5);
+  let marginWidth=0.075;
+  let margin=smoothstep(1.0-marginWidth-widthFootprint,1.0-marginWidth+widthFootprint,burnW)
+    *marginWidth/(marginWidth+widthFootprint*0.5);
+  let hotTissue=smoothstep(0.17,0.66,heat)*smoothstep(0.012,0.09,burnProgress);
+  let seed=input.material.z;
+  let fracturePhase=burnT*27.0+seed*41.0+input.uv.x*2.6;
+  let resolvedFiber=exp(-lengthFootprint*lengthFootprint*260.0);
+  let fracture=0.40+0.60*smoothstep(-0.15,0.65,sin(fracturePhase))*resolvedFiber;
+  let rimWake=smoothstep(0.04,0.12,burnPhase)*(1.0-smoothstep(0.24,0.43,burnPhase));
+  let thermalFlicker=0.80+0.12*sin(u.viewport.z*7.1+seed*31.0+burnT*10.0)
+    +0.08*sin(u.viewport.z*13.7+seed*13.0-burnT*17.0);
+  let tissueWeight=select(select(0.16,0.38,part>1.5 && part<2.5),1.0,part<0.5 || part>3.5);
+  let liveFront=front*(0.46+margin*0.54)*hotTissue*thermalFlicker*tissueWeight;
+  let rimEmber=margin*rimWake*fracture*hotTissue*thermalFlicker*tissueWeight;
+  radiance+=vec3f(5.2,0.92,0.028)*liveFront;
+  radiance+=vec3f(2.8,0.22,0.005)*rimEmber*0.72;
   radiance+=color*vec3f(0.85,0.20,0.025)*smoothstep(0.04,0.55,heat)*(1.0-scorch*0.85);
   let distance=length(eye-input.viewPosition);
   let haze=1.0-exp(-max(0.0,distance-1.8)*0.025*u.rideOrigin.w);
