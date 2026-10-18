@@ -40,4 +40,3 @@ fn combustionCell(direction: vec3f) -> u32 {
   return min(63u,u32(longitude*64.0))+min(31u,u32(latitude*32.0))*64u;
 }
 `;
-
