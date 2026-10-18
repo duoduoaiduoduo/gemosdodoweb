@@ -1,5 +1,6 @@
-import { sharedWGSL } from './shaders.js?v=fire-v22b';
-import { fireFieldWGSL } from './fire-simulation.js?v=fire-v22b';
+import { sharedWGSL } from './shaders.js?v=fire-v23b';
+import { fireFieldWGSL } from './fire-simulation.js?v=fire-v23b';
+import { leafAshWGSL } from './leaf-ash.js?v=fire-v23b';
 import { botanicalWGSL, GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT } from './botanical.js?v=flower-ratio-v17';
 
 export const FLOWER_ROOT_STRIDE = 16;
@@ -13,7 +14,7 @@ for(let y=0;y<CRUST_ROWS;y++) for(let x=0;x<CRUST_COLUMNS;x++) {
 }
 export const CRUST_INDICES = new Uint16Array(crustIndices);
 
-export const meshWGSL = /* wgsl */ `
+export const meshWGSL = leafAshWGSL + /* wgsl */ `
 struct MeshVertex {
   position: vec4f, // xyz position; w packs sky/heat/char as an exact 24-bit integer
   detail: vec4u, // octahedral normal, UV, linear RG, linear B + botanical part/seed
@@ -77,6 +78,19 @@ fn botanicalBurnPhase(progress: f32, t: f32, w: f32, part: f32) -> f32 {
 fn botanicalLocalChar(phase: f32) -> f32 {
   return smoothstep(0.018,0.21,phase);
 }
+fn botanicalErosionCoverage(erosion: f32, signedDistance: f32, footprint: f32, part: f32) -> f32 {
+  let aa=max(0.002,footprint*0.65);
+  let covered=smoothstep(-aa,aa,signedDistance);
+  let spent=select(covered,0.0,erosion>=0.99);
+  return select(spent,1.0,erosion<=0.00001 || part>5.5);
+}
+// Write a coverage mask with opaque surviving samples. Alpha-to-coverage would
+// otherwise square the film's resolved alpha and brighten the exposed gaps.
+fn botanicalCoverageMask(coverage: f32) -> u32 {
+  let count=u32(clamp(floor(coverage*4.0+0.5),0.0,4.0));
+  let masks=array<u32,5>(0u,1u,5u,7u,15u);
+  return masks[count];
+}
 fn sunDirection() -> vec3f {
   return referenceSunDirection();
 }
@@ -96,6 +110,7 @@ export const geometryWGSL = sharedWGSL + botanicalWGSL + meshWGSL + fireFieldWGS
 @group(0) @binding(2) var<storage,read_write> mesh: array<MeshVertex>;
 @group(0) @binding(3) var<storage,read> fireField: array<vec4f>;
 @group(0) @binding(4) var<storage,read> plantRecovery: array<vec4f>;
+@group(0) @binding(5) var<storage,read> leafAshStates: array<vec4f>;
 @compute @workgroup_size(128)
 fn generate(@builtin(global_invocation_id) invocation: vec3u) {
   let count = u32(u.viewport.w);
@@ -158,9 +173,11 @@ fn generate(@builtin(global_invocation_id) invocation: vec3u) {
   let t=clamp(vertex.uv.y,0.0,1.0);
   let localChar=botanicalLocalChar(botanicalBurnPhase(progress,t,vertex.uv.x,vertex.part));
   let wilt=smoothstep(0.10,0.98,localChar);
+  let erosion=leafAshStates[instance*5u+select(min(blade,4u),0u,flower)].x;
   let stem=vertex.position-particle.position.xyz;
   let bendAxis=botanicalNormal(cross(particle.normal.xyz,vec3f(0.32,0.87,0.39)),vec3f(1.0,0.0,0.0));
-  let curl=wilt*t*t*(0.045+0.055*random(instance*71u+63u));
+  let curl=wilt*t*t*(0.045+0.055*random(instance*71u+63u))
+    *(1.0+0.28*smoothstep(0.06,0.60,erosion)*localChar);
   let growth=clamp(recovery.x,0.035,1.0);
   vertex.position=particle.position.xyz+(stem*(1.0-wilt*0.62*(1.0-recovery.y))
     -particle.normal.xyz*curl+bendAxis*curl*0.44)*growth;
@@ -178,6 +195,26 @@ fn generate(@builtin(global_invocation_id) invocation: vec3u) {
 `;
 
 const resolveStoredWGSL = /* wgsl */ `
+fn botanicalAshStateIndex(vertexIndex: u32, instance: u32) -> u32 {
+  let count=u32(u.viewport.w);
+  let flowerCount=(count+FLOWER_STRIDE-1u)/FLOWER_STRIDE;
+  let crustInstance=count+flowerCount;
+  let flowerCloneStart=2u*count+flowerCount+1u;
+  if (instance<count) { return instance*5u+min(vertexIndex/14u,4u); }
+  if (instance==crustInstance) { return 0xffffffffu; }
+  if (instance>=flowerCloneStart) {
+    return ((instance-flowerCloneStart)%flowerCount)*FLOWER_STRIDE*5u;
+  }
+  if (instance>crustInstance) {
+    return (instance-crustInstance-1u)*5u+min(vertexIndex/14u,4u);
+  }
+  return (instance-count)*FLOWER_STRIDE*5u;
+}
+fn botanicalErosion(vertexIndex: u32, instance: u32) -> f32 {
+  let stateIndex=botanicalAshStateIndex(vertexIndex,instance);
+  if (stateIndex==0xffffffffu) { return 0.0; }
+  return clamp(leafAshStates[stateIndex].x,0.0,1.0);
+}
 fn resolveStored(vertexIndex: u32, instance: u32) -> MeshVertex {
   var stored=mesh[meshIndex(vertexIndex,instance)];
   let count=u32(u.viewport.w);
@@ -223,9 +260,25 @@ fn resolveStored(vertexIndex: u32, instance: u32) -> MeshVertex {
 
 export const shadowWGSL = sharedWGSL + meshWGSL + /* wgsl */ `
 @group(0) @binding(1) var<storage,read> mesh: array<MeshVertex>;
+@group(0) @binding(7) var<storage,read> leafAshStates: array<vec4f>;
 ${resolveStoredWGSL}
-@vertex fn shadowVertex(@builtin(vertex_index) vertexIndex:u32,@builtin(instance_index) instance:u32) -> @builtin(position) vec4f {
-  return vec4f(sunCoordinates(resolveStored(vertexIndex,instance).position.xyz),1.0);
+struct BotanicalShadowOutput {
+  @builtin(position) position: vec4f,
+  @location(0) uv: vec2f,
+  @location(1) material: vec3f,
+};
+@vertex fn shadowVertex(@builtin(vertex_index) vertexIndex:u32,@builtin(instance_index) instance:u32) -> BotanicalShadowOutput {
+  let stored=resolveStored(vertexIndex,instance);
+  let bp=unpack2x16float(stored.detail.w);
+  let part=floor(bp.y);
+  var output: BotanicalShadowOutput;
+  output.position=vec4f(sunCoordinates(stored.position.xyz),1.0);
+  output.uv=unpack2x16float(stored.detail.y);
+  output.material=vec3f(part,(bp.y-part)*10.0,botanicalErosion(vertexIndex,instance));
+  return output;
+}
+@fragment fn shadowFragment(input: BotanicalShadowOutput) {
+  if (leafAshSigned(input.material.z,input.uv.y,input.uv.x,input.material.y,input.material.x)<=0.0) { discard; }
 }
 `;
 
@@ -235,6 +288,7 @@ export const renderWGSL = sharedWGSL + meshWGSL + /* wgsl */ `
 @group(0) @binding(3) var sunSampler: sampler_comparison;
 @group(0) @binding(4) var characterAtlas: texture_2d_array<f32>;
 @group(0) @binding(5) var characterSampler: sampler;
+@group(0) @binding(7) var<storage,read> leafAshStates: array<vec4f>;
 ${resolveStoredWGSL}
 struct VertexOutput {
   @builtin(position) position: vec4f,
@@ -260,7 +314,7 @@ struct VertexOutput {
   let packedLight=u32(stored.position.w);
   output.material = vec3f(part,f32(packedLight&255u)/255.0,(bp.y-part)*10.0);
   output.surface = vec4f(0.0,0.0,-1.0,0.9);
-  output.combustion=vec3f(f32((packedLight>>8u)&255u)/255.0,1.0,f32((packedLight>>16u)&255u)/255.0);
+  output.combustion=vec3f(f32((packedLight>>8u)&255u)/255.0,botanicalErosion(vertexIndex,instance),f32((packedLight>>16u)&255u)/255.0);
   return output;
 }
 fn sunVisibility(position: vec3f, normal:vec3f) -> f32 {
@@ -289,13 +343,33 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
   let lightMask=normalView*sqrt(normalLight*normalLight*(1.0-alphaSquared)+alphaSquared);
   return 0.5/max(viewMask+lightMask,0.00001);
 }
-@fragment fn sceneFragment(input:VertexOutput,@builtin(front_facing) frontFacing:bool) -> @location(0) vec4f {
+struct BotanicalFragmentOutput {
+  @location(0) color: vec4f,
+  @builtin(sample_mask) coverage: u32,
+};
+fn botanicalFragmentOutput(color: vec3f, mask: u32) -> BotanicalFragmentOutput {
+  var output: BotanicalFragmentOutput;
+  output.color=vec4f(color,1.0);
+  output.coverage=mask;
+  return output;
+}
+@fragment fn botanicalDepthFragment(input: VertexOutput) -> @builtin(sample_mask) u32 {
+  let signedDistance=leafAshSigned(input.combustion.y,input.uv.y,input.uv.x,input.material.z,input.material.x);
+  let footprint=fwidth(signedDistance);
+  let coverage=botanicalErosionCoverage(input.combustion.y,signedDistance,footprint,input.material.x);
+  return botanicalCoverageMask(coverage);
+}
+@fragment fn sceneFragment(input:VertexOutput,@builtin(front_facing) frontFacing:bool) -> BotanicalFragmentOutput {
   // Evaluate gradients before any material branch, then use explicit LOD so
   // individual character material/texture indices need no uniform control flow.
   let atlasSize=vec2f(textureDimensions(characterAtlas,0));
   let dx=dpdx(input.surface.xy)*atlasSize;
   let dy=dpdy(input.surface.xy)*atlasSize;
   let textureLod=max(0.0,0.5*log2(max(max(dot(dx,dx),dot(dy,dy)),0.000001)));
+  let erosionDistance=leafAshSigned(input.combustion.y,input.uv.y,input.uv.x,input.material.z,input.material.x);
+  let erosionFootprint=fwidth(erosionDistance);
+  let erosionCoverage=botanicalErosionCoverage(input.combustion.y,erosionDistance,erosionFootprint,input.material.x);
+  let erosionMask=botanicalCoverageMask(erosionCoverage);
   // Evaluate these derivatives before material returns. Analytic coverage
   // preserves a thin ember's energy when a leaf is narrower than one pixel.
   let burnT=clamp(input.uv.y,0.0,1.0);
@@ -305,6 +379,7 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
   let phaseFootprint=max(fwidth(burnPhase),0.0025);
   let widthFootprint=max(fwidth(burnW),0.003);
   let lengthFootprint=max(fwidth(burnT),0.001);
+  if (erosionMask==0u) { discard; }
   let geometricNormal = normalize(input.normal);
   let normal = select(-geometricNormal,geometricNormal,frontFacing);
   let sun = sunDirection();
@@ -369,7 +444,7 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
       let edgeGlow=back*pow(max(dot(view,-sun),0.0),4.0)*0.07;
       radiance+=baseColor*actorSun*vec3f(1.0,0.55,0.31)*(softDiffuse+edgeGlow)*sunVis;
     }
-    return vec4f(max(radiance,vec3f(0.0)),1.0);
+    return botanicalFragmentOutput(max(radiance,vec3f(0.0)),15u);
   }
   if (part>5.5 && part<8.5) {
     let fur=noise(input.viewPosition*125.0)*0.12+noise(input.viewPosition*32.0)*0.09;
@@ -383,7 +458,7 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
     let sunlitTint=mix(vec3f(1.0),vec3f(1.25,1.04,0.78),u.rideOrigin.w*nl*sunVis);
     let charred=smoothstep(0.04,0.9,input.combustion.z);
     let groundColor=mix(input.color,vec3f(0.009,0.007,0.006),charred);
-    return vec4f(groundColor*sunlitTint*(sky+light+bounce)*canopy,1.0);
+    return botanicalFragmentOutput(groundColor*sunlitTint*(sky+light+bounce)*canopy,15u);
   }
   let leaf = part<1.5 || part>3.5;
   let t = clamp(input.uv.y,0.0,1.0);
@@ -470,7 +545,7 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
   radiance+=color*vec3f(0.85,0.20,0.025)*smoothstep(0.04,0.55,heat)*(1.0-scorch*0.85);
   let distance=length(eye-input.viewPosition);
   let haze=1.0-exp(-max(0.0,distance-1.8)*0.025*u.rideOrigin.w);
-  return vec4f(mix(max(radiance,vec3f(0.0)),vec3f(0.69,0.83,0.76),haze),1.0);
+  return botanicalFragmentOutput(mix(max(radiance,vec3f(0.0)),vec3f(0.69,0.83,0.76),haze),erosionMask);
 }
 `;
 

@@ -1,5 +1,5 @@
-import { volumeCommon, VOLUME_SIZE as SIZE, SOURCE_STRIDE } from './fire-volume-shared.js?v=fire-v22b';
-import { injectWGSL, advectWGSL, PRESSURE_SIZE, divergenceWGSL, pressureWGSL, gradientWGSL, projectWGSL } from './fire-flow.js?v=fire-v22b';
+import { volumeCommon, VOLUME_SIZE as SIZE, SOURCE_STRIDE } from './fire-volume-shared.js?v=fire-v23b';
+import { injectWGSL, advectWGSL, PRESSURE_SIZE, divergenceWGSL, pressureWGSL, gradientWGSL, projectWGSL } from './fire-flow.js?v=fire-v23b';
 
 // Temperature, soot and reacting gas occupy a persistent world-space volume.
 // No camera-facing polygons are used for either fire or smoke.
