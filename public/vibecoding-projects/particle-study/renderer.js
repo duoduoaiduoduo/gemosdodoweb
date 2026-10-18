@@ -1,12 +1,12 @@
 import { createChaosRide } from './chaos-ride.js?v=flower-ratio-v17';
 import { RIDE_HEIGHT_SCALE } from './ride-space.js?v=flower-ratio-v17';
 import { createSkaterModel, RIDER_VERTEX_STRIDE } from './character-model.js?v=flower-ratio-v17';
-import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL } from './shaders.js?v=fire-v20c';
-import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES } from './botanical-renderer.js?v=fire-v20c';
-import { createFireSimulation } from './fire-simulation.js?v=fire-v20c';
-import { createFireVisuals } from './fire-visuals.js?v=fire-v20c';
+import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL, depthResolveWGSL, fxaaWGSL } from './shaders.js?v=fire-v21g';
+import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES } from './botanical-renderer.js?v=fire-v21g';
+import { createFireSimulation } from './fire-simulation.js?v=fire-v21g';
+import { createFireVisuals } from './fire-visuals.js?v=fire-v21g';
 import { GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT, GRASS_INDICES, FLOWER_INDICES } from './botanical.js?v=flower-ratio-v17';
-import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=fire-v20c';
+import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=fire-v21g';
 
 // Keep the focus slider's existing calibration in the skating camera.
 const RIDE_FOCUS_REFERENCE = -0.48;
@@ -14,6 +14,8 @@ const MAX_PARTICLES = 48000;
 const QUALITY_COUNTS = { high: MAX_PARTICLES, normal: 28000, low: 18000 };
 const LENS_COUNTS = { high: 24, normal: 12, low: 8 };
 const MAX_LENS = 24;
+const GEOMETRY_SAMPLES = 4;
+const DEPTH_UNIFORM_OFFSET = MAX_LENS * 256;
 const STILL_SAMPLES = 512;
 const APERTURE_RADIUS = 0.11;
 const FLOAT_STRIDE = 64; // Dynamic uniform offsets must align to 256 bytes.
@@ -72,7 +74,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
   let disposed = false, paused = false, simulationTime = startTime, lastTimestamp = 0;
   let initializeParticles = true, geometryDirty = true, resetFilm = true, totalFilmSamples = 0, filmWrite = 0, displayIndex = 0;
   let geometryRevision = 0;
-  let sceneTexture, sumTexture, depthTexture, filmTextures = [];
+  let sceneTexture, multisampleTexture, sumTexture, depthTexture, resolvedDepthTexture, responseTexture, filmTextures = [];
   let uniforms, sampleUniforms, particles, viewParticles, meshVertices, meshIndices, sunTexture, riderVertices;
   const captures = [];
   const captureFrame = (event) => { if (typeof event.detail === 'function') captures.push(event.detail); };
@@ -86,7 +88,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     console.error('[WebGPU particle study]', error);
   };
   const destroyTargets = () => {
-    for (const target of [sceneTexture, sumTexture, depthTexture, ...filmTextures]) target?.destroy();
+    for (const target of [sceneTexture, multisampleTexture, sumTexture, depthTexture, resolvedDepthTexture, responseTexture, ...filmTextures]) target?.destroy();
   };
 
   try {
@@ -102,14 +104,20 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     context.configure({ device, format, alphaMode: 'opaque', usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC });
     canvas.dataset.renderer = 'webgpu';
     canvas.dataset.errors = JSON.stringify(diagnostic.errors);
-    canvas.dataset.optics = 'physical-aperture-v4';
+    canvas.dataset.optics = 'physical-aperture-msaa-v21';
+    canvas.dataset.antialias = '4x-msaa-per-aperture';
+    canvas.dataset.postAntialias = 'contrast-directed-fxaa-v21';
+    canvas.dataset.geometrySamples = String(GEOMETRY_SAMPLES);
+    canvas.dataset.volumeDepth = 'independent-pinhole-four-subsample-f32';
     canvas.dataset.palette = 'meadow-v7';
     canvas.dataset.geometry = 'continuous-unfolded-meadow-v13';
     canvas.dataset.lighting = 'sun-shadow-transmission-v9';
     canvas.dataset.lifecycle = 'continuous-radius-v3';
 
-    const shaderCodes = [computeWGSL, projectionWGSL, renderWGSL, accumulateWGSL, historyWGSL, compositeWGSL, geometryWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL];
-    const modules = shaderCodes.map((code, i) => device.createShaderModule({code, label: ['Plant root motion', 'View coordinates', 'Sunlit botanical film', 'Linear aperture integration', 'Stationary film integration', 'Film response', 'Curved botanical meshes', 'Sunlight shadow map', 'Same-body rider', 'Rider sunlight shadow'][i]}));
+    // Centered occlusion never replaces a physical aperture sample in the film.
+    const riderDepthWGSL = riderShadowWGSL.replace('output.position=vec4f(sunCoordinates(worldPosition),1.0);','output.position=cameraProjection(worldPosition);');
+    const shaderCodes = [computeWGSL, projectionWGSL, renderWGSL, accumulateWGSL, historyWGSL, compositeWGSL, geometryWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, depthResolveWGSL, riderDepthWGSL, fxaaWGSL];
+    const modules = shaderCodes.map((code, i) => device.createShaderModule({code, label: ['Plant root motion', 'View coordinates', 'Sunlit botanical film', 'Linear aperture integration', 'Stationary film integration', 'Film response', 'Curved botanical meshes', 'Sunlight shadow map', 'Same-body rider', 'Rider sunlight shadow', 'Subpixel occlusion resolve', 'Centered rider occlusion', 'Display edge antialias'][i]}));
     for (const info of await Promise.all(modules.map((module) => module.getCompilationInfo()))) {
       for (const message of info.messages) {
         if (message.type === 'error') throw new Error('WGSL ' + message.lineNum + ':' + message.linePos + ' ' + message.message);
@@ -117,7 +125,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       }
     }
     uniforms = device.createBuffer({size: 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC});
-    sampleUniforms = device.createBuffer({size: MAX_LENS * 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST});
+    sampleUniforms = device.createBuffer({size: (MAX_LENS + 1) * 256, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST});
     particles = device.createBuffer({size: MAX_PARTICLES * 64, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST});
     viewParticles = device.createBuffer({size: MAX_PARTICLES * 64, usage: GPUBufferUsage.STORAGE});
     fireSimulation=await createFireSimulation(device,{uniforms,plants:viewParticles,maxParticles:MAX_PARTICLES});
@@ -150,6 +158,15 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       ...Array.from({length: textures}, (_, i) => ({binding: i + 1, visibility: GPUShaderStage.FRAGMENT, texture: {sampleType: 'unfilterable-float'}})),
     ]});
     const accumulateLayout = makePostLayout(1), historyLayout = makePostLayout(2), compositeLayout = makePostLayout(2);
+    const fxaaLayout = device.createBindGroupLayout({entries:[
+      {binding:0,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'float'}},
+      {binding:1,visibility:GPUShaderStage.FRAGMENT,sampler:{type:'filtering'}},
+    ]});
+    const fxaaSampler = device.createSampler({label:'Subpixel display edge sampling',magFilter:'linear',minFilter:'linear',addressModeU:'clamp-to-edge',addressModeV:'clamp-to-edge'});
+    const depthResolveLayout = device.createBindGroupLayout({entries:[
+      {binding:0,visibility:GPUShaderStage.COMPUTE,texture:{sampleType:'depth',multisampled:true}},
+      {binding:1,visibility:GPUShaderStage.COMPUTE,storageTexture:{access:'write-only',format:'rgba32float'}},
+    ]});
     const makePipelineLayout = (layout) => device.createPipelineLayout({bindGroupLayouts: [layout]});
     const computeGroup = device.createBindGroup({layout: computeLayout, entries: [{binding: 0, resource: {buffer: uniforms}}, {binding: 1, resource: {buffer: particles}}]});
     const projectGroup = device.createBindGroup({layout: projectLayout, entries: [{binding: 0, resource: {buffer: uniforms}}, {binding: 1, resource: {buffer: particles}}, {binding: 2, resource: {buffer: viewParticles}}]});
@@ -166,35 +183,47 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     const additive = {color: {srcFactor: 'one', dstFactor: 'one', operation: 'add'}, alpha: {srcFactor: 'one', dstFactor: 'one', operation: 'add'}};
     const riderVertexLayout = [{arrayStride:RIDER_VERTEX_STRIDE,attributes:[{shaderLocation:0,format:'float32x3',offset:0},{shaderLocation:1,format:'float32x3',offset:12},{shaderLocation:2,format:'float32x3',offset:24},{shaderLocation:3,format:'float32',offset:36},
       {shaderLocation:4,format:'float32x2',offset:40},{shaderLocation:5,format:'float32',offset:48},{shaderLocation:6,format:'float32',offset:52},{shaderLocation:7,format:'uint16x4',offset:56},{shaderLocation:8,format:'float32x4',offset:64}]}];
-    const [computePipeline, projectPipeline, scenePipeline, accumulatePipeline, historyPipeline, compositePipeline, geometryPipeline, shadowPipeline, riderPipeline, riderShadowPipeline] = await Promise.all([
+    const [computePipeline, projectPipeline, scenePipeline, accumulatePipeline, historyPipeline, compositePipeline, geometryPipeline, shadowPipeline, riderPipeline, riderShadowPipeline, depthPipeline, riderDepthPipeline, depthResolvePipeline, fxaaPipeline] = await Promise.all([
       device.createComputePipelineAsync({layout: makePipelineLayout(computeLayout), compute: {module: modules[0], entryPoint: 'update'}}),
       device.createComputePipelineAsync({layout: makePipelineLayout(projectLayout), compute: {module: modules[1], entryPoint: 'project'}}),
       device.createRenderPipelineAsync({layout: makePipelineLayout(renderLayout), vertex: {module: modules[2], entryPoint: 'vertex'}, fragment: {module: modules[2], entryPoint: 'sceneFragment', targets: [{format: 'rgba16float'}]},
-        primitive: {topology: 'triangle-list', cullMode: 'none'}, depthStencil: {format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less'}}),
+        primitive: {topology: 'triangle-list', cullMode: 'none'}, depthStencil: {format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less'}, multisample:{count:GEOMETRY_SAMPLES}}),
       makePostPipeline(modules[3], accumulateLayout, 'rgba16float', additive),
       makePostPipeline(modules[4], historyLayout, 'rgba16float'),
       makePostPipeline(modules[5], compositeLayout, format),
       device.createComputePipelineAsync({layout:makePipelineLayout(geometryLayout),compute:{module:modules[6],entryPoint:'generate'}}),
       device.createRenderPipelineAsync({layout:makePipelineLayout(shadowLayout),vertex:{module:modules[7],entryPoint:'shadowVertex'},primitive:{topology:'triangle-list',cullMode:'none'},depthStencil:{format:'depth32float',depthWriteEnabled:true,depthCompare:'less'}}),
-      device.createRenderPipelineAsync({layout:makePipelineLayout(renderLayout),vertex:{module:modules[8],entryPoint:'riderVertex',buffers:riderVertexLayout},fragment:{module:modules[8],entryPoint:'sceneFragment',targets:[{format:'rgba16float'}]},primitive:{topology:'triangle-list',cullMode:'none'},depthStencil:{format:'depth32float',depthWriteEnabled:true,depthCompare:'less'}}),
+      device.createRenderPipelineAsync({layout:makePipelineLayout(renderLayout),vertex:{module:modules[8],entryPoint:'riderVertex',buffers:riderVertexLayout},fragment:{module:modules[8],entryPoint:'sceneFragment',targets:[{format:'rgba16float'}]},primitive:{topology:'triangle-list',cullMode:'none'},depthStencil:{format:'depth32float',depthWriteEnabled:true,depthCompare:'less'},multisample:{count:GEOMETRY_SAMPLES}}),
       device.createRenderPipelineAsync({layout:makePipelineLayout(shadowLayout),vertex:{module:modules[9],entryPoint:'riderShadowVertex',buffers:riderVertexLayout},fragment:{module:modules[9],entryPoint:'riderShadowFragment',targets:[]},primitive:{topology:'triangle-list',cullMode:'none'},depthStencil:{format:'depth32float',depthWriteEnabled:true,depthCompare:'less'}}),
+      device.createRenderPipelineAsync({label:'Centered four-sample botanical occlusion',layout:makePipelineLayout(renderLayout),vertex:{module:modules[2],entryPoint:'vertex'},primitive:{topology:'triangle-list',cullMode:'none'},depthStencil:{format:'depth32float',depthWriteEnabled:true,depthCompare:'less'},multisample:{count:GEOMETRY_SAMPLES}}),
+      device.createRenderPipelineAsync({label:'Centered four-sample rider occlusion',layout:makePipelineLayout(renderLayout),vertex:{module:modules[11],entryPoint:'riderShadowVertex',buffers:riderVertexLayout},fragment:{module:modules[11],entryPoint:'riderShadowFragment',targets:[]},primitive:{topology:'triangle-list',cullMode:'none'},depthStencil:{format:'depth32float',depthWriteEnabled:true,depthCompare:'less'},multisample:{count:GEOMETRY_SAMPLES}}),
+      device.createComputePipelineAsync({label:'Four-layer full-precision depth resolve',layout:makePipelineLayout(depthResolveLayout),compute:{module:modules[10],entryPoint:'resolveDepth'}}),
+      makePostPipeline(modules[12],fxaaLayout,format),
     ]);
-    let width = 0, height = 0, dpr = 1, fpsStart = performance.now(), fpsFrames = 0;
-    let accumulateGroup, historyGroups, compositeGroups;
+    let width = 0, height = 0, dpr = 1, currentResolutionCap = 0, fpsStart = performance.now(), fpsFrames = 0;
+    let accumulateGroup, historyGroups, compositeGroups, depthResolveGroup, fxaaGroup;
     const postGroup = (layout, textures) => device.createBindGroup({layout, entries: [{binding: 0, resource: {buffer: uniforms}}, ...textures.map((texture, i) => ({binding: i + 1, resource: texture.createView()}))]});
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
-      const resolutionCap = paused || parameters.speed === 0 ? 2 : (parameters.quality === 'high' ? 1.25 : 1);
+      const dynamicFire = fireSimulation.active || fireVisuals.active || igniter.active;
+      const resolutionCap = paused || (parameters.speed === 0 && !dynamicFire) ? 2 : (parameters.quality === 'high' ? 1.25 : 1);
+      currentResolutionCap = resolutionCap;
       dpr = Math.min(window.devicePixelRatio || 1, resolutionCap);
       const newWidth = Math.max(2, Math.round(rect.width * dpr)), newHeight = Math.max(2, Math.round(rect.height * dpr));
       if (newWidth === width && newHeight === height) return;
       width = newWidth; height = newHeight; canvas.width = width; canvas.height = height;
       destroyTargets();
       const texture = (label) => device.createTexture({label, size: [width, height], format: 'rgba16float', usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING});
-      sceneTexture = texture('One lens ray view'); sumTexture = texture('Current frame aperture integral');
+      sceneTexture = texture('Resolved physical aperture view');
+      multisampleTexture = device.createTexture({label:'Four subpixel samples per aperture',size:[width,height],format:'rgba16float',sampleCount:GEOMETRY_SAMPLES,usage:GPUTextureUsage.RENDER_ATTACHMENT});
+      sumTexture = texture('Current frame aperture integral');
       filmTextures = [texture('Stationary film A'), texture('Stationary film B')];
-      depthTexture = device.createTexture({size: [width, height], format: 'depth32float', usage: GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});
-      fireVisuals.resize({width,height,depthTexture});
+      depthTexture = device.createTexture({label:'Four-sample scene depth',size:[width,height],format:'depth32float',sampleCount:GEOMETRY_SAMPLES,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});
+      resolvedDepthTexture = device.createTexture({label:'Four ordered subpixel depths, full precision',size:[width,height],format:'rgba32float',usage:GPUTextureUsage.STORAGE_BINDING|GPUTextureUsage.TEXTURE_BINDING});
+      responseTexture = device.createTexture({label:'Tone-mapped display before edge resolve',size:[width,height],format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});
+      fxaaGroup = device.createBindGroup({layout:fxaaLayout,entries:[{binding:0,resource:responseTexture.createView()},{binding:1,resource:fxaaSampler}]});
+      depthResolveGroup = device.createBindGroup({layout:depthResolveLayout,entries:[{binding:0,resource:depthTexture.createView()},{binding:1,resource:resolvedDepthTexture.createView()}]});
+      fireVisuals.resize({width,height,depthTexture:resolvedDepthTexture});
       accumulateGroup = postGroup(accumulateLayout, [sceneTexture]);
       historyGroups = [postGroup(historyLayout, [sumTexture, filmTextures[1]]), postGroup(historyLayout, [sumTexture, filmTextures[0]])];
       compositeGroups = filmTextures.map((film) => postGroup(compositeLayout, [film,fireVisuals.texture]));
@@ -202,13 +231,16 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       diagnostic.width = width; diagnostic.height = height;
     };
     resizeObserver = new ResizeObserver(resize); resizeObserver.observe(canvas); resize();
-    const uniformData = new Float32Array(64), sampleData = new Float32Array(MAX_LENS * FLOAT_STRIDE);
+    const uniformData = new Float32Array(64), sampleData = new Float32Array((MAX_LENS + 1) * FLOAT_STRIDE);
     let framePending = false;
 
     const render = (timestamp) => {
       if (disposed) return;
       animationId = requestAnimationFrame(render);
       if (framePending) return;
+      const dynamicFire = fireSimulation.active || fireVisuals.active || igniter.active;
+      const resolutionCap = paused || (parameters.speed === 0 && !dynamicFire) ? 2 : (parameters.quality === 'high' ? 1.25 : 1);
+      if (resolutionCap !== currentResolutionCap) resize();
       const elapsed = lastTimestamp ? Math.min((timestamp - lastTimestamp) / 1000, 0.05) : 0; lastTimestamp = timestamp;
       const simulationStationary = paused || parameters.speed === 0;
       if (!simulationStationary) simulationTime += elapsed * parameters.speed;
@@ -244,7 +276,8 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       const flowerCount = Math.ceil(count/FLOWER_ROOT_STRIDE);
       const uniqueVertexCount = count*GRASS_VERTEX_COUNT+flowerCount*FLOWER_VERTEX_COUNT+CRUST_VERTEX_COUNT;
       const coverageScale = Math.sqrt(MAX_PARTICLES / count);
-      const lensCount = (rideBlend>.01 || fireSimulation.active || fireVisuals.active) && !stationary ? ({high:12,normal:8,low:8}[parameters.quality]||12) : (LENS_COUNTS[parameters.quality]||MAX_LENS);
+      // Charcoal blades retain the full aperture and subpixel coverage.
+      const lensCount = (rideBlend>.01 || fireSimulation.active || fireVisuals.active) && !stationary ? ({high:12,normal:12,low:8}[parameters.quality]||12) : (LENS_COUNTS[parameters.quality]||MAX_LENS);
       const needsIntegral = !stationary || totalFilmSamples < STILL_SAMPLES || initializeParticles;
       const historyWeight = totalFilmSamples ? lensCount / (totalFilmSamples + lensCount) : 1;
       uniformData.set([width, height, simulationTime, count, parameters.turbulence, parameters.dispersion, parameters.pointSize * coverageScale, parameters.zoom,
@@ -266,9 +299,10 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
           sampleData.set(uniformData, i * FLOAT_STRIDE);
           const pupil=lensSample((stationary ? totalFilmSamples : 0)+i);
           pupil[0]*=pupilScale; pupil[1]*=pupilScale;
-          if ((fireSimulation.active || fireVisuals.active || igniter.active) && i===lensCount-1) { pupil[0]=0;pupil[1]=0;pupil[2]=0;pupil[3]=0; }
           sampleData.set(pupil,i*FLOAT_STRIDE+16);
         }
+        sampleData.set(uniformData, MAX_LENS * FLOAT_STRIDE);
+        sampleData.set([0,0,0,0], MAX_LENS * FLOAT_STRIDE + 16);
         device.queue.writeBuffer(sampleUniforms, 0, sampleData);
         const updateGeometry = !stationary || geometryDirty || initializeParticles;
         if (updateGeometry) {
@@ -292,8 +326,8 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
           shadow.end();
         }
         for (let i = 0; i < lensCount; i++) {
-          const scene = encoder.beginRenderPass({colorAttachments: [{view: sceneTexture.createView(), clearValue: {r: 0, g: 0, b: 0, a: 0}, loadOp: 'clear', storeOp: 'store'}],
-            depthStencilAttachment: {view: depthTexture.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store'}});
+          const scene = encoder.beginRenderPass({colorAttachments: [{view: multisampleTexture.createView(), resolveTarget:sceneTexture.createView(), clearValue: {r: 0, g: 0, b: 0, a: 0}, loadOp: 'clear', storeOp: 'discard'}],
+            depthStencilAttachment: {view: depthTexture.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'discard'}});
           scene.setPipeline(scenePipeline); scene.setBindGroup(0, renderGroup, [i * 256]); scene.setIndexBuffer(meshIndices,'uint16');
           scene.drawIndexed(GRASS_INDICES.length,count,0,0,0);
           scene.drawIndexed(FLOWER_INDICES.length,flowerCount,GRASS_INDICES.length,0,count);
@@ -305,6 +339,20 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
           const sum = encoder.beginRenderPass({colorAttachments: [{view: sumTexture.createView(), clearValue: {r: 0, g: 0, b: 0, a: 0}, loadOp: i === 0 ? 'clear' : 'load', storeOp: 'store'}]});
           sum.setPipeline(accumulatePipeline); sum.setBindGroup(0, accumulateGroup); sum.draw(3); sum.end();
         }
+        // Preserve thin-leaf coverage in gas occlusion. One geometric hit no
+        // longer cuts an opaque pixel-wide wall through the entire gas ray.
+        if (fireSimulation.active || fireVisuals.active || igniter.active) {
+          const occlusion=encoder.beginRenderPass({label:'Independent pinhole subpixel occlusion',colorAttachments:[],depthStencilAttachment:{view:depthTexture.createView(),depthClearValue:1,depthLoadOp:'clear',depthStoreOp:'store'}});
+          occlusion.setPipeline(depthPipeline);occlusion.setBindGroup(0,renderGroup,[DEPTH_UNIFORM_OFFSET]);occlusion.setIndexBuffer(meshIndices,'uint16');
+          occlusion.drawIndexed(GRASS_INDICES.length,count,0,0,0);
+          occlusion.drawIndexed(FLOWER_INDICES.length,flowerCount,GRASS_INDICES.length,0,count);
+          if(unfold>.25)occlusion.drawIndexed(CRUST_INDICES.length,1,GRASS_INDICES.length+FLOWER_INDICES.length,0,count+flowerCount);
+          if(unfold>.35)occlusion.drawIndexed(GRASS_INDICES.length,count,0,0,count+flowerCount+1);
+          if(unfold>.35)occlusion.drawIndexed(FLOWER_INDICES.length,flowerCount*(parameters.flowerRatio>1?5:2),GRASS_INDICES.length,0,2*count+flowerCount+1);
+          if(riderVertexCount){occlusion.setPipeline(riderDepthPipeline);occlusion.setBindGroup(0,renderGroup,[DEPTH_UNIFORM_OFFSET]);occlusion.setVertexBuffer(0,riderVertices);occlusion.setIndexBuffer(skaterModel.indexBuffer,'uint32');occlusion.drawIndexed(skaterModel.indexCount);}
+          occlusion.end();
+          const depthResolve=encoder.beginComputePass({label:'Resolve subpixel gas occlusion'});depthResolve.setPipeline(depthResolvePipeline);depthResolve.setBindGroup(0,depthResolveGroup);depthResolve.dispatchWorkgroups(Math.ceil(width/8),Math.ceil(height/8));depthResolve.end();
+        }
         const history = encoder.beginRenderPass({colorAttachments: [{view: filmTextures[filmWrite].createView(), loadOp: 'clear', storeOp: 'store', clearValue: {r: 0, g: 0, b: 0, a: 0}}]});
         history.setPipeline(historyPipeline); history.setBindGroup(0, historyGroups[filmWrite]); history.draw(3); history.end();
         displayIndex = filmWrite; filmWrite = 1 - filmWrite;
@@ -312,8 +360,10 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
         initializeParticles = false;
       }
       if(needsIntegral)fireVisuals.render(encoder);
-      const output = encoder.beginRenderPass({colorAttachments: [{view: context.getCurrentTexture().createView(), loadOp: 'clear', storeOp: 'store', clearValue: {r: 0, g: 0, b: 0, a: 1}}]});
-      output.setPipeline(compositePipeline); output.setBindGroup(0, compositeGroups[displayIndex]); output.draw(3); output.end();
+      const response = encoder.beginRenderPass({label:'Tone-mapped plant and gas composite',colorAttachments:[{view:responseTexture.createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}]});
+      response.setPipeline(compositePipeline);response.setBindGroup(0,compositeGroups[displayIndex]);response.draw(3);response.end();
+      const output = encoder.beginRenderPass({label:'Contrast-directed display edge resolve',colorAttachments:[{view:context.getCurrentTexture().createView(),loadOp:'clear',storeOp:'store',clearValue:{r:0,g:0,b:0,a:1}}]});
+      output.setPipeline(fxaaPipeline);output.setBindGroup(0,fxaaGroup);output.draw(3);output.end();
       device.queue.submit([encoder.finish()]);
       if (needsIntegral) {
         framePending = true; const submitted = performance.now();
@@ -330,7 +380,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       canvas.dataset.focusDistance = focusDistance.toFixed(3); canvas.dataset.unfold=unfold.toFixed(4);
       canvas.dataset.ridePush = (rideState.push||0).toFixed(4);
       canvas.dataset.fireActive=String(fireSimulation.active);
-      canvas.dataset.fireRendering='persistent-3d-volume-v20';
+      canvas.dataset.fireRendering='branching-reaction-sheets-v21';
       canvas.dataset.regrowing=String(fireSimulation.regrowing);
       canvas.dataset.growthProgress=String(fireSimulation.growthProgress);
       canvas.dataset.igniterActive=String(igniter.active);
@@ -347,9 +397,9 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     };
     diagnostic.ready = true; animationId = requestAnimationFrame(render); onReady?.({renderer: 'webgpu', particleCount: MAX_PARTICLES});
     return {
-      setIgniter(value){Object.assign(igniter,{x:Math.max(0,Math.min(1,Number(value.x)||0)),y:Math.max(0,Math.min(1,Number(value.y)||0)),active:Boolean(value.active)});if(igniter.active)resetFilm=true;},
+      setIgniter(value){Object.assign(igniter,{x:Math.max(0,Math.min(1,Number(value.x)||0)),y:Math.max(0,Math.min(1,Number(value.y)||0)),active:Boolean(value.active)});if(igniter.active){resetFilm=true;resize();}},
       clearFire(){clearCombustion();geometryDirty=true;resetFilm=true;},
-      regrowFire(){if(!fireSimulation.regrow())return false;igniter.active=false;fireGeneration++;fireStatsDirty=true;geometryDirty=true;resetFilm=true;return true;},
+      regrowFire(){if(!fireSimulation.regrow())return false;igniter.active=false;fireGeneration++;fireStatsDirty=true;geometryDirty=true;resetFilm=true;resize();return true;},
       enterRide() { ride.enter({time:simulationTime,params:parameters});resetFilm=true; },
       exitRide() { ride.exit();resetFilm=true; },
       setInput(input) { ride.setInput(input); },

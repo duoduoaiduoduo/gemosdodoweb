@@ -451,3 +451,80 @@ export const backgroundWGSL = sharedWGSL + fullscreenWGSL + /* wgsl */ `
   return vec4f(referenceBackground(input.uv),1.0);
 }
 `;
+
+// Keep all subpixel depths: half-float NDC quantization creates visible depth
+// terraces at macro distances, while one nearest depth over-occludes thin grass.
+export const depthResolveWGSL = /* wgsl */ `
+@group(0) @binding(0) var sceneDepth: texture_depth_multisampled_2d;
+@group(0) @binding(1) var layers: texture_storage_2d<rgba32float,write>;
+@compute @workgroup_size(8,8)
+fn resolveDepth(@builtin(global_invocation_id) id:vec3u) {
+  let size=textureDimensions(sceneDepth);
+  if(any(id.xy>=size)){return;}
+  let pixel=vec2i(id.xy);
+  let a=textureLoad(sceneDepth,pixel,0);
+  let b=textureLoad(sceneDepth,pixel,1);
+  let c=textureLoad(sceneDepth,pixel,2);
+  let d=textureLoad(sceneDepth,pixel,3);
+  let lowAB=min(a,b);let highAB=max(a,b);
+  let lowCD=min(c,d);let highCD=max(c,d);
+  let middleA=max(lowAB,lowCD);let middleB=min(highAB,highCD);
+  textureStore(layers,pixel,vec4f(min(lowAB,lowCD),min(middleA,middleB),max(middleA,middleB),max(highAB,highCD)));
+}
+`;
+
+// Display-space edge resolve complements geometric MSAA: the thin volume
+// reaction sheet has no triangles for the hardware coverage mask to filter.
+// Low-contrast pixels leave after five taps; only a detected edge is searched.
+export const fxaaWGSL = fullscreenWGSL + /* wgsl */ `
+@group(0) @binding(0) var display: texture_2d<f32>;
+@group(0) @binding(1) var subpixelSampler: sampler;
+fn edgeLuma(rgb:vec3f)->f32{return dot(rgb,vec3f(0.299,0.587,0.114));}
+fn displayPixel(pixel:vec2i,size:vec2i)->vec3f{
+  return textureLoad(display,clamp(pixel,vec2i(0),size-vec2i(1)),0).rgb;
+}
+@fragment fn fragment(input:FullscreenOutput)->@location(0) vec4f{
+  let size=vec2i(textureDimensions(display,0));
+  let inverseSize=1.0/vec2f(size);
+  let pixel=clamp(vec2i(input.position.xy),vec2i(0),size-vec2i(1));
+  let center=displayPixel(pixel,size);
+  let north=displayPixel(pixel+vec2i(0,-1),size);
+  let south=displayPixel(pixel+vec2i(0,1),size);
+  let west=displayPixel(pixel+vec2i(-1,0),size);
+  let east=displayPixel(pixel+vec2i(1,0),size);
+  let lm=edgeLuma(center);let ln=edgeLuma(north);let ls=edgeLuma(south);
+  let lw=edgeLuma(west);let le=edgeLuma(east);
+  let cardinalMin=min(lm,min(min(ln,ls),min(lw,le)));
+  let cardinalMax=max(lm,max(max(ln,ls),max(lw,le)));
+  let cardinalRange=cardinalMax-cardinalMin;
+  if(cardinalRange<max(0.0312,cardinalMax*0.125)){
+    return vec4f(center,1.0);
+  }
+  let nw=displayPixel(pixel+vec2i(-1,-1),size);
+  let ne=displayPixel(pixel+vec2i(1,-1),size);
+  let sw=displayPixel(pixel+vec2i(-1,1),size);
+  let se=displayPixel(pixel+vec2i(1,1),size);
+  let lnw=edgeLuma(nw);let lne=edgeLuma(ne);
+  let lsw=edgeLuma(sw);let lse=edgeLuma(se);
+  let low=min(cardinalMin,min(min(lnw,lne),min(lsw,lse)));
+  let high=max(cardinalMax,max(max(lnw,lne),max(lsw,lse)));
+  var direction=vec2f(-((lnw+lne)-(lsw+lse)),(lnw+lsw)-(lne+lse));
+  let reduce=max((lnw+lne+lsw+lse)*(0.25*0.125),1.0/128.0);
+  direction=clamp(direction/(min(abs(direction.x),abs(direction.y))+reduce),vec2f(-6.0),vec2f(6.0))*inverseSize;
+  let uv=(vec2f(pixel)+0.5)*inverseSize;
+  let inner=(textureSampleLevel(display,subpixelSampler,uv-direction/6.0,0.0).rgb
+    +textureSampleLevel(display,subpixelSampler,uv+direction/6.0,0.0).rgb)*0.5;
+  let outer=inner*0.5+(textureSampleLevel(display,subpixelSampler,uv-direction*0.5,0.0).rgb
+    +textureSampleLevel(display,subpixelSampler,uv+direction*0.5,0.0).rgb)*0.25;
+  let outerLuma=edgeLuma(outer);
+  let alongEdge=select(outer,inner,outerLuma<low||outerLuma>high);
+  // A lone one-pixel pinhole has no edge direction. Its subpixel contrast
+  // receives a bounded correction; broader gradients and resolved detail do not.
+  let neighborhood=(2.0*(ln+ls+lw+le)+lnw+lne+lsw+lse)/12.0;
+  var subpixel=clamp(abs(neighborhood-lm)/max(high-low,0.00001),0.0,1.0);
+  subpixel=subpixel*subpixel*(3.0-2.0*subpixel);
+  subpixel=subpixel*subpixel*0.45;
+  let result=mix(alongEdge,(north+south+west+east)*0.25,subpixel);
+  return vec4f(result,1.0);
+}
+`;

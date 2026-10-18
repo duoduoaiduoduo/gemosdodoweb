@@ -1,5 +1,5 @@
-import { sharedWGSL } from './shaders.js?v=fire-v20c';
-import { fireFieldWGSL } from './fire-simulation.js?v=fire-v20c';
+import { sharedWGSL } from './shaders.js?v=fire-v21g';
+import { fireFieldWGSL } from './fire-simulation.js?v=fire-v21g';
 import { botanicalWGSL, GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT } from './botanical.js?v=flower-ratio-v17';
 
 export const FLOWER_ROOT_STRIDE = 16;
