@@ -1,5 +1,5 @@
-import { sharedWGSL } from './shaders.js?v=fire-v23b';
-import { leafAshWGSL } from './leaf-ash.js?v=fire-v23b';
+import { sharedWGSL } from './shaders.js?v=fire-v24b';
+import { fractureWGSL } from './leaf-fracture.js?v=fire-v24b';
 
 // A small persistent pool of incandescent fragments, rather than a looping
 // particle texture. A fragment leaves an actual leaf, then keeps its own
@@ -7,7 +7,7 @@ import { leafAshWGSL } from './leaf-ash.js?v=fire-v23b';
 const CAPACITY = 1536;
 const SPARK_SLOTS = 512;
 const MAX_SPARKS = 48;
-const MAX_ASH = 128;
+const MAX_ASH = 96;
 const particleCommon = /* wgsl */ `
 struct Ember {
   positionAge: vec4f,
@@ -19,7 +19,7 @@ struct EmberSettings { dt: f32, time: f32, spawning: f32, frame: f32 };
 @group(0) @binding(6) var<uniform> emberSettings: EmberSettings;
 `;
 
-const computeWGSL = sharedWGSL + leafAshWGSL + particleCommon + /* wgsl */ `
+const computeWGSL = sharedWGSL + fractureWGSL + particleCommon + /* wgsl */ `
 struct EmberCount { sparks: atomic<u32>, ash: atomic<u32> };
 struct MeshVertex { position: vec4f, detail: vec4u };
 @group(0) @binding(1) var<storage,read_write> embers: array<Ember>;
@@ -29,7 +29,7 @@ struct MeshVertex { position: vec4f, detail: vec4u };
 @group(0) @binding(5) var flowSampler: sampler;
 @group(0) @binding(7) var<storage,read_write> count: EmberCount;
 @group(0) @binding(8) var<storage,read> mesh: array<MeshVertex>;
-@group(0) @binding(9) var<storage,read> leafAshState: array<vec4f>;
+@group(0) @binding(10) var<storage,read> fractures: array<LeafFracture>;
 fn fireCell(direction: vec3f) -> u32 {
   let longitude=fract(atan2(direction.z,direction.x)/6.28318530718+1.0);
   let latitude=acos(clamp(direction.y,-1.0,1.0))/3.14159265359;
@@ -49,24 +49,6 @@ fn eddy(position: vec3f,time: f32) -> vec3f {
   let a=noiseGradient(position*7.1+vec3f(time*0.19,-time*0.78,2.7)).yzw;
   let b=noiseGradient(position*11.7+vec3f(6.4,time*0.56,-time*0.23)).yzw;
   return cross(a,vec3f(0.13,0.92,0.37))*0.038+cross(b,vec3f(0.81,0.16,-0.41))*0.013;
-}
-fn meshLeafPosition(base: u32,t: f32,w: f32) -> vec3f {
-  let rows=array<f32,7>(0.0,0.16,0.34,0.52,0.70,0.86,1.0);
-  var row=0u;
-  for(var segment=0u;segment<6u;segment++){
-    if(t>=rows[segment]){row=segment;}
-  }
-  let across=clamp(w*0.5+0.5,0.0,1.0);
-  let lower=mix(mesh[base+row*2u].position.xyz,mesh[base+row*2u+1u].position.xyz,across);
-  let upper=mix(mesh[base+(row+1u)*2u].position.xyz,mesh[base+(row+1u)*2u+1u].position.xyz,across);
-  return mix(lower,upper,(t-rows[row])/(rows[row+1u]-rows[row]));
-}
-fn meshNormal(packed: u32) -> vec3f {
-  let encoded=unpack2x16snorm(packed);
-  var n=vec3f(encoded,1.0-abs(encoded.x)-abs(encoded.y));
-  let t=clamp(-n.z,0.0,1.0);
-  n=vec3f(n.xy+select(vec2f(t),vec2f(-t),n.xy>=vec2f(0.0)),n.z);
-  return normalize(n);
 }
 @compute @workgroup_size(64)
 fn advance(@builtin(global_invocation_id) invocation: vec3u) {
@@ -125,16 +107,15 @@ fn detach(@builtin(global_invocation_id) invocation: vec3u) {
   if(progress<0.025){return;}
   let front=clamp(1.0-(progress*1.36-0.078)/0.96,0.04,0.98);
   var t=clamp(front+mix(0.015,0.095,random(seed+4u)),0.04,0.995);
-  let packedMaterial=unpack2x16float(mesh[base].detail.w).y;
-  let sourceSeed=fract(packedMaterial)*10.0;
-  let part=floor(packedMaterial);
-  let erosion=leafAshState[identity*5u+blade].x;
-  let w=f32(edge)*2.0-1.0;
-  for(var retreat=0u;retreat<16u;retreat++){
-    if(leafAshSigned(erosion,t,w,sourceSeed,part)>0.008){break;}
+  // The original leaf remains intact until its corresponding strip starts
+  // hanging. Never emit from the old mesh after that strip has moved away.
+  for(var retreat=0u;retreat<24u;retreat++){
+    let chunk=(identity*5u+blade)*3u+leafFractureChunk(t);
+    if(fractures[chunk].anchorStage.w<0.5){break;}
     t=max(0.015,t-0.045);
   }
-  if(leafAshSigned(erosion,t,w,sourceSeed,part)<=0.0){return;}
+  let sourceChunk=(identity*5u+blade)*3u+leafFractureChunk(t);
+  if(fractures[sourceChunk].anchorStage.w>=0.5){return;}
   let reservation=atomicAdd(&count.sparks,1u);
   if(reservation>=${MAX_SPARKS}u){return;}
   let rows=array<f32,7>(0.0,0.16,0.34,0.52,0.70,0.86,1.0);
@@ -171,62 +152,42 @@ fn detachAsh(@builtin(global_invocation_id) invocation: vec3u) {
   if(embers[index].velocityLife.w>0.0&&embers[index].positionAge.w<embers[index].velocityLife.w){return;}
   if(atomicLoad(&count.ash)>=${MAX_ASH}u){return;}
   let seed=hash32(index*617u+u32(emberSettings.frame)*1583u+7231u);
-  let rootCount=u32(u.viewport.w);
-  if(rootCount<1u){return;}
-  let identity=min(rootCount-1u,u32(random(seed)*f32(rootCount)));
-  let blade=min(4u,u32(random(seed+1u)*5.0));
-  let release=leafAshState[identity*5u+blade];
-  // z is a mass delta for this exact frame, already proportional to dt. Its
-  // probability is deliberately NOT multiplied by dt a second time. Cooling
-  // old char cannot continuously emit ash after material has stopped eroding.
-  if(release.z<=0.000001||random(seed+2u)>min(0.60,release.z*20.0)){return;}
-  let plant=plants[identity];
-  if(plant.position.w<0.00015||(plant.material.z>0.5&&u.rideOrigin.w<0.65)){return;}
-  let base=identity*70u+blade*14u;
-  let packed=unpack2x16float(mesh[base].detail.w).y;
-  let bladeSeed=fract(packed)*10.0;
-  let part=floor(packed);
-  let w=select(-1.0,1.0,random(seed+3u)>0.5)*mix(0.36,0.95,random(seed+4u));
-  let boundary=max(0.0,release.x-release.z*random(seed+5u));
-  var sourceT=0.95;
-  var bestError=100.0;
-  // The same fractured threshold as the leaf's discard mask locates a chip
-  // on its newly disappearing edge. Scan the non-monotone cracks, then refine
-  // locally; no position is inferred from a smooth approximate burn sphere.
-  for(var sample=0u;sample<17u;sample++){
-    let candidate=mix(0.025,0.985,f32(sample)/16.0);
-    let error=abs(leafAshThreshold(candidate,w,bladeSeed,part)-boundary);
-    if(error<bestError){bestError=error;sourceT=candidate;}
+  let chunkCount=u32(u.viewport.w)*15u;
+  if(chunkCount<1u||random(seed)>emberSettings.dt*0.72){return;}
+  var source: LeafFracture;
+  var found=false;
+  // Dust is secondary material from an already detached real leaf strip. The
+  // strip has visibly hung, broken away and tumbled for several seconds before
+  // its final powdering phase can release these few small cold fragments.
+  for(var trial=0u;trial<4u;trial++){
+    let identity=min(chunkCount-1u,u32(random(seed+trial*11u+1u)*f32(chunkCount)));
+    let candidate=fractures[identity];
+    if(candidate.anchorStage.w<1.5||candidate.anchorStage.w>2.5){continue;}
+    if(candidate.motion.w<=0.03||candidate.centerAge.w>=candidate.velocityLife.w){continue;}
+    let powder=clamp(candidate.motion.w,0.0,1.0);
+    if(random(seed+trial*11u+2u)>powder){continue;}
+    source=candidate;found=true;break;
   }
-  var spacing=0.030;
-  for(var refinement=0u;refinement<4u;refinement++){
-    let left=clamp(sourceT-spacing,0.015,0.995);
-    let right=clamp(sourceT+spacing,0.015,0.995);
-    let a=abs(leafAshThreshold(left,w,bladeSeed,part)-boundary);
-    let b=abs(leafAshThreshold(right,w,bladeSeed,part)-boundary);
-    if(a<bestError){sourceT=left;bestError=a;}
-    if(b<bestError){sourceT=right;bestError=b;}
-    spacing*=0.48;
-  }
-  if(bestError>0.065){return;}
+  if(!found){return;}
   let reservation=atomicAdd(&count.ash,1u);
   if(reservation>=${MAX_ASH}u){return;}
-  let normal=meshNormal(mesh[base+4u].detail.x);
-  let position=meshLeafPosition(base,sourceT,w)+normal*0.001;
+  let normal=normalize(cross(source.axisUWidth.xyz,source.axisVLength.xyz)+vec3f(0.00001));
+  let widthOffset=(random(seed+47u)-0.5)*source.axisUWidth.w*0.78;
+  let lengthOffset=(random(seed+48u)-0.5)*source.axisVLength.w*0.78;
+  let position=source.centerAge.xyz+source.axisUWidth.xyz*widthOffset
+    +source.axisVLength.xyz*lengthOffset+normal*0.0005;
   let up=normalize(mix(vec3f(0.0,1.0,0.0),u.worldUp.xyz,u.rideOrigin.w));
-  let side=normalize(cross(up,normal)+vec3f(0.001,0.0,0.002));
-  let direction=select(-1.0,1.0,random(seed+6u)>0.5);
-  let mass=random(seed+7u);
-  let state=fireState[fireCell(rideDirection(identity))];
-  let hot=select(0.07,mix(0.57,0.83,random(seed+8u)),random(seed+9u)<0.22&&state.x>0.43);
-  let velocity=airVelocity(position)*mix(0.43,0.67,random(seed+10u))
-    +side*direction*mix(0.025,0.12,random(seed+11u))+normal*0.025
-    +up*mix(-0.018,0.065,random(seed+12u));
+  let direction=select(-1.0,1.0,random(seed+49u)>0.5);
+  let mass=mix(0.08,0.55,random(seed+50u));
+  let velocity=source.velocityLife.xyz+source.axisUWidth.xyz*direction*mix(0.015,0.055,random(seed+51u))
+    +normal*mix(-0.015,0.025,random(seed+52u))+up*0.015;
   var fragment: Ember;
   fragment.positionAge=vec4f(position,0.0);
-  fragment.velocityLife=vec4f(velocity,mix(3.0,5.2,random(seed+13u)));
-  fragment.thermal=vec4f(mix(0.78,1.65,random(seed+14u)),hot,2.0+mass,random(seed+15u));
-  fragment.orientation=vec4f(normal,mix(3.0,9.0,random(seed+16u))*direction);
+  fragment.velocityLife=vec4f(velocity,mix(2.0,4.0,random(seed+53u)));
+  // The long strip carries the last visible red rim. Its late fine dust has
+  // already cooled: neither a new flame nor glowing confetti is created here.
+  fragment.thermal=vec4f(mix(0.42,0.88,random(seed+54u)),0.035,2.0+mass,random(seed+55u));
+  fragment.orientation=vec4f(normal,mix(5.0,11.0,random(seed+56u))*direction);
   embers[index]=fragment;
 }
 
@@ -333,7 +294,7 @@ struct EmberVertex {
 `;
 
 export async function createEmberParticles(device, {
-  uniforms, sampleUniforms, plants, fireState, meshVertices, leafAshState,
+  uniforms, sampleUniforms, plants, fireState, meshVertices, fractureState,
   format = 'rgba16float', depthFormat = 'depth32float', sampleCount = 4,
 } = {}) {
   const particles = device.createBuffer({label:'Persistent leaf ember pool',size:CAPACITY*64,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
@@ -351,7 +312,7 @@ export async function createEmberParticles(device, {
     {binding:6,visibility:GPUShaderStage.COMPUTE,buffer:{type:'uniform'}},
     {binding:7,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
     {binding:8,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-    {binding:9,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+    {binding:10,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
   ]});
   const renderLayout = device.createBindGroupLayout({entries:[
     {binding:0,visibility:GPUShaderStage.VERTEX|GPUShaderStage.FRAGMENT,buffer:{type:'uniform',hasDynamicOffset:true,minBindingSize:256}},
@@ -364,7 +325,7 @@ export async function createEmberParticles(device, {
   const [advancePipeline,detachPipeline,ashPipeline,renderPipeline]=await Promise.all([
     device.createComputePipelineAsync({label:'Advect and cool live embers',layout:pipelineLayout,compute:{module:computeModule,entryPoint:'advance'}}),
     device.createComputePipelineAsync({label:'Release sparse burning leaf tips',layout:pipelineLayout,compute:{module:computeModule,entryPoint:'detach'}}),
-    device.createComputePipelineAsync({label:'Release finite eroded carbon flakes',layout:pipelineLayout,compute:{module:computeModule,entryPoint:'detachAsh'}}),
+    device.createComputePipelineAsync({label:'Late powder released by detached leaf strips',layout:pipelineLayout,compute:{module:computeModule,entryPoint:'detachAsh'}}),
     device.createRenderPipelineAsync({label:'MSAA aperture-resolved glowing fragments',layout:device.createPipelineLayout({bindGroupLayouts:[renderLayout]}),
       vertex:{module:renderModule,entryPoint:'emberVertex'},
       fragment:{module:renderModule,entryPoint:'emberFragment',targets:[{format,blend:{color:{srcFactor:'one',dstFactor:'one-minus-src-alpha',operation:'add'},alpha:{srcFactor:'one',dstFactor:'one-minus-src-alpha',operation:'add'}}}]},
@@ -392,7 +353,7 @@ export async function createEmberParticles(device, {
         {binding:6,resource:{buffer:settings}},
         {binding:7,resource:{buffer:counter}},
         {binding:8,resource:{buffer:meshVertices}},
-        {binding:9,resource:{buffer:leafAshState}},
+        {binding:10,resource:{buffer:fractureState}},
       ]});
       computeGroups.set(texture,group);
     }
@@ -447,7 +408,7 @@ export async function createEmberParticles(device, {
           const heat=values[at+9];temperature+=heat;maxTemperature=Math.max(maxTemperature,heat);
           if(heat>0.72){hot++;}
         }
-        return {alive,hot,sparks,ash,temperatureAverage:temperature/Math.max(1,alive),maxTemperature};
+        return {alive,hot,sparks,ash,dust:ash,temperatureAverage:temperature/Math.max(1,alive),maxTemperature};
       }catch{return null;}
       finally{if(buffer?.mapState==='mapped'){buffer.unmap();}statsPending=false;}
     },

@@ -1,14 +1,15 @@
 import { createChaosRide } from './chaos-ride.js?v=flower-ratio-v17';
 import { RIDE_HEIGHT_SCALE } from './ride-space.js?v=flower-ratio-v17';
 import { createSkaterModel, RIDER_VERTEX_STRIDE } from './character-model.js?v=flower-ratio-v17';
-import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL, depthResolveWGSL, fxaaWGSL } from './shaders.js?v=fire-v23b';
-import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES } from './botanical-renderer.js?v=fire-v23b';
-import { createFireSimulation } from './fire-simulation.js?v=fire-v23b';
-import { createFireVisuals } from './fire-visuals.js?v=fire-v23b';
-import { createEmberParticles } from './ember-particles.js?v=fire-v23b';
-import { createLeafAsh } from './leaf-ash.js?v=fire-v23b';
-import { GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT, GRASS_INDICES, FLOWER_INDICES } from './botanical.js?v=flower-ratio-v17';
-import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=fire-v23b';
+import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL, depthResolveWGSL, fxaaWGSL } from './shaders.js?v=fire-v24b';
+import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES, GRASS_RENDER_INDICES as GRASS_INDICES } from './botanical-renderer.js?v=fire-v24b';
+import { createFireSimulation } from './fire-simulation.js?v=fire-v24b';
+import { createFireVisuals } from './fire-visuals.js?v=fire-v24b';
+import { createEmberParticles } from './ember-particles.js?v=fire-v24b';
+import { createLeafAsh } from './leaf-ash.js?v=fire-v24b';
+import { createLeafFracture } from './leaf-fracture.js?v=fire-v24b';
+import { GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT, FLOWER_INDICES, GRASS_INDICES as GRASS_ORIGINAL_INDICES } from './botanical.js?v=flower-ratio-v17';
+import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=fire-v24b';
 
 // Keep the focus slider's existing calibration in the skating camera.
 const RIDE_FOCUS_REFERENCE = -0.48;
@@ -68,16 +69,16 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
   const startTime = Number.isFinite(initialTime) ? Math.max(0, Math.min(60, initialTime)) : 0;
   const diagnostic = { renderer: 'webgpu', ready: false, frame: 0, time: startTime, particleCount: MAX_PARTICLES, fps: 0, errors: [], paused: false };
   window.__particleState = diagnostic;
-  let device, context, animationId, resizeObserver, skaterModel, fireSimulation, fireVisuals, emberParticles, leafAsh;
+  let device, context, animationId, resizeObserver, skaterModel, fireSimulation, fireVisuals, emberParticles, leafAsh, leafFracture;
   const igniter={x:0.5,y:0.5,active:false};
-  let fireVolumeClear=true;
+  let fireVolumeClear=true,fractureIndexing=false,awaitingRegrowthCleanup=false;
   let fireStats={burnedFraction:0,heatAverage:0,activeCells:0,smokeAverage:0,fuelAverage:1},fireGeneration=0,fireStatsDirty=false;
-  const clearCombustion=()=>{igniter.active=false;fireGeneration++;fireStatsDirty=true;fireStats={burnedFraction:0,heatAverage:0,activeCells:0,smokeAverage:0,fuelAverage:1};fireSimulation.clear();fireVolumeClear=true;};
+  const clearCombustion=()=>{igniter.active=false;fractureIndexing=false;awaitingRegrowthCleanup=false;fireGeneration++;fireStatsDirty=true;fireStats={burnedFraction:0,heatAverage:0,activeCells:0,smokeAverage:0,fuelAverage:1};fireSimulation.clear();fireVolumeClear=true;};
   let disposed = false, paused = false, simulationTime = startTime, lastTimestamp = 0;
   let initializeParticles = true, geometryDirty = true, resetFilm = true, totalFilmSamples = 0, filmWrite = 0, displayIndex = 0;
   let geometryRevision = 0;
   let sceneTexture, multisampleTexture, sumTexture, depthTexture, resolvedDepthTexture, responseTexture, filmTextures = [];
-  let uniforms, sampleUniforms, particles, viewParticles, meshVertices, meshIndices, sunTexture, riderVertices;
+  let uniforms, sampleUniforms, particles, viewParticles, meshVertices, meshIndices, regularMeshIndices, sunTexture, riderVertices;
   const captures = [];
   const captureFrame = (event) => { if (typeof event.detail === 'function') captures.push(event.detail); };
   canvas.addEventListener('capture-frame', captureFrame);
@@ -139,11 +140,15 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     canvas.dataset.character = 'textured-anatomical-gpu-skin-v16';
     canvas.dataset.riderBones = String(skaterModel.boneCount);
     meshVertices = device.createBuffer({size: MAX_MESH_VERTICES * 32, usage: GPUBufferUsage.STORAGE});
-    emberParticles=await createEmberParticles(device,{uniforms,sampleUniforms,plants:viewParticles,fireState:fireSimulation.stateBuffer,meshVertices,leafAshState:leafAsh.stateBuffer,format:'rgba16float',depthFormat:'depth32float',sampleCount:GEOMETRY_SAMPLES});
+    leafFracture=await createLeafFracture(device,{uniforms,plants:viewParticles,meshVertices,leafAshState:leafAsh.stateBuffer,growthBuffer:fireSimulation.growthBuffer,maxParticles:MAX_PARTICLES});
+    emberParticles=await createEmberParticles(device,{uniforms,sampleUniforms,plants:viewParticles,fireState:fireSimulation.stateBuffer,meshVertices,leafAshState:leafAsh.stateBuffer,fractureState:leafFracture.stateBuffer,format:'rgba16float',depthFormat:'depth32float',sampleCount:GEOMETRY_SAMPLES});
     const indices = new Uint16Array(GRASS_INDICES.length+FLOWER_INDICES.length+CRUST_INDICES.length);
     indices.set(GRASS_INDICES); indices.set(FLOWER_INDICES,GRASS_INDICES.length); indices.set(CRUST_INDICES,GRASS_INDICES.length+FLOWER_INDICES.length);
     meshIndices = device.createBuffer({size: Math.ceil(indices.byteLength/4)*4, usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST});
     device.queue.writeBuffer(meshIndices,0,indices);
+    const regularIndices=indices.slice();regularIndices.set(GRASS_ORIGINAL_INDICES,0);
+    regularMeshIndices=device.createBuffer({label:'Intact grass original shared indices',size:Math.ceil(regularIndices.byteLength/4)*4,usage:GPUBufferUsage.INDEX|GPUBufferUsage.COPY_DST});
+    device.queue.writeBuffer(regularMeshIndices,0,regularIndices);
     sunTexture = device.createTexture({size:[2048,2048],format:'depth32float',usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});
     const sunSampler = device.createSampler({compare:'less-equal',minFilter:'linear',magFilter:'linear'});
 
@@ -154,9 +159,9 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     const geometryLayout = device.createBindGroupLayout({entries: [uniformEntry(GPUShaderStage.COMPUTE),storageEntry(1,GPUShaderStage.COMPUTE,'read-only-storage'),storageEntry(2,GPUShaderStage.COMPUTE,'storage'),storageEntry(3,GPUShaderStage.COMPUTE,'read-only-storage'),storageEntry(4,GPUShaderStage.COMPUTE,'read-only-storage'),storageEntry(5,GPUShaderStage.COMPUTE,'read-only-storage')]});
     const characterEntries = [{binding:4,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'float',viewDimension:'2d-array'}},
       {binding:5,visibility:GPUShaderStage.FRAGMENT,sampler:{type:'filtering'}}, storageEntry(6,GPUShaderStage.VERTEX,'read-only-storage')];
-    const shadowLayout = device.createBindGroupLayout({entries: [uniformEntry(GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT),storageEntry(1,GPUShaderStage.VERTEX,'read-only-storage'),...characterEntries,storageEntry(7,GPUShaderStage.VERTEX,'read-only-storage')]});
+    const shadowLayout = device.createBindGroupLayout({entries: [uniformEntry(GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT),storageEntry(1,GPUShaderStage.VERTEX,'read-only-storage'),...characterEntries,storageEntry(7,GPUShaderStage.VERTEX,'read-only-storage'),storageEntry(8,GPUShaderStage.VERTEX,'read-only-storage')]});
     const renderLayout = device.createBindGroupLayout({entries: [uniformEntry(GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, true), storageEntry(1, GPUShaderStage.VERTEX, 'read-only-storage'),
-      {binding:2,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'depth'}},{binding:3,visibility:GPUShaderStage.FRAGMENT,sampler:{type:'comparison'}},...characterEntries,storageEntry(7,GPUShaderStage.VERTEX,'read-only-storage')]});
+      {binding:2,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'depth'}},{binding:3,visibility:GPUShaderStage.FRAGMENT,sampler:{type:'comparison'}},...characterEntries,storageEntry(7,GPUShaderStage.VERTEX,'read-only-storage'),storageEntry(8,GPUShaderStage.VERTEX,'read-only-storage')]});
     const makePostLayout = (textures) => device.createBindGroupLayout({entries: [
       uniformEntry(GPUShaderStage.FRAGMENT),
       ...Array.from({length: textures}, (_, i) => ({binding: i + 1, visibility: GPUShaderStage.FRAGMENT, texture: {sampleType: 'unfilterable-float'}})),
@@ -176,9 +181,9 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     const projectGroup = device.createBindGroup({layout: projectLayout, entries: [{binding: 0, resource: {buffer: uniforms}}, {binding: 1, resource: {buffer: particles}}, {binding: 2, resource: {buffer: viewParticles}}]});
     const geometryGroup = device.createBindGroup({layout:geometryLayout,entries:[{binding:0,resource:{buffer:uniforms}},{binding:1,resource:{buffer:viewParticles}},{binding:2,resource:{buffer:meshVertices}},{binding:3,resource:{buffer:fireSimulation.stateBuffer}},{binding:4,resource:{buffer:fireSimulation.growthBuffer}},{binding:5,resource:{buffer:leafAsh.stateBuffer}}]});
     const characterResources=[{binding:4,resource:skaterModel.texture.createView({dimension:'2d-array'})},{binding:5,resource:skaterModel.sampler},{binding:6,resource:{buffer:skaterModel.jointBuffer}}];
-    const shadowGroup = device.createBindGroup({layout:shadowLayout,entries:[{binding:0,resource:{buffer:uniforms}},{binding:1,resource:{buffer:meshVertices}},...characterResources,{binding:7,resource:{buffer:leafAsh.stateBuffer}}]});
+    const shadowGroup = device.createBindGroup({layout:shadowLayout,entries:[{binding:0,resource:{buffer:uniforms}},{binding:1,resource:{buffer:meshVertices}},...characterResources,{binding:7,resource:{buffer:leafAsh.stateBuffer}},{binding:8,resource:{buffer:leafFracture.stateBuffer}}]});
     const renderGroup = device.createBindGroup({layout: renderLayout, entries: [{binding: 0, resource: {buffer: sampleUniforms, offset: 0, size: 256}}, {binding: 1, resource: {buffer: meshVertices}},
-      {binding:2,resource:sunTexture.createView()},{binding:3,resource:sunSampler},...characterResources,{binding:7,resource:{buffer:leafAsh.stateBuffer}}]});
+      {binding:2,resource:sunTexture.createView()},{binding:3,resource:sunSampler},...characterResources,{binding:7,resource:{buffer:leafAsh.stateBuffer}},{binding:8,resource:{buffer:leafFracture.stateBuffer}}]});
 
     const makePostPipeline = (module, layout, target, blend) => device.createRenderPipelineAsync({
       layout: makePipelineLayout(layout), vertex: {module, entryPoint: 'vertex'}, fragment: {module, entryPoint: 'fragment', targets: [{format: target, ...(blend ? {blend} : {})}]},
@@ -209,7 +214,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
     const postGroup = (layout, textures) => device.createBindGroup({layout, entries: [{binding: 0, resource: {buffer: uniforms}}, ...textures.map((texture, i) => ({binding: i + 1, resource: texture.createView()}))]});
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
-      const dynamicFire = fireSimulation.active || fireVisuals.active || emberParticles.active || leafAsh.active || igniter.active;
+      const dynamicFire = fireSimulation.active || fireVisuals.active || emberParticles.active || leafAsh.active || leafFracture.active || igniter.active;
       const resolutionCap = paused || (parameters.speed === 0 && !dynamicFire) ? 2 : (parameters.quality === 'high' ? 1.25 : 1);
       currentResolutionCap = resolutionCap;
       dpr = Math.min(window.devicePixelRatio || 1, resolutionCap);
@@ -242,7 +247,8 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       if (disposed) return;
       animationId = requestAnimationFrame(render);
       if (framePending) return;
-      const dynamicFire = fireSimulation.active || fireVisuals.active || emberParticles.active || leafAsh.active || igniter.active;
+      if(awaitingRegrowthCleanup&&!fireSimulation.regrowing){fractureIndexing=false;awaitingRegrowthCleanup=false;resetFilm=true;geometryDirty=true;}
+      const dynamicFire = fireSimulation.active || fireVisuals.active || emberParticles.active || leafAsh.active || leafFracture.active || igniter.active;
       const resolutionCap = paused || (parameters.speed === 0 && !dynamicFire) ? 2 : (parameters.quality === 'high' ? 1.25 : 1);
       if (resolutionCap !== currentResolutionCap) resize();
       const elapsed = lastTimestamp ? Math.min((timestamp - lastTimestamp) / 1000, 0.05) : 0; lastTimestamp = timestamp;
@@ -250,7 +256,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       if (!simulationStationary) simulationTime += elapsed * parameters.speed;
       rideState = ride.update(paused ? 0 : elapsed,{time:simulationTime,params:parameters});
       const rideBlend = Math.max(0,Math.min(1,rideState.blend||0));
-      const stationary = simulationStationary && !(rideBlend>0 && !paused) && !((fireSimulation.active || fireVisuals.active || emberParticles.active || leafAsh.active || igniter.active) && !paused);
+      const stationary = simulationStationary && !(rideBlend>0 && !paused) && !((fireSimulation.active || fireVisuals.active || emberParticles.active || leafAsh.active || leafFracture.active || igniter.active) && !paused);
       if (!stationary) totalFilmSamples = 0;
       if (lightingTween) {
         const previousYaw=lightingYaw,previousPitch=lightingPitch;
@@ -281,7 +287,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       const uniqueVertexCount = count*GRASS_VERTEX_COUNT+flowerCount*FLOWER_VERTEX_COUNT+CRUST_VERTEX_COUNT;
       const coverageScale = Math.sqrt(MAX_PARTICLES / count);
       // Charcoal blades retain the full aperture and subpixel coverage.
-      const lensCount = (rideBlend>.01 || fireSimulation.active || fireVisuals.active || emberParticles.active || leafAsh.active) && !stationary ? ({high:12,normal:12,low:8}[parameters.quality]||12) : (LENS_COUNTS[parameters.quality]||MAX_LENS);
+      const lensCount = (rideBlend>.01 || fireSimulation.active || fireVisuals.active || emberParticles.active || leafAsh.active || leafFracture.active) && !stationary ? ({high:12,normal:12,low:8}[parameters.quality]||12) : (LENS_COUNTS[parameters.quality]||MAX_LENS);
       const needsIntegral = !stationary || totalFilmSamples < STILL_SAMPLES || initializeParticles;
       const historyWeight = totalFilmSamples ? lensCount / (totalFilmSamples + lensCount) : 1;
       uniformData.set([width, height, simulationTime, count, parameters.turbulence, parameters.dispersion, parameters.pointSize * coverageScale, parameters.zoom,
@@ -291,13 +297,14 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       uniformData.set([...(space?.domainRight||[1,0,0]),space?.baseRadius||.93],32);
       uniformData.set([...(space?.domainForward||[0,0,1]),3.0],36);
       uniformData.set([...(space?.domainNormal||[0,1,0]),parameters.flowerRatio],40);
-      uniformData.set([...(space?.worldRight||[1,0,0]),0],44);
+      uniformData.set([...(space?.worldRight||[1,0,0]),fractureIndexing?1:0],44);
       uniformData.set([...(space?.worldForward||[0,0,1]),0],48);
       uniformData.set([...(space?.worldUp||[0,1,0]),RIDE_HEIGHT_SCALE],52);
       uniformData.set([...(space?.origin||[0,0,0]),unfold],56);
       uniformData.set([...(rideState.position||[0,0,0]),rideState.visibility||0],60);
       device.queue.writeBuffer(uniforms, 0, uniformData);
       const encoder = device.createCommandEncoder({label: 'Physical aperture film'});
+      const frameMeshIndices=fractureIndexing?meshIndices:regularMeshIndices;
       if (needsIntegral) {
         for (let i = 0; i < lensCount; i++) {
           sampleData.set(uniformData, i * FLOAT_STRIDE);
@@ -316,13 +323,14 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
           leafAsh.encode(encoder,{dt:paused?0:elapsed,count,active:fireSimulation.active||igniter.active,regrowing:fireSimulation.regrowing,clear:fireVolumeClear});
           fireVisuals.encode(encoder,{dt:paused?0:elapsed,count,active:fireSimulation.active||igniter.active,regrowing:fireSimulation.regrowing,clear:fireVolumeClear});
           const geometry=encoder.beginComputePass();geometry.setPipeline(geometryPipeline);geometry.setBindGroup(0,geometryGroup);geometry.dispatchWorkgroups(Math.ceil(uniqueVertexCount/128));geometry.end();
-          emberParticles.encode(encoder,{dt:paused?0:elapsed,count,active:fireSimulation.active||igniter.active||leafAsh.active,regrowing:fireSimulation.regrowing,clear:fireVolumeClear,flowTexture:fireVisuals.velocityTexture});fireVolumeClear=false;
+          leafFracture.encode(encoder,{dt:paused?0:elapsed,count,active:fireSimulation.active||igniter.active||leafAsh.active,regrowing:fireSimulation.regrowing,clear:fireVolumeClear,flowTexture:fireVisuals.velocityTexture});
+          emberParticles.encode(encoder,{dt:paused?0:elapsed,count,active:fireSimulation.active||igniter.active||leafAsh.active||leafFracture.active,regrowing:fireSimulation.regrowing,clear:fireVolumeClear,flowTexture:fireVisuals.velocityTexture});fireVolumeClear=false;
           geometryDirty = false;
           canvas.dataset.geometryRevision = String(++geometryRevision);
         }
         if (updateGeometry || riderVertexCount || rideBlend>0) {
           const shadow = encoder.beginRenderPass({colorAttachments:[],depthStencilAttachment:{view:sunTexture.createView(),depthClearValue:1,depthLoadOp:'clear',depthStoreOp:'store'}});
-          shadow.setPipeline(shadowPipeline); shadow.setBindGroup(0,shadowGroup); shadow.setIndexBuffer(meshIndices,'uint16');
+          shadow.setPipeline(shadowPipeline); shadow.setBindGroup(0,shadowGroup); shadow.setIndexBuffer(frameMeshIndices,'uint16');
           shadow.drawIndexed(GRASS_INDICES.length,count,0,0,0);
           shadow.drawIndexed(FLOWER_INDICES.length,flowerCount,GRASS_INDICES.length,0,count);
           if(unfold>.25) shadow.drawIndexed(CRUST_INDICES.length,1,GRASS_INDICES.length+FLOWER_INDICES.length,0,count+flowerCount);
@@ -334,7 +342,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
         for (let i = 0; i < lensCount; i++) {
           const scene = encoder.beginRenderPass({colorAttachments: [{view: multisampleTexture.createView(), resolveTarget:sceneTexture.createView(), clearValue: {r: 0, g: 0, b: 0, a: 0}, loadOp: 'clear', storeOp: 'discard'}],
             depthStencilAttachment: {view: depthTexture.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'discard'}});
-          scene.setPipeline(scenePipeline); scene.setBindGroup(0, renderGroup, [i * 256]); scene.setIndexBuffer(meshIndices,'uint16');
+          scene.setPipeline(scenePipeline); scene.setBindGroup(0, renderGroup, [i * 256]); scene.setIndexBuffer(frameMeshIndices,'uint16');
           scene.drawIndexed(GRASS_INDICES.length,count,0,0,0);
           scene.drawIndexed(FLOWER_INDICES.length,flowerCount,GRASS_INDICES.length,0,count);
           if(unfold>.25) scene.drawIndexed(CRUST_INDICES.length,1,GRASS_INDICES.length+FLOWER_INDICES.length,0,count+flowerCount);
@@ -348,9 +356,9 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
         }
         // Preserve thin-leaf coverage in gas occlusion. One geometric hit no
         // longer cuts an opaque pixel-wide wall through the entire gas ray.
-        if (fireSimulation.active || fireVisuals.active || emberParticles.active || leafAsh.active || igniter.active) {
+        if (fireSimulation.active || fireVisuals.active || emberParticles.active || leafAsh.active || leafFracture.active || igniter.active) {
           const occlusion=encoder.beginRenderPass({label:'Independent pinhole subpixel occlusion',colorAttachments:[],depthStencilAttachment:{view:depthTexture.createView(),depthClearValue:1,depthLoadOp:'clear',depthStoreOp:'store'}});
-          occlusion.setPipeline(depthPipeline);occlusion.setBindGroup(0,renderGroup,[DEPTH_UNIFORM_OFFSET]);occlusion.setIndexBuffer(meshIndices,'uint16');
+          occlusion.setPipeline(depthPipeline);occlusion.setBindGroup(0,renderGroup,[DEPTH_UNIFORM_OFFSET]);occlusion.setIndexBuffer(frameMeshIndices,'uint16');
           occlusion.drawIndexed(GRASS_INDICES.length,count,0,0,0);
           occlusion.drawIndexed(FLOWER_INDICES.length,flowerCount,GRASS_INDICES.length,0,count);
           if(unfold>.25)occlusion.drawIndexed(CRUST_INDICES.length,1,GRASS_INDICES.length+FLOWER_INDICES.length,0,count+flowerCount);
@@ -388,8 +396,9 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       canvas.dataset.ridePush = (rideState.push||0).toFixed(4);
       canvas.dataset.fireActive=String(fireSimulation.active);
       canvas.dataset.fireRendering='branching-reaction-sheets-v21';
-      canvas.dataset.vegetationBurning='fracturing-leaf-edge-incandescence-v23';
-      canvas.dataset.emberRendering='visible-sparks-tumbling-ash-v23';
+      canvas.dataset.grassIndexing=fractureIndexing?'fracture-120':'intact-70';
+      canvas.dataset.vegetationBurning='hinged-char-leaf-detachment-v24';
+      canvas.dataset.emberRendering='leaf-fragments-to-fine-ash-v24';
       canvas.dataset.regrowing=String(fireSimulation.regrowing);
       canvas.dataset.growthProgress=String(fireSimulation.growthProgress);
       canvas.dataset.igniterActive=String(igniter.active);
@@ -402,15 +411,16 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
         if(fireSimulation.active || fireStats.burnedFraction>0 || fireStatsDirty)fireSimulation.readStats().then(stats=>{if(stats&&!disposed&&generation===fireGeneration){fireStats=stats;fireStatsDirty=false;canvas.dataset.burnedFraction=stats.burnedFraction.toFixed(4);canvas.dataset.fireHeat=stats.heatAverage.toFixed(4);canvas.dataset.fireCells=String(stats.activeCells);canvas.dataset.fuel=stats.fuelAverage.toFixed(4);canvas.dataset.growthAverage=stats.growthAverage.toFixed(4);canvas.dataset.moisture=stats.moistureAverage.toFixed(4);}});
         emberParticles.readStats().then(stats=>{if(stats&&!disposed&&generation===fireGeneration){canvas.dataset.emberCount=String(stats.alive);canvas.dataset.sparkCount=String(stats.sparks??stats.alive);canvas.dataset.ashCount=String(stats.ash??0);canvas.dataset.emberHot=String(stats.hot);canvas.dataset.emberTemperature=stats.temperatureAverage.toFixed(4);canvas.dataset.emberMaxTemperature=stats.maxTemperature.toFixed(4);}});
         leafAsh.readStats().then(stats=>{if(stats&&!disposed&&generation===fireGeneration){canvas.dataset.leafAshStats=JSON.stringify(stats);}});
+        leafFracture.readStats().then(stats=>{if(stats&&!disposed&&generation===fireGeneration){canvas.dataset.leafFragmentStats=JSON.stringify(stats);}});
         canvas.dataset.burnedFraction=fireStats.burnedFraction.toFixed(4);
         onStats?.({fps: diagnostic.fps, particleCount: count, time: simulationTime, paused, fireActive:fireSimulation.active, burnedFraction:fireStats.burnedFraction, regrowing:fireSimulation.regrowing,growthProgress:fireSimulation.growthProgress, riding:Boolean(rideState.active),transitioning:Boolean(rideState.transitioning),rideBlend,distance:rideState.distance||0,speed:rideState.speed||0,airborne:Boolean(rideState.airborne),jumps:rideState.jumps||0}); fpsFrames = 0; fpsStart = timestamp;
       }
     };
     diagnostic.ready = true; animationId = requestAnimationFrame(render); onReady?.({renderer: 'webgpu', particleCount: MAX_PARTICLES});
     return {
-      setIgniter(value){Object.assign(igniter,{x:Math.max(0,Math.min(1,Number(value.x)||0)),y:Math.max(0,Math.min(1,Number(value.y)||0)),active:Boolean(value.active)});if(igniter.active){resetFilm=true;resize();}},
+      setIgniter(value){Object.assign(igniter,{x:Math.max(0,Math.min(1,Number(value.x)||0)),y:Math.max(0,Math.min(1,Number(value.y)||0)),active:Boolean(value.active)});if(igniter.active){fractureIndexing=true;resetFilm=true;resize();}},
       clearFire(){clearCombustion();geometryDirty=true;resetFilm=true;},
-      regrowFire(){if(!fireSimulation.regrow())return false;igniter.active=false;fireGeneration++;fireStatsDirty=true;geometryDirty=true;resetFilm=true;resize();return true;},
+      regrowFire(){if(!fireSimulation.regrow())return false;awaitingRegrowthCleanup=true;igniter.active=false;fireGeneration++;fireStatsDirty=true;geometryDirty=true;resetFilm=true;resize();return true;},
       enterRide() { ride.enter({time:simulationTime,params:parameters});resetFilm=true; },
       exitRide() { ride.exit();resetFilm=true; },
       setInput(input) { ride.setInput(input); },
@@ -436,10 +446,10 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       setPaused(value) { const next = Boolean(value); if (next !== paused) resetFilm = true; paused = next; diagnostic.paused = paused; resize(); },
       reset() { ride.reset();clearCombustion();Object.assign(parameters, INITIAL); lightingTween=null;lightingYaw=parameters.yaw;lightingPitch=parameters.pitch; simulationTime = 0; paused = false; initializeParticles = true; geometryDirty = true; resetFilm = true; resize(); diagnostic.parameters = { ...parameters }; },
       getState() { return { ...parameters, paused, time: simulationTime, particleCount: QUALITY_COUNTS[parameters.quality], fps: diagnostic.fps, riding:Boolean(rideState.active),transitioning:Boolean(rideState.transitioning),rideBlend:rideState.blend||0,distance:rideState.distance||0,speed:rideState.speed||0,airborne:Boolean(rideState.airborne),jumps:rideState.jumps||0 }; },
-      destroy() { disposed = true; cancelAnimationFrame(animationId); resizeObserver.disconnect(); canvas.removeEventListener('capture-frame', captureFrame);emberParticles.destroy();leafAsh.destroy();fireVisuals.destroy();fireSimulation.destroy();destroyTargets(); sunTexture.destroy(); for (const buffer of [uniforms,sampleUniforms,particles,viewParticles,meshVertices,meshIndices]) buffer.destroy(); skaterModel.destroy(); context.unconfigure(); device.destroy(); },
+      destroy() { disposed = true; cancelAnimationFrame(animationId); resizeObserver.disconnect(); canvas.removeEventListener('capture-frame', captureFrame);emberParticles.destroy();leafFracture.destroy();leafAsh.destroy();fireVisuals.destroy();fireSimulation.destroy();destroyTargets(); sunTexture.destroy(); for (const buffer of [uniforms,sampleUniforms,particles,viewParticles,meshVertices,meshIndices,regularMeshIndices]) buffer.destroy(); skaterModel.destroy(); context.unconfigure(); device.destroy(); },
     };
   } catch (error) {
-    reportError(error); resizeObserver?.disconnect(); canvas.removeEventListener('capture-frame', captureFrame);emberParticles?.destroy();leafAsh?.destroy();fireVisuals?.destroy();fireSimulation?.destroy();
-    destroyTargets(); sunTexture?.destroy(); for (const buffer of [uniforms,sampleUniforms,particles,viewParticles,meshVertices,meshIndices]) buffer?.destroy(); skaterModel?.destroy(); device?.destroy(); throw error;
+    reportError(error); resizeObserver?.disconnect(); canvas.removeEventListener('capture-frame', captureFrame);emberParticles?.destroy();leafFracture?.destroy();leafAsh?.destroy();fireVisuals?.destroy();fireSimulation?.destroy();
+    destroyTargets(); sunTexture?.destroy(); for (const buffer of [uniforms,sampleUniforms,particles,viewParticles,meshVertices,meshIndices,regularMeshIndices]) buffer?.destroy(); skaterModel?.destroy(); device?.destroy(); throw error;
   }
 }
