@@ -1,4 +1,5 @@
-import { sharedWGSL } from './shaders.js?v=flower-ratio-v17';
+import { sharedWGSL } from './shaders.js?v=fire-v19';
+import { fireFieldWGSL } from './fire-simulation.js?v=fire-v19';
 import { botanicalWGSL, GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT } from './botanical.js?v=flower-ratio-v17';
 
 export const FLOWER_ROOT_STRIDE = 16;
@@ -14,7 +15,7 @@ export const CRUST_INDICES = new Uint16Array(crustIndices);
 
 export const meshWGSL = /* wgsl */ `
 struct MeshVertex {
-  position: vec4f, // xyz position, local sky visibility
+  position: vec4f, // xyz position; w packs sky/heat/char as an exact 24-bit integer
   detail: vec4u, // octahedral normal, UV, linear RG, linear B + botanical part/seed
 };
 const GRASS_VERTICES: u32 = ${GRASS_VERTEX_COUNT}u;
@@ -78,9 +79,10 @@ fn sunCoordinates(position: vec3f) -> vec3f {
 }
 `;
 
-export const geometryWGSL = sharedWGSL + botanicalWGSL + meshWGSL + /* wgsl */ `
+export const geometryWGSL = sharedWGSL + botanicalWGSL + meshWGSL + fireFieldWGSL + /* wgsl */ `
 @group(0) @binding(1) var<storage,read> plants: array<Particle>;
 @group(0) @binding(2) var<storage,read_write> mesh: array<MeshVertex>;
+@group(0) @binding(3) var<storage,read> fireField: array<vec4f>;
 @compute @workgroup_size(128)
 fn generate(@builtin(global_invocation_id) invocation: vec3u) {
   let count = u32(u.viewport.w);
@@ -109,7 +111,9 @@ fn generate(@builtin(global_invocation_id) invocation: vec3u) {
     let color=srgbToLinear(referenceParticle(worldToMacro(original),crustIndex));
     // The optical-scale support is below the same grass roots. Fine green
     // fibers shade its gaps, rather than exposing pale background through them.
-    mesh[index].position=vec4f(position,0.70);
+    let combustion=fireField[fireCell(direction)];
+    let packedLight=178u | (u32(clamp(combustion.x,0.0,1.0)*255.0)<<8u) | (u32(clamp(combustion.z,0.0,1.0)*255.0)<<16u);
+    mesh[index].position=vec4f(position,f32(packedLight));
     mesh[index].detail=vec4u(pack2x16snorm(octEncode(microNormal)),pack2x16float(vec2f(0.0)),
       pack2x16float(color.rg*0.75),pack2x16float(vec2f(color.b*0.75,6.0)));
     return;
@@ -127,7 +131,16 @@ fn generate(@builtin(global_invocation_id) invocation: vec3u) {
   if (!flower && instance%32u==0u) {
     vertex.position=mix(vertex.position,particle.position.xyz,flowerGrowth(instance));
   }
-  mesh[index].position = vec4f(vertex.position,vertex.visibility);
+  let combustion=fireField[fireCell(rideDirection(instance))];
+  let charAmount=clamp(combustion.z,0.0,1.0);
+  let wilt=charAmount*charAmount;
+  let stem=vertex.position-particle.position.xyz;
+  vertex.position=particle.position.xyz+stem*(1.0-wilt*0.76)
+    -particle.normal.xyz*(0.075*wilt*vertex.uv.y*vertex.uv.y);
+  let packedLight=u32(clamp(vertex.visibility,0.0,1.0)*255.0)
+    | (u32(clamp(combustion.x,0.0,1.0)*255.0)<<8u)
+    | (u32(charAmount*255.0)<<16u);
+  mesh[index].position = vec4f(vertex.position,f32(packedLight));
   mesh[index].detail = vec4u(pack2x16snorm(octEncode(vertex.normal)),pack2x16float(vertex.uv),
     pack2x16float(vertex.color.rg),pack2x16float(vec2f(vertex.color.b,vertex.part+vertex.seed*0.1)));
 }
@@ -200,6 +213,7 @@ struct VertexOutput {
   @location(3) color: vec3f,
   @location(4) material: vec3f,
   @location(5) surface: vec4f,
+  @location(6) combustion: vec3f,
 };
 @vertex fn vertex(@builtin(vertex_index) vertexIndex:u32,@builtin(instance_index) instance:u32) -> VertexOutput {
   let stored = resolveStored(vertexIndex,instance);
@@ -212,8 +226,10 @@ struct VertexOutput {
   output.normal = octDecode(unpack2x16snorm(stored.detail.x));
   output.uv = unpack2x16float(stored.detail.y);
   output.color = vec3f(rg,bp.x);
-  output.material = vec3f(part,stored.position.w,(bp.y-part)*10.0);
+  let packedLight=u32(stored.position.w);
+  output.material = vec3f(part,f32(packedLight&255u)/255.0,(bp.y-part)*10.0);
   output.surface = vec4f(0.0,0.0,-1.0,0.9);
+  output.combustion=vec3f(f32((packedLight>>8u)&255u)/255.0,1.0,f32((packedLight>>16u)&255u)/255.0);
   return output;
 }
 fn sunVisibility(position: vec3f, normal:vec3f) -> f32 {
@@ -325,13 +341,17 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
     let light=mix(vec3f(3.9,3.45,2.65),vec3f(4.5,3.65,2.45),u.rideOrigin.w)*nl*sunVis;
     let bounce=vec3f(0.17,0.18,0.08)*(1.0-sunVis)*u.rideOrigin.w;
     let sunlitTint=mix(vec3f(1.0),vec3f(1.25,1.04,0.78),u.rideOrigin.w*nl*sunVis);
-    return vec4f(input.color*sunlitTint*(sky+light+bounce)*canopy,1.0);
+    let charred=smoothstep(0.04,0.9,input.combustion.z);
+    let groundColor=mix(input.color,vec3f(0.009,0.007,0.006),charred);
+    return vec4f(groundColor*sunlitTint*(sky+light+bounce)*canopy,1.0);
   }
   let leaf = part<1.5 || part>3.5;
   let t = clamp(input.uv.y,0.0,1.0);
   let w = clamp(abs(input.uv.x),0.0,1.0);
   let midrib = exp(-w*18.0);
   var color = input.color;
+  let charAmount=clamp(input.combustion.z,0.0,1.0);
+  let heat=clamp(input.combustion.x,0.0,1.0);
   var thickness = 0.46;
   var localAO = 1.0;
   var scatter = vec3f(0.82,0.97,0.20);
@@ -359,6 +379,12 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
     color *= 0.94+0.06*sin(input.uv.x*65.0+input.uv.y*47.0);
     color *= 0.60;
   }
+  let scorch=smoothstep(0.025,0.72,charAmount);
+  let toasted=color*vec3f(0.88,0.47,0.16);
+  color=mix(color,toasted,smoothstep(0.0,0.2,charAmount));
+  let ash=smoothstep(0.84,1.0,charAmount)*smoothstep(-0.15,0.65,noise(input.viewPosition*85.0));
+  color=mix(color,mix(vec3f(0.006,0.0045,0.0038),vec3f(0.10,0.095,0.087),ash),scorch);
+  transmissionWeight*=1.0-scorch;
   let skyAmount = 0.5+0.5*dot(normal,skyUp);
   let sky = mix(vec3f(0.055,0.095,0.045),vec3f(0.30,0.49,0.72),skyAmount);
   let skyVisibility = mix(0.38,1.0,clamp(input.material.y,0.0,1.0))*localAO;
@@ -375,7 +401,12 @@ fn actorSmith(normalView: f32, normalLight: f32, alphaSquared: f32) -> f32 {
   let meadowBounce=vec3f(0.13,0.14,0.065)*skyVisibility*(1.0-nl*sunVis)*u.rideOrigin.w;
   let indirect=sky*skyVisibility*mix(1.0,1.15,u.rideOrigin.w);
   let sunlitTint=mix(vec3f(1.0),vec3f(1.10,1.025,0.88),u.rideOrigin.w*nl*sunVis*select(0.0,1.0,leaf));
-  let radiance=color*sunlitTint*(indirect+direct+meadowBounce)+transmitted+skyTransmitted+sunColor*sheen*sunVis;
+  var radiance=color*sunlitTint*(indirect+direct+meadowBounce)+transmitted+skyTransmitted*(1.0-scorch)+sunColor*sheen*sunVis*(1.0-scorch);
+  let coalTexture=smoothstep(0.25,0.70,noise(input.viewPosition*145.0+vec3f(0.0,u.viewport.z*0.8,0.0)));
+  let cracks=pow(coalTexture,4.0)*smoothstep(0.08,0.42,charAmount);
+  let ember=pow(heat,3.0)*charAmount*(0.012+cracks*0.65);
+  radiance+=vec3f(1.65,0.15,0.006)*ember;
+  radiance+=color*vec3f(0.85,0.20,0.025)*smoothstep(0.04,0.55,heat)*(1.0-scorch*0.85);
   let distance=length(eye-input.viewPosition);
   let haze=1.0-exp(-max(0.0,distance-1.8)*0.025*u.rideOrigin.w);
   return vec4f(mix(max(radiance,vec3f(0.0)),vec3f(0.69,0.83,0.76),haze),1.0);
@@ -411,6 +442,7 @@ struct RiderInput {
   output.color = input.color;
   output.material = vec3f(10.0+input.material,1.0,0.0);
   output.surface = vec4f(input.uv,input.textureIndex,input.roughness);
+  output.combustion=vec3f(0.0,1.0,0.0);
   return output;
 }
 fn sunVisibility`

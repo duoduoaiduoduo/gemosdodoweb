@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#9acee8">
   <title>流形 · 滑入混沌</title>
-  <meta name="description" content="流动花草中的无尽滑板。镜头连续深入同一混沌体，跟随男孩穿行花草；支持键盘与触屏转向、跳跃和真实光圈景深。">
+  <meta name="description" content="探索流动的花草流形，滑入混沌，或拖动一枚火种，看草木燃烧、火星升起，再让它重新生长。">
   <meta property="og:type" content="website">
   <meta property="og:title" content="流形 · 滑入混沌">
-  <meta property="og:description" content="草木，成流。探索流动的花草流形，或滑入其中，跟随男孩穿行花草。支持转向、跳跃、暂停和画面调节。">
+  <meta property="og:description" content="草木，成流。滑入混沌，或拖动火种点燃草木，再让它重新生长。">
   <meta property="og:url" content="https://gemosdodo.art/vibecoding/particle-study">
   <meta property="og:image" content="https://gemosdodo.art/vibecoding-projects/particle-study/cover.jpg">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="./style.css?v=mobile-controls-v18">
+  <link rel="stylesheet" href="./style.css?v=fire-v19">
 </head>
 <body>
   <main class="studio" id="studio">
@@ -36,6 +36,17 @@
       <div class="quality-row"><span>细节</span><div class="segmented" role="group" aria-label="植被细节"><button id="qualityNormal" data-quality="normal" aria-pressed="true">流畅</button><button id="qualityHigh" data-quality="high" aria-pressed="false">精细</button></div></div>
       <button class="reset-button" id="reset">恢复默认参数 <span>↺</span></button>
     </section>
+    <aside class="fire-tools" id="fireTools" aria-label="火种玩法">
+      <p class="fire-hint" id="fireHint">拖动火种，点燃草木</p>
+      <div class="fire-tools-row">
+        <button class="fire-seed" id="fireSeed" aria-label="拖动火种到草木，或点击进入点火模式" aria-pressed="false" disabled>
+          <span class="fire-seed-icon" aria-hidden="true"><svg viewBox="0 0 32 40"><defs><linearGradient id="seedFlame" x1="0" y1="1" x2=".35" y2="0"><stop stop-color="#e76825"/><stop offset=".53" stop-color="#ffaf43"/><stop offset="1" stop-color="#ffe3a3"/></linearGradient></defs><path class="flame-outer" fill="url(#seedFlame)" d="M17.1 1.8c1.7 8.1-5.3 10-4.4 16.4-2.8-1.8-3.1-4.5-2.6-6.6C6.3 16.2 3.8 21 4.7 26.5c1 7.1 5.8 11.4 11.6 11.4 7.3 0 12.2-5.7 11-13.5-.7-4.2-3.5-8.2-6.7-10.8 1.5 5.1-.4 7.4-1.6 8.3 1.4-7.4 2.9-13-1.9-20.1Z"/><path class="flame-core" fill="#fff2c9" d="M16.2 20.4c.6 5.1-4.6 7.4-4 11 .4 3.1 2 4.9 4.6 4.9 3.8 0 5.7-4.1 3.9-7.6-.3 2.3-1.4 2.9-2.2 3.1 1.5-4.3-.1-8.3-2.3-11.4Z"/></svg></span>
+          <span id="fireSeedLabel">火种</span><span class="fire-mode-dot" aria-hidden="true"></span>
+        </button>
+        <button class="fire-regrow" id="fireRegrow" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17v-6m0 2C4.5 13 3 8.5 3 5c4.5 0 7 2.4 7 6m0 0c0-4.4 2.7-7 7-7 0 4.5-2.4 7-7 7Z"/></svg><span>重新生长</span></button>
+      </div>
+    </aside>
+    <div class="fire-cursor" id="fireCursor" hidden aria-hidden="true"><span class="fire-cursor-flame"><svg viewBox="0 0 32 40"><path fill="#ff8d37" d="M17.1 1.8c1.7 8.1-5.3 10-4.4 16.4-2.8-1.8-3.1-4.5-2.6-6.6C6.3 16.2 3.8 21 4.7 26.5c1 7.1 5.8 11.4 11.6 11.4 7.3 0 12.2-5.7 11-13.5-.7-4.2-3.5-8.2-6.7-10.8 1.5 5.1-.4 7.4-1.6 8.3 1.4-7.4 2.9-13-1.9-20.1Z"/><path fill="#fff0bc" d="M16.2 20.4c.6 5.1-4.6 7.4-4 11 .4 3.1 2 4.9 4.6 4.9 3.8 0 5.7-4.1 3.9-7.6-.3 2.3-1.4 2.9-2.2 3.1 1.5-4.3-.1-8.3-2.3-11.4Z"/></svg></span><span class="fire-contact"></span></div>
     <footer class="bottom chrome">
       <div class="caption"><span class="piece-number">实验 001</span><h1>草木，成流。</h1><p>拖动旋转 · 滚动缩放</p></div>
       <nav class="toolbar" aria-label="播放与显示控制">
@@ -50,6 +61,6 @@
     <button class="exit-focus" id="exitFocus" aria-label="退出专注模式" hidden>退出专注 <span>Esc</span></button>
     <div class="toast" id="toast" role="status" hidden></div>
   </main>
-  <script type="module" src="./app.js?v=mobile-controls-v18"></script>
+  <script type="module" src="./app.js?v=fire-v19"></script>
 </body>
 </html>

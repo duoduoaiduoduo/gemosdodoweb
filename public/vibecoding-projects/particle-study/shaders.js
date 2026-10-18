@@ -410,6 +410,7 @@ export const historyWGSL = sharedWGSL + fullscreenWGSL + /* wgsl */ `
 
 export const compositeWGSL = sharedWGSL + fullscreenWGSL + /* wgsl */ `
 @group(0) @binding(1) var film: texture_2d<f32>;
+@group(0) @binding(2) var heatFilm: texture_2d<f32>;
 
 fn linearToSrgb(color: vec3f) -> vec3f {
   let value = max(color,vec3f(0.0));
@@ -417,15 +418,20 @@ fn linearToSrgb(color: vec3f) -> vec3f {
 }
 
 @fragment fn fragment(input: FullscreenOutput) -> @location(0) vec4f {
+  let heatSize=vec2i(textureDimensions(heatFilm,0));
+  let heatPixel=clamp(vec2i(input.uv*vec2f(heatSize)),vec2i(0),heatSize-vec2i(1));
+  let heat=textureLoad(heatFilm,heatPixel,0);
+  let refraction=clamp(heat.xy,vec2f(-0.008),vec2f(0.008));
+  let uv=clamp(input.uv+refraction,vec2f(0.0),vec2f(0.999999));
   let size = vec2i(textureDimensions(film,0));
-  let pixel = clamp(vec2i(input.uv*u.viewport.xy),vec2i(0),size-vec2i(1));
+  let pixel = clamp(vec2i(uv*u.viewport.xy),vec2i(0),size-vec2i(1));
   let sceneColor = textureLoad(film,pixel,0);
   let alpha = clamp(sceneColor.a,0.0,1.0);
-  let backgroundSrgb = referenceBackground(input.uv);
+  let backgroundSrgb = referenceBackground(uv);
   let backgroundLinear = srgbToLinear(backgroundSrgb);
   // Lift the measured background through the inverse shoulder first. A single
   // tone curve then follows optical integration and leaves its target RGB intact.
-  let backgroundRadiance = backgroundLinear/(vec3f(1.0)-0.16*backgroundLinear)+referenceSunRadiance(input.uv);
+  let backgroundRadiance = backgroundLinear/(vec3f(1.0)-0.16*backgroundLinear)+referenceSunRadiance(uv);
   let combined = max(sceneColor.rgb,vec3f(0.0))*max(u.extra.z,0.01)
     +backgroundRadiance*(1.0-alpha);
   let toned = combined/(vec3f(1.0)+0.16*combined);

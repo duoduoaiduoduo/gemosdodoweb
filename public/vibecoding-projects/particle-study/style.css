@@ -62,3 +62,50 @@
   .studio.settings-open .error{width:min(390px,calc(100% - var(--settings-width) - 30px));max-height:82%;overflow-y:auto;padding:20px}
   .studio.settings-open .toast{left:calc((100% - var(--settings-width))/2);bottom:18px;max-width:calc(100% - var(--settings-width) - 24px);white-space:normal;text-align:center}
 }
+
+/* The seed stays within reach without covering the point of contact. */
+.fire-tools{position:absolute;right:36px;bottom:112px;z-index:2;user-select:none;-webkit-user-select:none;transition:opacity .25s,transform .25s}
+.fire-hint{margin:0 4px 12px;text-align:right;font-size:10px;letter-spacing:1px;color:#56695d;opacity:.7;pointer-events:none}
+.fire-tools-row{display:flex;align-items:center;gap:10px}
+.fire-seed{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;min-width:102px;min-height:50px;padding:8px 16px 8px 12px;border:1px solid #fff9e5db;border-radius:28px;background:linear-gradient(135deg,#fff8e6d9,#f8efdbb3);box-shadow:0 3px 24px #825a2a10,inset 0 1px 0 #ffffff8f;backdrop-filter:blur(18px);font-size:11px;letter-spacing:1.3px;color:#765932;touch-action:none;cursor:grab;transition:background .2s,box-shadow .2s,border-color .2s}
+.fire-seed:active{cursor:grabbing}
+.fire-seed:hover{background:#fff9e8ed;box-shadow:0 4px 28px #b778231c,inset 0 1px 0 #fff9}
+.fire-seed[aria-pressed=true]{background:linear-gradient(135deg,#fff1d5f0,#f9d99cd9);border-color:#fff0c9;box-shadow:0 0 30px #f4b94c28,inset 0 1px 0 #fff8}
+.fire-seed-icon{display:block;width:25px;height:32px;flex:none;transform-origin:50% 90%;filter:drop-shadow(0 1px 5px #ec982545)}
+.fire-seed-icon svg{display:block;width:100%;height:100%;stroke:none}
+.fire-mode-dot{display:none;width:4px;height:4px;border-radius:50%;background:#b76b23;box-shadow:0 0 7px #d3914870}
+.fire-seed[aria-pressed=true] .fire-mode-dot{display:block}
+.fire-seed[aria-pressed=true] .fire-seed-icon{animation:seed-flicker 1.4s ease-in-out infinite alternate}
+.fire-regrow{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 13px;border:1px solid #ffffff73;border-radius:24px;background:#f3faf18c;backdrop-filter:blur(16px);color:#4f6a5a;font-size:10px;letter-spacing:.7px;transition:background .2s,opacity .2s}
+.fire-regrow:hover:not(:disabled){background:#f8fff1d9}
+.fire-regrow svg{width:18px;height:18px;stroke-width:1.2}
+.fire-regrow:disabled{opacity:.42;cursor:default}
+.fire-cursor{position:absolute;z-index:4;width:0;height:0;pointer-events:none}
+.fire-cursor-flame{position:absolute;left:0;bottom:18px;display:block;width:26px;height:34px;transform:translateX(-50%);filter:drop-shadow(0 1px 8px #ff9a37b3);animation:cursor-flicker .23s ease-in-out infinite alternate}
+.fire-cursor-flame svg{display:block;width:100%;height:100%}
+.fire-contact{position:absolute;left:-5px;top:-5px;width:10px;height:10px;border:1px solid #fff2c1d9;border-radius:50%;box-shadow:0 0 0 5px #ffae4b16,0 0 15px #ff8b43c2;background:#ffd2846b}
+.is-igniting #scene,.is-igniting #scene:active{cursor:crosshair}
+.studio.settings-open .fire-tools{display:none}
+.is-focused .fire-tools{opacity:.78}
+.is-focused .fire-tools:hover,.is-focused.is-igniting .fire-tools{opacity:1}
+@keyframes seed-flicker{0%{transform:rotate(-2deg) scale(.96,1)}50%{transform:rotate(1.5deg) scale(1.02,.97)}100%{transform:rotate(0) scale(.98,1.04)}}
+@keyframes cursor-flicker{from{margin-left:-1px;scale:.95 1.05}to{margin-left:1px;scale:1.04 .95}}
+@media(max-width:650px){
+  .fire-tools{right:max(18px,env(safe-area-inset-right,0px));bottom:calc(174px + env(safe-area-inset-bottom,0px))}
+  .fire-hint{font-size:9px;letter-spacing:.8px;margin-bottom:9px}
+  .fire-tools-row{gap:8px}
+  .fire-seed{min-height:48px;min-width:98px;padding:7px 14px 7px 11px;font-size:10px;gap:8px}
+  .fire-regrow{padding:10px 12px;font-size:9px;gap:6px}
+  .is-igniting .caption p{font-size:8px;letter-spacing:.4px}
+  .is-focused .fire-tools{bottom:calc(85px + env(safe-area-inset-bottom,0px))}
+}
+@media(max-height:540px) and (orientation:landscape){
+  .fire-tools{right:max(18px,env(safe-area-inset-right,0px));bottom:calc(91px + env(safe-area-inset-bottom,0px))}
+  .fire-hint{font-size:9px;margin-bottom:7px}
+  .fire-seed{min-height:44px;padding:6px 13px 6px 10px;font-size:10px}
+  .fire-seed-icon{width:23px;height:30px}
+  .fire-regrow{min-height:42px;padding:9px 11px;font-size:9px}
+  .is-riding .fire-tools{bottom:auto;top:calc(65px + env(safe-area-inset-top,0px))}
+  .is-focused .fire-tools{bottom:calc(80px + env(safe-area-inset-bottom,0px));top:auto}
+}
+@media(prefers-reduced-motion:reduce){.fire-tools,.fire-seed,.fire-regrow{transition:none}.fire-seed-icon,.fire-cursor-flame{animation:none!important}}

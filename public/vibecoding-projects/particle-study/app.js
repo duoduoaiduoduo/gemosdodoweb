@@ -1,4 +1,4 @@
-import { createRenderer } from './renderer.js?v=mobile-controls-v18';
+import { createRenderer } from './renderer.js?v=fire-v19';
 import { DEFAULT_PARAMETERS as defaults } from './parameters.js?v=mobile-controls-v18';
 
 const $ = (id) => document.getElementById(id);
@@ -12,6 +12,7 @@ let paused = viewQuery.has('still');
 let focused = false;
 let toastTimer;
 let riding = false, rideRequested = false, dragSteer = 0, leftHeld = false, rightHeld = false;
+let fireMode = false, fireUsed = false, fireCanvasPointer = null, fireToolDrag = null, suppressFireClick = false;
 const pressed = new Set();
 const params = { ...defaults };
 
@@ -36,6 +37,13 @@ function toast(message) {
 
 function setPaused(value) {
   paused = value;
+  if (paused) {
+    stopIgniter();
+    if (fireToolDrag) suppressFireClick = true;
+    fireToolDrag = null;
+    dragging = false;
+    clearInput();
+  }
   renderer?.setPaused(paused);
   $('pauseIcon').hidden = paused;
   $('playIcon').hidden = !paused;
@@ -44,20 +52,70 @@ function setPaused(value) {
 }
 
 function updateRideUI() {
-  const inRide = riding || rideRequested;
+  const inRide = !fireMode && (riding || rideRequested);
   $('studio').classList.toggle('is-riding', inRide);
   $('rideEntry').setAttribute('aria-pressed', String(rideRequested));
   $('rideEntryLabel').textContent = rideRequested ? '回看混沌' : '滑入混沌';
   $('rideEntryArrow').textContent = rideRequested ? '↙' : '↗';
   $('rideReadout').hidden = !inRide;
   $('rideTouch').hidden = !inRide;
-  document.querySelector('.caption h1').textContent = inRide ? '在流动中滑行。' : '草木，成流。';
-  document.querySelector('.caption p').textContent = inRide ? '← → / A D 转向 · 空格跳跃 · P 暂停' : '拖动旋转 · 滚动缩放';
-  canvas.setAttribute('aria-label', inRide ? '在同一个流动花草粒子体上滑板；左右转向，空格跳跃' : '实时 WebGPU 流动草叶与花朵；拖动旋转，滚动缩放');
+  document.querySelector('.caption h1').textContent = inRide ? '在流动中滑行。' : fireMode ? '一簇火，一场新生。' : '草木，成流。';
+  document.querySelector('.caption p').textContent = inRide ? '← → / A D 转向 · 空格跳跃 · P 暂停' : fireMode ? '按住点燃 · 滑动蔓延 · 点击火种恢复旋转' : '拖动旋转 · 滚动缩放';
+  canvas.setAttribute('aria-label', inRide ? '在同一个流动花草粒子体上滑板；左右转向，空格跳跃' : fireMode ? '点火模式；按住或滑动点燃草木，点击火种退出' : '实时 WebGPU 流动草叶与花朵；拖动旋转，滚动缩放');
+}
+
+function updateFireUI() {
+  $('studio').classList.toggle('is-igniting', fireMode);
+  $('fireSeed').setAttribute('aria-pressed', String(fireMode));
+  $('fireSeed').setAttribute('aria-label', fireMode ? '退出点火模式，恢复旋转' : '拖动火种到草木，或点击进入点火模式');
+  $('fireSeedLabel').textContent = fireMode ? '收起火种' : '火种';
+  $('fireHint').textContent = fireMode ? '按住草木，让火焰蔓延' : '拖动火种，点燃草木';
+  $('fireRegrow').disabled = !renderer || !fireUsed;
+}
+
+function stopIgniter() {
+  renderer?.setIgniter?.({ x: 0, y: 0, active: false });
+  fireCanvasPointer = null;
+  $('fireCursor').hidden = true;
+}
+
+function setFireMode(value) {
+  if (value && (!renderer || !$('settings').hidden)) return;
+  stopIgniter();
+  fireMode = value;
+  if (value) {
+    if (riding || rideRequested) {
+      renderer.exitRide();
+      const state = renderer.getState(); params.yaw = state.yaw; params.pitch = state.pitch;
+    }
+    rideRequested = riding = false;
+    clearInput();
+    setPaused(false);
+  }
+  updateFireUI(); updateRideUI();
+}
+
+function applyFirePoint(event) {
+  if (!renderer || !fireMode || !$('settings').hidden || document.hidden) return stopIgniter();
+  const rect = canvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) / rect.width;
+  const y = (event.clientY - rect.top) / rect.height;
+  const onCanvas = x >= 0 && x <= 1 && y >= 0 && y <= 1 && document.elementFromPoint(event.clientX, event.clientY) === canvas;
+  if (!onCanvas) {
+    renderer.setIgniter?.({ x: 0, y: 0, active: false });
+    $('fireCursor').hidden = true;
+    return;
+  }
+  const studioRect = $('studio').getBoundingClientRect();
+  $('fireCursor').style.left = `${event.clientX - studioRect.left}px`;
+  $('fireCursor').style.top = `${event.clientY - studioRect.top}px`;
+  $('fireCursor').hidden = false;
+  renderer.setIgniter?.({ x, y, active: true });
+  if (!fireUsed) { fireUsed = true; updateFireUI(); }
 }
 
 function updateSteer() {
-  if (!renderer || !(riding || rideRequested)) return;
+  if (!renderer || fireMode || !(riding || rideRequested)) return;
   const left = leftHeld || pressed.has('ArrowLeft') || pressed.has('KeyA');
   const right = rightHeld || pressed.has('ArrowRight') || pressed.has('KeyD');
   renderer.setInput({ steer: Math.max(-1, Math.min(1, (right ? 1 : 0) - (left ? 1 : 0) + dragSteer)) });
@@ -71,6 +129,7 @@ function clearInput() {
 
 function toggleRide() {
   if (!renderer) return;
+  setFireMode(false);
   rideRequested = !rideRequested; clearInput();
   setPaused(false);
   if (rideRequested) { renderer.enterRide(); }
@@ -86,6 +145,8 @@ function settings(value) {
   $('studio').classList.toggle('settings-open', value);
   $('openSettings').setAttribute('aria-expanded', String(value));
   if (value) {
+    setFireMode(false);
+    fireToolDrag = null;
     clearInput();
     $('settings').scrollTop = 0;
     $('closeSettings').focus({ preventScroll: true });
@@ -101,6 +162,7 @@ function focus(value) {
 }
 
 function reset() {
+  setFireMode(false); fireUsed = false; renderer?.clearFire?.(); updateFireUI();
   rideRequested = riding = false; clearInput(); updateRideUI();
   Object.assign(params, defaults);
   renderer?.reset();
@@ -129,9 +191,11 @@ function selectQuality(quality) {
 async function start() {
   $('error').hidden = true;
   $('loading').hidden = false;
+  stopIgniter(); fireToolDrag = null; fireMode = fireUsed = false;
   renderer?.destroy();
   renderer = undefined; rideRequested = riding = false; updateRideUI();
   $('rideEntry').disabled = true;
+  $('fireSeed').disabled = true; updateFireUI();
   try {
     renderer = await createRenderer(canvas, {
       initialTime: Number(viewQuery.get('at') || 0),
@@ -145,6 +209,7 @@ async function start() {
         riding = Boolean(stats.riding || stats.rideBlend > 0.001);
         $('rideDistance').textContent = `${Math.floor(stats.distance || 0).toLocaleString()} m`;
         $('rideAirborne').hidden = !stats.airborne;
+        if (stats.burnedFraction > 0 && !fireUsed) { fireUsed = true; updateFireUI(); }
         updateRideUI();
       },
       onError: showError,
@@ -155,10 +220,13 @@ async function start() {
     $('engineLabel').textContent = 'WEBGPU · LIVE';
     $('liveDot').classList.add('active');
     $('rideEntry').disabled = false;
+    $('fireSeed').disabled = false; updateFireUI();
   } catch (error) { showError(error); }
 }
 
 function showError(error) {
+  stopIgniter();
+  $('fireSeed').disabled = true; $('fireRegrow').disabled = true;
   console.error('WebGPU renderer:', error);
   $('loading').hidden = true;
   $('error').hidden = false;
@@ -180,6 +248,40 @@ $('retry').addEventListener('click', start);
 $('qualityHigh').addEventListener('click', () => selectQuality('high'));
 $('qualityNormal').addEventListener('click', () => selectQuality('normal'));
 $('rideEntry').addEventListener('click', toggleRide);
+$('fireSeed').addEventListener('click', (event) => {
+  if (suppressFireClick && event.detail !== 0) return;
+  setFireMode(!fireMode);
+  canvas.focus({ preventScroll: true });
+});
+$('fireSeed').addEventListener('pointerdown', (event) => {
+  if (!renderer || event.button !== 0) return;
+  suppressFireClick = false;
+  fireToolDrag = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
+  $('fireSeed').setPointerCapture(event.pointerId);
+});
+$('fireSeed').addEventListener('pointermove', (event) => {
+  if (!fireToolDrag || fireToolDrag.id !== event.pointerId) return;
+  if (!fireToolDrag.moved && Math.hypot(event.clientX - fireToolDrag.x, event.clientY - fireToolDrag.y) > 6) {
+    fireToolDrag.moved = true;
+    setFireMode(true);
+  }
+  if (fireToolDrag.moved) applyFirePoint(event);
+});
+function releaseFireTool(event) {
+  if (!fireToolDrag || fireToolDrag.id !== event.pointerId) return;
+  if (fireToolDrag.moved || event.type !== 'pointerup') {
+    suppressFireClick = true;
+  }
+  fireToolDrag = null;
+  stopIgniter();
+}
+$('fireSeed').addEventListener('pointerup', releaseFireTool);
+$('fireSeed').addEventListener('pointercancel', releaseFireTool);
+$('fireSeed').addEventListener('lostpointercapture', releaseFireTool);
+$('fireRegrow').addEventListener('click', () => {
+  stopIgniter(); renderer?.clearFire?.(); fireUsed = false; updateFireUI();
+  toast('草木重新生长'); canvas.focus({ preventScroll: true });
+});
 $('rideJump').addEventListener('pointerdown', event => { event.preventDefault(); if (!paused) renderer?.jump(); });
 for (const [id, side] of [['steerLeft', 'left'], ['steerRight', 'right']]) {
   const button = $(id);
@@ -225,6 +327,14 @@ let pointerX = 0;
 let pointerY = 0;
 let dragOrigin = 0;
 canvas.addEventListener('pointerdown', (event) => {
+  if (event.button !== 0) return;
+  if (fireMode) {
+    if (!renderer || !$('settings').hidden || fireCanvasPointer !== null) return;
+    canvas.focus({ preventScroll: true });
+    fireCanvasPointer = event.pointerId;
+    canvas.setPointerCapture(event.pointerId);
+    setPaused(false); applyFirePoint(event); return;
+  }
   dragging = true;
   pointerX = event.clientX;
   dragOrigin = event.clientX;
@@ -232,6 +342,10 @@ canvas.addEventListener('pointerdown', (event) => {
   canvas.setPointerCapture(event.pointerId);
 });
 canvas.addEventListener('pointermove', (event) => {
+  if (fireMode) {
+    if (event.pointerId === fireCanvasPointer) applyFirePoint(event);
+    return;
+  }
   if (!dragging) return;
   if (riding || rideRequested) {
     dragSteer = Math.max(-1, Math.min(1, (event.clientX - dragOrigin) / 85)); updateSteer(); return;
@@ -242,7 +356,10 @@ canvas.addEventListener('pointermove', (event) => {
   pointerY = event.clientY;
   renderer?.setParameters({ yaw: params.yaw, pitch: params.pitch });
 });
-function stopDrag() { dragging = false; dragSteer = 0; updateSteer(); }
+function stopDrag(event) {
+  if (!event || event.pointerId === fireCanvasPointer) stopIgniter();
+  dragging = false; dragSteer = 0; updateSteer();
+}
 canvas.addEventListener('pointerup', stopDrag);
 canvas.addEventListener('pointercancel', stopDrag);
 canvas.addEventListener('lostpointercapture', stopDrag);
@@ -252,9 +369,9 @@ canvas.addEventListener('wheel', (event) => {
   params.zoom = Math.max(0.65, Math.min(1.6, params.zoom * Math.exp(-event.deltaY * 0.001)));
   renderer?.setParameters({ zoom: params.zoom });
 }, { passive: false });
-canvas.addEventListener('dblclick', () => focus(!focused));
+canvas.addEventListener('dblclick', () => { if (!fireMode) focus(!focused); });
 document.addEventListener('keydown', (event) => {
-  if (event.code === 'Escape') { focus(false); settings(false); return; }
+  if (event.code === 'Escape') { setFireMode(false); focus(false); settings(false); return; }
   if (event.target instanceof HTMLInputElement) return;
   if (event.code === 'KeyF' && !event.repeat) { focus(!focused); return; }
   if (event.target instanceof HTMLButtonElement || event.target instanceof HTMLAnchorElement) return;
@@ -266,10 +383,11 @@ document.addEventListener('keydown', (event) => {
   if (event.code === 'KeyR') reset();
 });
 document.addEventListener('keyup', event => { if (pressed.delete(event.code)) updateSteer(); });
-window.addEventListener('blur', clearInput);
+window.addEventListener('blur', () => { clearInput(); stopDrag(); fireToolDrag = null; });
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) clearInput();
+  if (document.hidden) { clearInput(); stopDrag(); fireToolDrag = null; }
   renderer?.setPaused(document.hidden || paused);
 });
 syncControls();
+updateFireUI();
 start();
