@@ -1,5 +1,5 @@
-import { sharedWGSL } from './shaders.js?v=fire-v26a';
-import { fractureWGSL } from './leaf-fracture.js?v=fire-v26a';
+import { sharedWGSL } from './shaders.js?v=fire-v27a';
+import { fractureWGSL } from './leaf-fracture.js?v=fire-v27a';
 
 // A small persistent pool of incandescent fragments, rather than a looping
 // particle texture. A fragment leaves an actual leaf, then keeps its own
@@ -167,7 +167,7 @@ fn detach(@builtin(global_invocation_id) invocation: vec3u) {
   var ember: Ember;
   ember.positionAge=vec4f(position,0.0);
   ember.velocityLife=vec4f(velocity,mix(3.2,5.1,random(seed+10u))+flake*0.45);
-  ember.thermal=vec4f(mix(0.50,0.84,pow(random(seed+11u),1.6))+flake*0.12,
+  ember.thermal=vec4f(mix(0.64,1.05,pow(random(seed+11u),1.6))+flake*0.14,
     mix(0.98,1.22,random(seed+12u)),flake,random(seed+13u));
   ember.orientation=vec4f(0.0,0.0,0.0,mix(0.028,0.060,random(seed+15u)));
   embers[index]=ember;
@@ -258,7 +258,7 @@ fn sparkFlicker(age: f32,seed: f32) -> f32 {
   let fast=noise(p*3.13+vec3f(age*29.3,0.0,-age*7.2));
   let breath=smoothstep(-0.55,0.48,slow*0.50+uneven*0.72);
   let flare=pow(smoothstep(0.06,0.48,uneven*0.70+fast*0.45),2.0);
-  return 0.13+breath*0.85+flare*0.88;
+  return 0.24+breath*0.88+flare*0.88;
 }
 @vertex fn emberVertex(@builtin(vertex_index) vertex: u32,@builtin(instance_index) index: u32) -> EmberVertex {
   let corners=array<vec2f,6>(vec2f(-1.0,-1.0),vec2f(1.0,-1.0),vec2f(-1.0,1.0),vec2f(-1.0,1.0),vec2f(1.0,-1.0),vec2f(1.0,1.0));
@@ -304,7 +304,7 @@ fn sparkFlicker(age: f32,seed: f32) -> f32 {
   let screenMotion=(head.xy/head.w-tail.xy/max(tail.w,0.015))*u.viewport.xy*0.5;
   let motionLength=length(screenMotion);
   // Four connected sections follow the recent accelerated trajectory. The
-  // footprint is only 1–2 CSS pixels across, with a 7 px maximum short tail.
+  // slightly stronger sliver keeps the same 7 px maximum short tail.
   let shutter=baseShutter*min(1.0,7.0*u.camera.z/max(0.0001,motionLength));
   let segment=vertex/6u;
   let t=(f32(segment)+select(0.0,1.0,corner.y>0.0))*0.25;
@@ -319,7 +319,9 @@ fn sparkFlicker(age: f32,seed: f32) -> f32 {
   let turn=0.72+0.28*smoothstep(-0.65,0.65,noise(vec3f(ember.thermal.w*31.0,ember.positionAge.w*8.7,2.4)));
   let halfWidth=ember.thermal.x*clamp(3.58/head.w,0.35,4.0)*u.camera.z*turn;
   let taper=mix(0.055,1.0,pow(t,0.72))*mix(1.0,0.40,smoothstep(0.85,1.0,t));
-  let tip=along*halfWidth*0.9*smoothstep(0.80,1.0,t);
+  // Keep a tiny elongated chip visible when its screen velocity approaches
+  // zero; the genuine trailing path still contracts with motion.
+  let tip=along*max(halfWidth*0.95,0.85*u.camera.z)*smoothstep(0.80,1.0,t);
   let offset=across*corner.x*halfWidth*taper+tip;
   result.position=center+vec4f(offset*vec2f(2.0,2.0)/u.viewport.xy*center.w,0.0,0.0);
   result.local=vec2f(corner.x,t);
@@ -381,8 +383,8 @@ fn sparkFlicker(age: f32,seed: f32) -> f32 {
   let bodyColor=mix(vec3f(4.8,0.28,0.003),vec3f(1.10,0.045,0.001),whiteBackdrop);
   let trailColor=mix(vec3f(4.0,0.12,0.0015),vec3f(0.75,0.020,0.0006),whiteBackdrop);
   let intensity=fade*heat;
-  let emission=(color*core*head*2.8+bodyColor*max(0.0,body-core)*head)*flicker*intensity
-    +trailColor*thread*tail*previousFlicker*intensity*0.64;
+  let emission=(color*core*head*3.5+bodyColor*max(0.0,body-core)*head)*flicker*intensity
+    +trailColor*thread*tail*previousFlicker*intensity*0.95;
   let carbon=mix(vec3f(0.13,0.009,0.001),vec3f(0.035,0.002,0.0004),whiteBackdrop)
     *max(0.0,body-core)*head*fade;
   let opacity=clamp(body*head*0.97+thread*tail*0.68,0.0,1.0)*fade;

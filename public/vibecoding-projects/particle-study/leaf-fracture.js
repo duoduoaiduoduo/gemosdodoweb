@@ -1,5 +1,5 @@
-import { sharedWGSL } from './shaders.js?v=fire-v26a';
-import { leafAshWGSL } from './leaf-ash.js?v=fire-v26a';
+import { sharedWGSL } from './shaders.js?v=fire-v27a';
+import { leafAshWGSL } from './leaf-ash.js?v=fire-v27a';
 
 const CHUNKS_PER_BLADE = 3;
 const CHUNKS_PER_ROOT = 15;

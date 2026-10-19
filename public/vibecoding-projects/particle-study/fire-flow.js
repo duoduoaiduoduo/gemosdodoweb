@@ -1,4 +1,4 @@
-import { volumeCommon, SOURCE_STRIDE } from './fire-volume-shared.js?v=fire-v26a';
+import { volumeCommon, SOURCE_STRIDE } from './fire-volume-shared.js?v=fire-v27a';
 
 export const injectWGSL = volumeCommon + /* wgsl */ `
 struct SourceCell { heat: atomic<u32>, soot: atomic<u32>, reaction: atomic<u32>, coverage: atomic<u32> };
