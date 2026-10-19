@@ -17,6 +17,7 @@ import {graduationBibliographyPublication} from './server/graduation-bibliograph
 import {graduationPersonalizedTitlePublication,thesisPersonalizedTitlePublication} from './server/research-personalized-title-publications.js';
 import {graduationStoryboardPublication} from './server/graduation-storyboard-publication.js';
 import {graduationSchedulePublication} from './server/graduation-schedule-publication.js';
+import {graduationReferenceLayoutPublication} from './server/graduation-reference-layout-publication.js';
 import {createClueBoxes} from './server/clue-boxes.js';
 import {createTransfer} from './server/transfer.js';
 import {createGithubProfileCounter} from './server/github-profile-counter.js';
@@ -60,7 +61,7 @@ app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1) || 1);
 app.use('/api/github-visitors.svg', createGithubProfileCounter(path.join(__dirname, 'github-profile-visits.json')));
 app.use('/api/transfer', createTransfer({root: path.join(__dirname, '.transfer-storage'), secret: RESOLVED_ADMIN_SECRET}).router);
 app.use('/api/graduation-entry', createGraduationEntry(graduationEntryConfig));
-app.use('/api/graduation-review', createGraduationReview(path.join(__dirname, '.graduation-review', 'annotations.json'), {publications:[graduationPublication,graduationBackgroundPublication,graduationBackgroundRefinementPublication,graduationBackgroundSourcePublication,graduationBackgroundSourceCitationPublication,graduationTitleResetPublication,graduationConceptsPublication,graduationPracticePublication,graduationBibliographyPublication,graduationPersonalizedTitlePublication,graduationStoryboardPublication,graduationSchedulePublication]}));
+app.use('/api/graduation-review', createGraduationReview(path.join(__dirname, '.graduation-review', 'annotations.json'), {publications:[graduationPublication,graduationBackgroundPublication,graduationBackgroundRefinementPublication,graduationBackgroundSourcePublication,graduationBackgroundSourceCitationPublication,graduationTitleResetPublication,graduationConceptsPublication,graduationPracticePublication,graduationBibliographyPublication,graduationPersonalizedTitlePublication,graduationStoryboardPublication,graduationSchedulePublication,graduationReferenceLayoutPublication]}));
 app.use('/api/thesis-review', createGraduationReview(path.join(__dirname, '.graduation-review', 'thesis-annotations.json'), {initialDocument:thesisInitialDocument,publications:[thesisPublication,thesisLiteraturePublication,thesisTitlePublication,thesisTitleResetPublication,thesisPersonalizedTitlePublication],versionLabelPrefix:'论文讨论稿',bodyLimit:'1mb',maxSectionCharacters:60000,maxSectionParagraphs:300}));
 app.use('/api/clue-boxes', createClueBoxes({root:path.join(__dirname, '.clue-boxes-store')}));
 app.use(express.json({limit: `${Math.max(50, maxRequestMb)}mb`}));

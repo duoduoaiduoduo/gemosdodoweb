@@ -11,11 +11,12 @@ const isHeading=text=>Array.from(text).length<=80&&!/[\n。！？!?；;]/u.test(
 
 // Find a real page break, rather than turning a fixed character count into a
 // new paragraph. Code-point slices preserve emoji and all original text.
-function fragmentEnd(chars,start,available){
+function fragmentEnd(chars,start,available,tailHeight=0){
   let low=1,high=chars.length-start,best=0;
   while(low<=high){
     const length=Math.floor((low+high)/2);
-    if(paragraphHeight(chars.slice(start,start+length).join(''))<=available){best=length;low=length+1;}
+    const extra=start+length===chars.length?tailHeight:0;
+    if(paragraphHeight(chars.slice(start,start+length).join(''))+extra<=available){best=length;low=length+1;}
     else high=length-1;
   }
   return start+best;
@@ -23,22 +24,42 @@ function fragmentEnd(chars,start,available){
 export function paginateSections(sections){
   const pages=[];
   for(const section of sections){
-    const rich=Boolean(section.images?.length||section.tables?.length||section.sourceList||(section.links?.length||0)>2);
+    // This is opt-in: historical stored pages and the legacy pagination path
+    // keep their geometry. Source paragraphs remain the editable source text.
+    const inlineReferences=section.inlineReferenceLinks===true;
+    const numberedLinks=new Map();
+    if(inlineReferences)for(const link of section.links||[]){
+      const number=link[0]?.match(/^\s*\[(\d+)\]/)?.[1];
+      if(number){if(!numberedLinks.has(number))numberedLinks.set(number,[]);numberedLinks.get(number).push(link);}
+    }
+    const linksFor=text=>inlineReferences?numberedLinks.get(text.match(/^\s*\[(\d+)\]/)?.[1])||[]:[];
+    // The smaller supplementary labels are block links, each with a 5px gap.
+    // Using the prose line width is deliberately conservative at their 12px size.
+    const supplementHeight=links=>links.slice(1).reduce((height,[label])=>height+lines(label)*20+5,0);
+    const rich=Boolean(inlineReferences||section.images?.length||section.tables?.length||section.sourceList||(section.links?.length||0)>2);
     let page={title:section.title,paragraphs:[],pending:'',links:[]};
     let available=pages.length===0?500:690;
     const flush=()=>{pages.push(page);page={title:`${section.title}（续）`,paragraphs:[],pending:'',links:[]};available=PAGE_HEIGHT;};
+    const appendParagraph=(text,links)=>{
+      const index=page.paragraphs.length;
+      page.paragraphs.push(text);
+      if(links.length)(page.paragraphLinks||=[]).push({index,links:links.map(link=>[...link])});
+    };
     const keepHeadings=section.keepHeadingsWithNext!==false;
     let openingParagraph=-1;
     for(let paragraphIndex=0;paragraphIndex<section.paragraphs.length;paragraphIndex++){
       const paragraph=section.paragraphs[paragraphIndex];
       if(!paragraph.length)continue;
+      const paragraphLinks=linksFor(paragraph);
+      const extraHeight=supplementHeight(paragraphLinks);
+      if(extraHeight+paragraphHeight(Array.from(paragraph).at(-1))>PAGE_HEIGHT)throw new Error('Supplementary reference links exceed one page.');
       // New pages keep consecutive headings with the following paragraph. If
       // that group exceeds a whole page, reserve at least two opening lines.
       if(keepHeadings&&isHeading(paragraph)&&(paragraphIndex===0||!isHeading(section.paragraphs[paragraphIndex-1]))){
         let headingHeight=0,bodyHeight=0,bodyIndex=-1;
         for(let next=paragraphIndex;next<section.paragraphs.length;next++){
           const text=section.paragraphs[next];
-          if(!isHeading(text)){bodyHeight=paragraphHeight(text);bodyIndex=next;break;}
+          if(!isHeading(text)){bodyHeight=paragraphHeight(text)+supplementHeight(linksFor(text));bodyIndex=next;break;}
           headingHeight+=paragraphHeight(text);
         }
         const mustSplit=headingHeight+bodyHeight>PAGE_HEIGHT;
@@ -47,23 +68,25 @@ export function paginateSections(sections){
         if(Math.min(groupHeight,PAGE_HEIGHT)>available&&page.paragraphs.length)flush();
         if(groupHeight>available&&!page.paragraphs.length)openingParagraph=bodyIndex;
       }
-      const height=paragraphHeight(paragraph);
-      if(height<=available){page.paragraphs.push(paragraph);available-=height;continue;}
+      const height=paragraphHeight(paragraph)+extraHeight;
+      if(height<=available){appendParagraph(paragraph,paragraphLinks);available-=height;continue;}
       const keepOpening=paragraphIndex===openingParagraph;
       // A paragraph that fits a fresh page moves there intact. Only a genuine
       // page boundary may split prose, including the shorter cover-page area.
       if(page.paragraphs.length&&!keepOpening){
         flush();
-        if(height<=available){page.paragraphs.push(paragraph);available-=height;continue;}
+        if(height<=available){appendParagraph(paragraph,paragraphLinks);available-=height;continue;}
       }
       const chars=Array.from(paragraph);
       let start=0;
       while(start<chars.length){
-        const end=fragmentEnd(chars,start,available);
+        const end=fragmentEnd(chars,start,available,extraHeight);
         if(end===start){flush();continue;}
         const text=chars.slice(start,end).join('');
         if(start>0)(page.continuationParagraphs||=[]).push(page.paragraphs.length);
-        page.paragraphs.push(text);available-=paragraphHeight(text);start=end;
+        const final=end===chars.length;
+        appendParagraph(text,final?paragraphLinks:paragraphLinks.slice(0,1));
+        available-=paragraphHeight(text)+(final?extraHeight:0);start=end;
         if(start<chars.length)flush();
       }
     }
@@ -89,7 +112,7 @@ export function paginateSections(sections){
         pages.push({...base,tables:[{...table,rows}]});
       }
       for(const image of section.images||[])pages.push({...base,images:[image]});
-      for(let i=0;i<(section.links?.length||0);i+=8)pages.push({...base,sourceList:true,links:section.links.slice(i,i+8)});
+      if(!inlineReferences)for(let i=0;i<(section.links?.length||0);i+=8)pages.push({...base,sourceList:true,links:section.links.slice(i,i+8)});
     }
   }
   return pages;

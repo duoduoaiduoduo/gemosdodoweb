@@ -179,3 +179,103 @@ test('headings followed by a paragraph longer than a page retain at least two li
   assert.equal(textOf(pages), paragraphs.join(''));
   assertPageBudgets(pages);
 });
+
+test('opt-in bibliography displays editable reference text once with all primary and supplementary URLs', () => {
+  const paragraphs=['[1] 第一条参考文献。','[2] 第二条参考文献。','[3] 第三条参考文献。'];
+  const links=[
+    [paragraphs[0],'https://example.org/one'],
+    [paragraphs[1],'https://example.org/two'],
+    ['[2] 原始作品','https://example.org/two/artwork'],
+    [paragraphs[2],'https://example.org/three'],
+  ];
+  const input=section(paragraphs,{title:'七、参考文献',sourceList:true,inlineReferenceLinks:true,links});
+  const before=structuredClone(input);
+  const pages=paginateSections([input]);
+  assert.equal(pages.length,1);
+  assert.deepEqual(pages[0].paragraphs,paragraphs);
+  assert.deepEqual(pages[0].paragraphLinks,[{index:0,links:links.slice(0,1)},{index:1,links:links.slice(1,3)},{index:2,links:links.slice(3)}]);
+  assert.deepEqual(pages.flatMap(page=>(page.paragraphLinks||[]).flatMap(entry=>entry.links)),links);
+  assert.ok(pages.every(page=>!page.sourceList&&page.links.length===0));
+  assert.deepEqual(input,before,'source paragraphs, link labels and URL order remain editable and unchanged');
+});
+
+test('legacy bibliography output retains separate text and source pages without the opt-in flag', () => {
+  const paragraphs=['[1] 既有文献。'];
+  const links=[[paragraphs[0],'https://example.org/original']];
+  const input=section(paragraphs,{title:'参考文献',sourceList:true,links});
+  const expected=[
+    {title:'参考文献',paragraphs,pending:'',links:[]},
+    {title:'参考文献（图表与来源）',paragraphs:[],pending:'',links,sourceList:true},
+  ];
+  assert.deepEqual(paginateSections([input]),expected);
+  assert.deepEqual(paginateSections([{...input,inlineReferenceLinks:false}]),expected);
+});
+
+test('supplementary link height moves a complete reference onto the next page', () => {
+  const paragraphs=['[1] '+'甲'.repeat(220),'[2] '+'乙'.repeat(220)];
+  const links=[
+    [paragraphs[0],'https://example.org/one'],
+    [paragraphs[1],'https://example.org/two'],
+    ['[2] 补充来源','https://example.org/two/supplement'],
+  ];
+  const proseHeight=paragraphs.reduce((height,text)=>height+lineCount(text)*32+18,0);
+  assert.equal(proseHeight,484,'both reference texts alone fit the 500-unit opening page');
+  const pages=paginateSections([section(paragraphs,{inlineReferenceLinks:true,links})]);
+  assert.deepEqual(pages.map(page=>page.paragraphs),[[paragraphs[0]],[paragraphs[1]]]);
+  assert.deepEqual(pages[1].paragraphLinks,[{index:0,links:links.slice(1)}]);
+  const withoutSupplement=paginateSections([section(paragraphs,{inlineReferenceLinks:true,links:links.slice(0,2)})]);
+  assert.equal(withoutSupplement.length,1,'the supplementary label is the reason for the page break');
+});
+
+test('wrapped supplementary source labels reserve their full block height', () => {
+  const paragraphs=['[1] '+'甲'.repeat(140),'[2] '+'乙'.repeat(160)];
+  const supplement='[2] '+'来源'.repeat(105);
+  const links=[
+    [paragraphs[0],'https://example.org/one'],
+    [paragraphs[1],'https://example.org/two'],
+    [supplement,'https://example.org/two/supplement'],
+  ];
+  const proseHeight=paragraphs.reduce((height,text)=>height+lineCount(text)*32+18,0);
+  assert.ok(proseHeight+25<=500,'assuming only one line would put both entries on the opening page');
+  assert.ok(proseHeight+lineCount(supplement)*20+5>500);
+  const pages=paginateSections([section(paragraphs,{inlineReferenceLinks:true,links})]);
+  assert.deepEqual(pages.map(page=>page.paragraphs),[[paragraphs[0]],[paragraphs[1]]]);
+});
+
+test('cross-page reference fragments retain the original number and show supplementary sources only at the end', () => {
+  // The first opening-page fragment fills exactly fifteen lines; its next
+  // fragment deliberately begins with another reference number in quoted text.
+  const longReference='[1] '+'甲'.repeat(508)+'[2] '+'乙'.repeat(900);
+  const secondReference='[2] 这是第二条独立文献。';
+  const links=[
+    [longReference,'https://example.org/one'],
+    ['[1] 补充来源','https://example.org/one/supplement'],
+    [secondReference,'https://example.org/two'],
+  ];
+  const pages=paginateSections([section([longReference,secondReference],{inlineReferenceLinks:true,links})]);
+  assert.ok(pages.length>=3);
+  assert.ok(pages[1].paragraphs[0].startsWith('[2]'),'the continuation must not be misbound to source number 2');
+  const fragments=[];
+  for(const page of pages)for(const [index,text] of page.paragraphs.entries()){
+    const attached=page.paragraphLinks.find(entry=>entry.index===index).links;
+    if(text===secondReference){assert.deepEqual(attached,links.slice(2));continue;}
+    fragments.push({text,attached});
+    assert.equal(attached[0][1],links[0][1]);
+  }
+  assert.equal(fragments.map(fragment=>fragment.text).join(''),longReference);
+  assert.ok(fragments.slice(0,-1).every(fragment=>fragment.attached.length===1));
+  assert.deepEqual(fragments.at(-1).attached,links.slice(0,2));
+  assert.equal(pages.flatMap(page=>page.paragraphLinks.flatMap(entry=>entry.links)).filter(([,url])=>url===links[1][1]).length,1);
+  for(const [index,page] of pages.entries()){
+    const height=page.paragraphs.reduce((sum,text)=>sum+lineCount(text)*32+18,0)
+      +page.paragraphLinks.reduce((sum,entry)=>sum+entry.links.slice(1).reduce((extra,[label])=>extra+lineCount(label)*20+5,0),0);
+    assert.ok(height<=(index===0?500:690),`page ${index+1} includes its supplementary source budget`);
+  }
+});
+
+test('inline reference matching requires a number at the start of the source paragraph', () => {
+  const paragraph='普通正文只是提到文献[1]，不能变成参考文献条目。';
+  const pages=paginateSections([section([paragraph],{inlineReferenceLinks:true,links:[['[1] 文献','https://example.org/one']]})]);
+  assert.deepEqual(pages[0].paragraphs,[paragraph]);
+  assert.equal(pages[0].paragraphLinks,undefined);
+});
