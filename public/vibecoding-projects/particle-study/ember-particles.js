@@ -1,5 +1,5 @@
-import { sharedWGSL } from './shaders.js?v=fire-v27a';
-import { fractureWGSL } from './leaf-fracture.js?v=fire-v27a';
+import { sharedWGSL } from './shaders.js?v=fire-v28c';
+import { fractureWGSL } from './leaf-fracture.js?v=fire-v28c';
 
 // A small persistent pool of incandescent fragments, rather than a looping
 // particle texture. A fragment leaves an actual leaf, then keeps its own

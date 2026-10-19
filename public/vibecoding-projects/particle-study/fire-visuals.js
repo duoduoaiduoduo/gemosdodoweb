@@ -1,5 +1,5 @@
-import { volumeCommon, VOLUME_SIZE as SIZE, SOURCE_STRIDE } from './fire-volume-shared.js?v=fire-v27a';
-import { injectWGSL, advectWGSL, PRESSURE_SIZE, divergenceWGSL, pressureWGSL, gradientWGSL, projectWGSL } from './fire-flow.js?v=fire-v27a';
+import { volumeCommon, VOLUME_SIZE as SIZE, SOURCE_STRIDE } from './fire-volume-shared.js?v=fire-v28c';
+import { injectWGSL, advectWGSL, PRESSURE_SIZE, divergenceWGSL, pressureWGSL, gradientWGSL, projectWGSL } from './fire-flow.js?v=fire-v28c';
 
 // Temperature, soot and reacting gas occupy a persistent world-space volume.
 // No camera-facing polygons are used for either fire or smoke.
@@ -46,6 +46,37 @@ fn reactionBand(previous: f32,current: f32,width: f32) -> f32 {
   // instead of disappearing or becoming an isolated overbright pixel.
   return clamp((reactionIntegral(current,width)-reactionIntegral(previous,width))/delta,0.0,1.0);
 }
+fn smokeCoefficient(age: f32) -> f32 {
+  // A fresh fold is dense; its older, entrained cap becomes translucent.
+  // Old soot must not become progressively more opaque as it leaves the fire.
+  return mix(8.8,10.5,smoothstep(0.12,0.75,age))
+    *mix(1.0,0.44,smoothstep(0.85,4.8,age));
+}
+fn rollingSoot(density: vec4f,world: vec3f,velocity: vec3f,time: f32) -> f32 {
+  if(density.y<=0.0015){return 0.0;}
+  // Broad folds carry their fine strands. A subtractive erosion at the cool
+  // thin edge opens real gaps instead of painting noise over a solid grey mass.
+  let roll=noiseGradient((world-velocity*0.20)*3.8+vec3f(time*0.06,-time*0.21,4.7));
+  let material=world+roll.yzw*0.065-velocity*0.13;
+  let fold=noise(material*5.9+vec3f(3.2,-time*0.29,7.1));
+  let strand=noise(material*12.4+roll.yzw*0.55+vec3f(4.8,1.7,-time*0.34));
+  let structure=max(0.0,0.88+fold*1.38+strand*0.36);
+  let thin=1.0-smoothstep(0.025,0.16,density.y);
+  let old=smoothstep(0.8,4.6,density.w);
+  let gap=1.0-smoothstep(-0.35,0.25,fold+strand*0.25);
+  let erosion=(0.0015+old*0.017)*(0.45+thin*0.55)*gap;
+  return max(0.0,(density.y-0.0015)*structure-erosion);
+}
+fn flameInterface(density: vec4f,world: vec3f,velocity: vec3f,time: f32) -> vec3f {
+  let age=min(density.w,2.0);
+  let roll=noiseGradient(world*6.4-velocity*0.7+vec3f(time*0.21,-time*0.77,time*0.14));
+  let foldedWorld=world+roll.yzw*0.045-velocity*(0.075+age*0.10);
+  let wrinkle=noise(foldedWorld*vec3f(11.0,6.0,11.0)+vec3f(time*0.35,-time*1.85,-time*0.23));
+  let lace=noise(foldedWorld*vec3f(18.0,10.8,18.0)+roll.yzw*0.85+vec3f(6.2,-time*2.3,1.7));
+  let fuelInterface=0.085+(wrinkle*0.5+0.5)*0.060+lace*0.010+max(0.0,age-0.10)*0.16;
+  let branchChannel=0.15+1.05*smoothstep(-0.40,0.38,wrinkle+lace*0.16);
+  return vec3f(density.z*branchChannel-fuelInterface,wrinkle,lace);
+}
 @fragment fn volumeFragment(input: VolumeVertex) -> @location(0) vec4f {
   let rayOrigin=cameraWorld();
   let rayDirection=backgroundWorldRay(input.uv);
@@ -78,9 +109,10 @@ fn reactionBand(previous: f32,current: f32,width: f32) -> f32 {
   var coverageOpacity=0.0;
   var radiance=vec3f(0.0);
   var previousMixture=-0.15;
+  var skippedMixture=false;
   let sun=referenceSunDirection();
   let sunUV=vec3f(dot(sun,volumeRight(u)),dot(sun,volumeUp(u)),dot(sun,volumeForward(u)))/extent;
-  let cosine=dot(rayDirection,-sun);
+  let cosine=dot(rayDirection,sun);
   let phase=0.72+0.19*(1.0-0.38*0.38)/pow(1.0+0.38*0.38-0.76*cosine,1.5);
   let time=gasSettings.frame;
   for(var sample=0u;sample<steps;sample++){
@@ -94,51 +126,70 @@ fn reactionBand(previous: f32,current: f32,width: f32) -> f32 {
       // the whole hot gas pocket must not glow like coloured fog. The scalar
       // interface is folded by the actual advected flow, then wrinkles split
       // and rejoin it into unequal, leaning tongues and torn trailing tips.
-      let roll=noiseGradient(world*6.4-velocity*0.7+vec3f(time*0.21,-time*0.77,time*0.14));
-      let foldedWorld=world+roll.yzw*0.045-velocity*(0.075+age*0.10);
-      let wrinkle=noise(foldedWorld*vec3f(11.0,6.0,11.0)+vec3f(time*0.35,-time*1.85,-time*0.23));
-      let lace=noise(foldedWorld*vec3f(18.0,10.8,18.0)+roll.yzw*0.85+vec3f(6.2,-time*2.3,1.7));
-      let fuelInterface=0.085+(wrinkle*0.5+0.5)*0.060+lace*0.010+max(0.0,age-0.10)*0.16;
-      let branchChannel=0.15+1.05*smoothstep(-0.40,0.38,wrinkle+lace*0.16);
-      let mixtureDistance=density.z*branchChannel-fuelInterface;
-      let nativeWidth=0.068;
-      let sheet=min(1.0,reactionBand(previousMixture,mixtureDistance,nativeWidth)*1.10);
-      let tears=smoothstep(-0.52,-0.19,lace+wrinkle*0.40-age*0.10);
-      // A narrow reacting shoulder inside the interface gives each tongue a
-      // continuous body, rather than a one-sample mesh of hollow bright wires.
-      let innerShoulder=smoothstep(-0.005,0.050,mixtureDistance)
-        *(1.0-smoothstep(0.14,0.28,mixtureDistance))*0.35;
-      let reaction=max(sheet,innerShoulder)*tears*smoothstep(0.14,0.38,density.x)
-        *smoothstep(0.035,0.11,density.z)*(1.0-smoothstep(0.64,1.10,age));
-      let hotCore=smoothstep(1.10,1.48,density.x)*smoothstep(0.55,0.94,density.z)
-        *(1.0-smoothstep(0.035,0.14,age));
-      previousMixture=mixtureDistance;
-      // The soot field has its own broader rolling lobes. Fine structure is
-      // coherent inside those lobes and never a separate layer of grain.
-      let billow=noise(world*5.7-velocity*0.38+vec3f(3.2,-time*0.42,7.1));
-      let smokeDetail=noise(foldedWorld*12.0+vec3f(4.8,1.7,-time*0.21));
-      let soot=max(0.0,density.y-0.002)*clamp(0.88+billow*0.90+smokeDetail*0.20,0.32,1.48);
-      let smokeCoefficient=mix(8.0,12.5,smoothstep(0.18,0.80,age));
-      let smokeExtinction=soot*smokeCoefficient;
+      var sheet=0.0;
+      var reaction=0.0;
+      var hotCore=0.0;
+      // Leave the accepted reaction interface intact. Cold detached smoke
+      // skips its flame-only wrinkles, paying instead for coherent soot folds.
+      if(density.x>0.14&&density.z>0.035&&age<1.10){
+        if(skippedMixture&&sample>0u){
+          // Restore the preceding sample only at a flame entrance, retaining
+          // the original thin-interface integral without shading every cold voxel.
+          let previousWorld=rayOrigin+rayDirection*(distance-stepLength);
+          let previousUV=uvFromWorld(previousWorld,u);
+          let previousDensity=volumeSample(previousUV);
+          let previousVelocity=textureSampleLevel(flowField,linearSampler,previousUV,0.0).xyz;
+          previousMixture=flameInterface(previousDensity,previousWorld,previousVelocity,time).x;
+        }
+        let reactionInterface=flameInterface(density,world,velocity,time);
+        let mixtureDistance=reactionInterface.x;
+        let wrinkle=reactionInterface.y;
+        let lace=reactionInterface.z;
+        sheet=min(1.0,reactionBand(previousMixture,mixtureDistance,0.068)*1.10);
+        let tears=smoothstep(-0.52,-0.19,lace+wrinkle*0.40-age*0.10);
+        let innerShoulder=smoothstep(-0.005,0.050,mixtureDistance)
+          *(1.0-smoothstep(0.14,0.28,mixtureDistance))*0.35;
+        reaction=max(sheet,innerShoulder)*tears*smoothstep(0.14,0.38,density.x)
+          *smoothstep(0.035,0.11,density.z)*(1.0-smoothstep(0.64,1.10,age));
+        hotCore=smoothstep(1.10,1.48,density.x)*smoothstep(0.55,0.94,density.z)
+          *(1.0-smoothstep(0.035,0.14,age));
+        previousMixture=mixtureDistance;
+        skippedMixture=false;
+      }else{skippedMixture=true;}
+      let soot=rollingSoot(density,world,velocity,time);
+      let smokeExtinction=soot*smokeCoefficient(density.w);
       let flameExtinction=reaction*38.0+hotCore*7.0;
       let extinction=smokeExtinction+flameExtinction;
       let opacity=1.0-exp(-extinction*stepLength);
       if(opacity>0.000025){
         var opticalShadow=0.0;
+        var litNeighbour=soot;
         if(soot>0.005){
           // Increasing world-space intervals resolve the lit billow rim and
           // still reach the neighbouring roll that shadows its darker core.
           var shadowDistance=0.045;
           var shadowStep=0.065;
           for(var shadow=0u;shadow<5u;shadow++){
-            opticalShadow+=volumeSample(uv+sunUV*shadowDistance).y*shadowStep*smokeCoefficient;
+            let neighbour=volumeSample(uv+sunUV*shadowDistance);
+            var shadowSoot=max(0.0,neighbour.y-0.0015);
+            if(shadow==0u){
+              // The nearest lit fold must use the same carved material as
+              // the visible ray. Raw voxel density would smooth its dark
+              // troughs and lit shoulders back into one broad grey cap.
+              shadowSoot=rollingSoot(neighbour,world+sun*shadowDistance,velocity,time);
+              litNeighbour=shadowSoot;
+            }
+            opticalShadow+=shadowSoot*shadowStep*smokeCoefficient(neighbour.w);
             shadowDistance+=shadowStep;shadowStep*=1.55;
           }
         }
-        let sunTransmission=exp(-opticalShadow);
-        let ambient=vec3f(0.073,0.082,0.101)*exp(-soot*1.05);
-        let sunColor=vec3f(0.32,0.30,0.265)*sunTransmission*phase;
-        let smokeLight=ambient+sunColor+vec3f(0.16,0.021,0.001)*reaction*min(1.0,density.x);
+        let sunTransmission=exp(-opticalShadow*1.15);
+        let facing=clamp(0.50+(soot-litNeighbour)/max(0.018,soot*0.75),0.0,1.0);
+        let cavity=mix(0.28,1.0,exp(-opticalShadow*0.85));
+        let ambient=vec3f(0.062,0.074,0.093)*cavity*exp(-soot*0.60);
+        let sunColor=vec3f(0.38,0.36,0.325)*sunTransmission*phase*mix(0.62,1.22,facing);
+        let warmBase=vec3f(0.16,0.032,0.006)*min(1.0,density.x)*exp(-density.w*0.55);
+        let smokeLight=ambient+sunColor+warmBase;
         // The thin mixing layer is hotter than the bulk gas in its voxel.
         // Temperature gates combustion above; interface chemistry gives the
         // readable gold centre, while the outer optical edge stays orange.
@@ -158,6 +209,7 @@ fn reactionBand(previous: f32,current: f32,width: f32) -> f32 {
       }
     }else{
       previousMixture=-0.15;
+      skippedMixture=false;
     }
     distance+=stepLength;
     if(transmission<0.025){break;}

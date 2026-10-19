@@ -1,5 +1,5 @@
-import { createRenderer } from './renderer.js?v=fire-v27a';
-import { DEFAULT_PARAMETERS as defaults } from './parameters.js?v=fire-v27a';
+import { createRenderer } from './renderer.js?v=fire-v28c';
+import { DEFAULT_PARAMETERS as defaults } from './parameters.js?v=fire-v28c';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('scene');

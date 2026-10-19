@@ -1,4 +1,4 @@
-import { volumeCommon, SOURCE_STRIDE } from './fire-volume-shared.js?v=fire-v27a';
+import { volumeCommon, SOURCE_STRIDE } from './fire-volume-shared.js?v=fire-v28c';
 
 export const injectWGSL = volumeCommon + /* wgsl */ `
 struct SourceCell { heat: atomic<u32>, soot: atomic<u32>, reaction: atomic<u32>, coverage: atomic<u32> };
@@ -79,6 +79,23 @@ fn sampleVelocity(position: vec3f) -> vec3f {
   if(!inside(uv)){return vec3f(0.0);}
   return textureSampleLevel(oldVelocity,linearSampler,uv,0.0).xyz;
 }
+// Semi-Lagrangian trilinear filtering softens a detached smoke lobe every
+// frame. A bounded, four-tap anti-diffusion correction retains its shoulders
+// without sharpening heat/reaction or creating new density at an empty rim.
+fn transportedSoot(position: vec3f, carried: f32) -> f32 {
+  let spacing=volumeExtent(previousU)/f32(GRID);
+  let a=sampleGas(position+spacing*vec3f(0.85,0.85,0.85)).y;
+  let b=sampleGas(position+spacing*vec3f(0.85,-0.85,-0.85)).y;
+  let c=sampleGas(position+spacing*vec3f(-0.85,0.85,-0.85)).y;
+  let d=sampleGas(position+spacing*vec3f(-0.85,-0.85,0.85)).y;
+  let low=min(carried,min(min(a,b),min(c,d)));
+  let high=max(carried,max(max(a,b),max(c,d)));
+  let phase=fract(uvFromWorld(position,previousU)*f32(GRID)-vec3f(0.5));
+  // No interpolation loss exists when a departure lands on an exact texel.
+  let filtering=dot(phase*(vec3f(1.0)-phase),vec3f(1.3333333));
+  let correction=(carried-(a+b+c+d)*0.25)*0.26*filtering;
+  return clamp(carried+correction,max(0.0,low),high);
+}
 // Analytic curls of scalar potentials provide coherent, divergence-free
 // rolling motion at three scales, without frame-to-frame random displacement.
 fn turbulentCurl(position: vec3f, time: f32) -> vec3f {
@@ -143,6 +160,12 @@ fn advect(@builtin(global_invocation_id) cell: vec3u) {
   let middleVelocity=sampleVelocity(world-firstVelocity*dt*0.5);
   let departure=world-middleVelocity*dt;
   var gas=sampleGas(departure);
+  if(gas.y>0.003 && gas.w>0.15){
+    // Preserve coherent cool soot pockets; the accepted hot flame field keeps
+    // the original transport and receives no sharpening correction.
+    let detachedSmoke=smoothstep(0.15,0.65,gas.w)*(1.0-smoothstep(0.30,0.85,gas.x));
+    gas.y=mix(gas.y,transportedSoot(departure,gas.y),detachedSmoke);
+  }
   var velocity=sampleVelocity(departure);
   let source=vec3f(sources[cellIndex(cell)].xyz)/4096.0;
   let vertical=normalize(mix(vec3f(0.0,1.0,0.0),u.worldUp.xyz,u.rideOrigin.w));
@@ -158,8 +181,15 @@ fn advect(@builtin(global_invocation_id) cell: vec3u) {
   let consumed=gas.z*(1.0-exp(-dt*reactionCooling));
   gas.z-=consumed;
   gas.x*=exp(-dt*(1.08+gas.y*0.13));
-  // Soot forms at the cooling reaction rim and remains in a detached plume.
-  gas.y=(gas.y+consumed*0.17)*exp(-dt*0.13);
+  // The dense, newly released fold survives while its entrained thin rim
+  // dilutes faster. Older cool wisps continue to disappear after fuel stops;
+  // fresh smouldering soot is not prematurely aged by an existing pocket.
+  let coolingSmoke=1.0-smoothstep(0.24,0.80,gas.x);
+  let detached=1.0-smoothstep(0.015,0.16,source.y+source.z);
+  let thinRim=1.0-smoothstep(0.012,0.11,gas.y);
+  let oldWisp=smoothstep(1.0,5.0,gas.w);
+  let mixingLoss=coolingSmoke*detached*(thinRim*0.34+oldWisp*0.17);
+  gas.y=(gas.y+consumed*0.17)*exp(-dt*(0.13+mixingLoss));
   let activity=smoothstep(0.006,0.14,gas.x+gas.y*0.8);
   let warm=clamp(gas.x,0.0,1.5);
   let buoyancy=vertical*(warm*0.98-gas.y*0.024);
@@ -167,7 +197,13 @@ fn advect(@builtin(global_invocation_id) cell: vec3u) {
   let ambientWind=volumeRight(u)*(0.11+0.07*sin(time*0.71))
     +volumeForward(u)*(0.055+0.045*cos(time*0.47+1.2));
   var curling=vec3f(0.0);
-  if(activity>0.001){curling=turbulentCurl(world,time)+entrainmentRoll(world,time)*0.68;}
+  if(activity>0.001){
+    // Additional entrainment belongs to detached cool smoke. The hot source
+    // and the nearby flame keep their existing force and shape.
+    let rollingSmoke=coolingSmoke*detached*smoothstep(0.20,1.0,gas.w)*smoothstep(0.01,0.10,gas.y);
+    curling=turbulentCurl(world,time)*(1.0+rollingSmoke*0.12)
+      +entrainmentRoll(world,time)*(0.68+rollingSmoke*0.34);
+  }
   velocity+=(buoyancy+curling*activity)*dt;
   // A coherent low-frequency breeze pushes a whole group before its smaller
   // lobes peel sideways. No per-blade vertical impulse is imposed.
