@@ -1,5 +1,6 @@
-import { volumeCommon, VOLUME_SIZE as SIZE, SOURCE_STRIDE } from './fire-volume-shared.js?v=fire-v28c';
-import { injectWGSL, advectWGSL, PRESSURE_SIZE, divergenceWGSL, pressureWGSL, gradientWGSL, projectWGSL } from './fire-flow.js?v=fire-v28c';
+import { volumeCommon, VOLUME_SIZE as SIZE, SOURCE_STRIDE } from './fire-volume-shared.js?v=fire-v29d';
+import { injectWGSL, advectWGSL, PRESSURE_SIZE, divergenceWGSL, pressureWGSL, gradientWGSL, projectWGSL } from './fire-flow.js?v=fire-v29d';
+import { createSmokePlume } from './smoke-plume.js?v=fire-v29d';
 
 // Temperature, soot and reacting gas occupy a persistent world-space volume.
 // No camera-facing polygons are used for either fire or smoke.
@@ -13,6 +14,7 @@ const renderWGSL = volumeCommon + /* wgsl */ `
 @group(0) @binding(2) var sceneDepth: texture_2d<f32>;
 @group(0) @binding(3) var linearSampler: sampler;
 @group(0) @binding(4) var flowField: texture_3d<f32>;
+@group(0) @binding(5) var smokeField: texture_3d<f32>;
 struct VolumeVertex { @builtin(position) position: vec4f, @location(0) uv: vec2f };
 @vertex fn volumeVertex(@builtin(vertex_index) vertex: u32) -> VolumeVertex {
   let corners=array<vec2f,3>(vec2f(-1.0,-1.0),vec2f(3.0,-1.0),vec2f(-1.0,3.0));
@@ -24,6 +26,13 @@ struct VolumeVertex { @builtin(position) position: vec4f, @location(0) uv: vec2f
 fn volumeSample(uv: vec3f) -> vec4f {
   if(!inside(uv)){return vec4f(0.0);}
   return textureSampleLevel(gasField,linearSampler,uv,0.0);
+}
+fn smokeSample(uv: vec3f) -> vec4f {
+  if(!inside(uv)){return vec4f(0.0);}
+  return textureSampleLevel(smokeField,linearSampler,uv,0.0);
+}
+fn smokeAge(state: vec4f) -> f32 {
+  return clamp(state.y/max(0.00001,state.x),0.0,12.0);
 }
 fn blackbody(temperature: f32) -> vec3f {
   let red=vec3f(0.90,0.023,0.001);
@@ -52,20 +61,27 @@ fn smokeCoefficient(age: f32) -> f32 {
   return mix(8.8,10.5,smoothstep(0.12,0.75,age))
     *mix(1.0,0.44,smoothstep(0.85,4.8,age));
 }
-fn rollingSoot(density: vec4f,world: vec3f,velocity: vec3f,time: f32) -> f32 {
-  if(density.y<=0.0015){return 0.0;}
-  // Broad folds carry their fine strands. A subtractive erosion at the cool
-  // thin edge opens real gaps instead of painting noise over a solid grey mass.
-  let roll=noiseGradient((world-velocity*0.20)*3.8+vec3f(time*0.06,-time*0.21,4.7));
-  let material=world+roll.yzw*0.065-velocity*0.13;
-  let fold=noise(material*5.9+vec3f(3.2,-time*0.29,7.1));
-  let strand=noise(material*12.4+roll.yzw*0.55+vec3f(4.8,1.7,-time*0.34));
-  let structure=max(0.0,0.88+fold*1.38+strand*0.36);
-  let thin=1.0-smoothstep(0.025,0.16,density.y);
-  let old=smoothstep(0.8,4.6,density.w);
-  let gap=1.0-smoothstep(-0.35,0.25,fold+strand*0.25);
-  let erosion=(0.0015+old*0.017)*(0.45+thin*0.55)*gap;
-  return max(0.0,(density.y-0.0015)*structure-erosion);
+fn rollingSoot(state: vec4f,world: vec3f,velocity: vec3f) -> f32 {
+  if(state.x<=0.0015){return 0.0;}
+  // Birth position and recovered birth time are material coordinates. Their
+  // contours bend with the independent smoke transport, so the thin sheets
+  // stretch and roll with the plume instead of sliding through world noise.
+  let birth=state.zw/max(0.00001,state.x);
+  let age=smokeAge(state);
+  let birthTime=gasSettings.frame-age;
+  let material=vec3f(birth.x*5.4,birthTime*1.35,birth.y*5.4);
+  let warp=noiseGradient(material*0.73+vec3f(1.7,4.8,6.2)).yzw;
+  let fold=noise(material+warp*0.85);
+  let lace=noise(material*2.13+warp*1.1+vec3f(3.1,7.3,2.9));
+  let folded=fold+lace*0.28;
+  let opened=smoothstep(0.20,0.85,age);
+  let sheet=mix(0.10,1.32,smoothstep(-0.28,0.24,folded));
+  let strand=noise((world-velocity*0.07)*vec3f(14.0,9.0,14.0)+warp*1.2);
+  let thin=1.0-smoothstep(0.022,0.13,state.x);
+  let old=smoothstep(0.7,4.0,age);
+  let gap=smoothstep(-0.02,0.42,lace+strand*0.38);
+  let erosion=(0.001+old*0.014)*thin*gap;
+  return max(0.0,(state.x-0.0015)*mix(1.0,sheet,opened)*(1.0+strand*0.16)-erosion);
 }
 fn flameInterface(density: vec4f,world: vec3f,velocity: vec3f,time: f32) -> vec3f {
   let age=min(density.w,2.0);
@@ -119,7 +135,9 @@ fn flameInterface(density: vec4f,world: vec3f,velocity: vec3f,time: f32) -> vec3
     let world=rayOrigin+rayDirection*distance;
     let uv=uvFromWorld(world,u);
     let density=volumeSample(uv);
-    if(density.x+density.y+density.z>0.0018){
+    let smoke=smokeSample(uv);
+    let gasPresent=density.x+density.y+density.z>0.0018;
+    if(gasPresent||smoke.x>0.0018){
       let velocity=textureSampleLevel(flowField,linearSampler,uv,0.0).xyz;
       let age=min(density.w,2.0);
       // A diffusion flame radiates at a thin fuel/air reaction interface;
@@ -155,9 +173,11 @@ fn flameInterface(density: vec4f,world: vec3f,velocity: vec3f,time: f32) -> vec3
           *(1.0-smoothstep(0.035,0.14,age));
         previousMixture=mixtureDistance;
         skippedMixture=false;
-      }else{skippedMixture=true;}
-      let soot=rollingSoot(density,world,velocity,time);
-      let smokeExtinction=soot*smokeCoefficient(density.w);
+      }else if(gasPresent){skippedMixture=true;}
+      else{previousMixture=-0.15;skippedMixture=false;}
+      let soot=rollingSoot(smoke,world,velocity);
+      let localSmokeAge=smokeAge(smoke);
+      let smokeExtinction=soot*smokeCoefficient(localSmokeAge);
       let flameExtinction=reaction*38.0+hotCore*7.0;
       let extinction=smokeExtinction+flameExtinction;
       let opacity=1.0-exp(-extinction*stepLength);
@@ -170,16 +190,16 @@ fn flameInterface(density: vec4f,world: vec3f,velocity: vec3f,time: f32) -> vec3
           var shadowDistance=0.045;
           var shadowStep=0.065;
           for(var shadow=0u;shadow<5u;shadow++){
-            let neighbour=volumeSample(uv+sunUV*shadowDistance);
-            var shadowSoot=max(0.0,neighbour.y-0.0015);
+            let neighbour=smokeSample(uv+sunUV*shadowDistance);
+            var shadowSoot=max(0.0,neighbour.x-0.0015);
             if(shadow==0u){
               // The nearest lit fold must use the same carved material as
               // the visible ray. Raw voxel density would smooth its dark
               // troughs and lit shoulders back into one broad grey cap.
-              shadowSoot=rollingSoot(neighbour,world+sun*shadowDistance,velocity,time);
+              shadowSoot=rollingSoot(neighbour,world+sun*shadowDistance,velocity);
               litNeighbour=shadowSoot;
             }
-            opticalShadow+=shadowSoot*shadowStep*smokeCoefficient(neighbour.w);
+            opticalShadow+=shadowSoot*shadowStep*smokeCoefficient(smokeAge(neighbour));
             shadowDistance+=shadowStep;shadowStep*=1.55;
           }
         }
@@ -188,7 +208,7 @@ fn flameInterface(density: vec4f,world: vec3f,velocity: vec3f,time: f32) -> vec3
         let cavity=mix(0.28,1.0,exp(-opticalShadow*0.85));
         let ambient=vec3f(0.062,0.074,0.093)*cavity*exp(-soot*0.60);
         let sunColor=vec3f(0.38,0.36,0.325)*sunTransmission*phase*mix(0.62,1.22,facing);
-        let warmBase=vec3f(0.16,0.032,0.006)*min(1.0,density.x)*exp(-density.w*0.55);
+        let warmBase=vec3f(0.16,0.032,0.006)*min(1.0,density.x)*exp(-localSmokeAge*0.55);
         let smokeLight=ambient+sunColor+warmBase;
         // The thin mixing layer is hotter than the bulk gas in its voxel.
         // Temperature gates combustion above; interface chemistry gives the
@@ -225,6 +245,7 @@ export async function createFireVisuals(device, { uniforms, plants, fireState, f
   const makeVolume = label => device.createTexture({label,size:[SIZE,SIZE,SIZE],dimension:'3d',format:'rgba16float',usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.STORAGE_BINDING});
   const gases = [makeVolume('Combustion volume A'),makeVolume('Combustion volume B')];
   const velocities = [makeVolume('Buoyant velocity A'),makeVolume('Buoyant velocity B')];
+  const smokePlume=await createSmokePlume(device,{uniforms,settingsBuffer,previousUniforms,sourceBuffer,gases,velocities});
   const predictedVelocity=makeVolume('Unprojected buoyant velocity');
   const makeCoarse=(label,coarseFormat)=>device.createTexture({label,size:[PRESSURE_SIZE,PRESSURE_SIZE,PRESSURE_SIZE],dimension:'3d',format:coarseFormat,usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.STORAGE_BINDING});
   const divergenceTexture=makeCoarse('Coarse velocity divergence','r32float');
@@ -242,7 +263,7 @@ export async function createFireVisuals(device, { uniforms, plants, fireState, f
   const pressureLayout=device.createBindGroupLayout({entries:[...commonEntries,sampled3D(1,'unfilterable-float'),sampled3D(2,'unfilterable-float'),stored3D(3,'r32float')]});
   const gradientLayout=device.createBindGroupLayout({entries:[...commonEntries,sampled3D(1,'unfilterable-float'),stored3D(2,'rgba16float')]});
   const projectLayout=device.createBindGroupLayout({entries:[...commonEntries,sampled3D(1),sampled3D(2),stored3D(3,'rgba16float'),filteredSampler(4)]});
-  const renderLayout=device.createBindGroupLayout({entries:[...commonEntries,{binding:1,visibility:GPUShaderStage.FRAGMENT,texture:{viewDimension:'3d'}},{binding:2,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'unfilterable-float'}},{binding:3,visibility:GPUShaderStage.FRAGMENT,sampler:{type:'filtering'}},{binding:4,visibility:GPUShaderStage.FRAGMENT,texture:{viewDimension:'3d'}}]});
+  const renderLayout=device.createBindGroupLayout({entries:[...commonEntries,{binding:1,visibility:GPUShaderStage.FRAGMENT,texture:{viewDimension:'3d'}},{binding:2,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'unfilterable-float'}},{binding:3,visibility:GPUShaderStage.FRAGMENT,sampler:{type:'filtering'}},{binding:4,visibility:GPUShaderStage.FRAGMENT,texture:{viewDimension:'3d'}},{binding:5,visibility:GPUShaderStage.FRAGMENT,texture:{viewDimension:'3d'}}]});
   const computePipeline=(label,layout,code,entryPoint)=>device.createComputePipelineAsync({label,layout:device.createPipelineLayout({bindGroupLayouts:[layout]}),compute:{module:device.createShaderModule({label,code}),entryPoint}});
   const [injectPipeline,advectPipeline,renderPipeline,divergencePipeline,clearPressurePipeline,pressurePipeline,gradientPipeline,projectPipeline]=await Promise.all([
     device.createComputePipelineAsync({label:'Gas released by burning blades',layout:device.createPipelineLayout({bindGroupLayouts:[sourceLayout]}),compute:{module:device.createShaderModule({label:'Root gas injection',code:injectWGSL}),entryPoint:'inject'}}),
@@ -321,6 +342,7 @@ export async function createFireVisuals(device, { uniforms, plants, fireState, f
         projectionPass.setPipeline(projectPipeline);projectionPass.setBindGroup(0,projectGroups[current]);projectionPass.dispatchWorkgroups(SIZE/4,SIZE/4,SIZE/4);projectionPass.end();
       }
       current=1-current;
+      smokePlume.encode(encoder,current);
       encoder.copyBufferToBuffer(uniforms,0,previousUniforms,0,256);
       first=false;
     },
@@ -330,7 +352,7 @@ export async function createFireVisuals(device, { uniforms, plants, fireState, f
       const scale=Math.min(0.75,960/Math.max(width,height));
       outputTexture=device.createTexture({label:'Antialiased volumetric radiance',size:[Math.max(1,Math.ceil(width*scale)),Math.max(1,Math.ceil(height*scale))],format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});
       outputView=outputTexture.createView();
-      renderGroups=[0,1].map(index=>device.createBindGroup({layout:renderLayout,entries:[...commonResources,{binding:1,resource:gases[index].createView()},{binding:2,resource:depthTexture.createView()},{binding:3,resource:sampler},{binding:4,resource:velocities[index].createView()}]}));
+      renderGroups=[0,1].map(index=>device.createBindGroup({layout:renderLayout,entries:[...commonResources,{binding:1,resource:gases[index].createView()},{binding:2,resource:depthTexture.createView()},{binding:3,resource:sampler},{binding:4,resource:velocities[index].createView()},{binding:5,resource:smokePlume.textures[index].createView()}]}));
     },
     render(encoder){
       if(destroyed||!outputView){return;}
@@ -339,7 +361,7 @@ export async function createFireVisuals(device, { uniforms, plants, fireState, f
     },
     destroy(){
       if(destroyed){return;}destroyed=true;
-      outputTexture?.destroy();settingsBuffer.destroy();previousUniforms.destroy();sourceBuffer.destroy();
+      outputTexture?.destroy();smokePlume.destroy();settingsBuffer.destroy();previousUniforms.destroy();sourceBuffer.destroy();
       for(const texture of [...gases,...velocities,predictedVelocity,divergenceTexture,...pressures,pressureGradient]){texture.destroy();}
     },
   };

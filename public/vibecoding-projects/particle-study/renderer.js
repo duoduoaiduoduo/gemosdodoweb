@@ -1,15 +1,15 @@
 import { createChaosRide } from './chaos-ride.js?v=flower-ratio-v17';
 import { RIDE_HEIGHT_SCALE } from './ride-space.js?v=flower-ratio-v17';
 import { createSkaterModel, RIDER_VERTEX_STRIDE } from './character-model.js?v=flower-ratio-v17';
-import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL, depthResolveWGSL, fxaaWGSL } from './shaders.js?v=fire-v28c';
-import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES, GRASS_RENDER_INDICES as GRASS_INDICES } from './botanical-renderer.js?v=fire-v28c';
-import { createFireSimulation } from './fire-simulation.js?v=fire-v28c';
-import { createFireVisuals } from './fire-visuals.js?v=fire-v28c';
-import { createEmberParticles } from './ember-particles.js?v=fire-v28c';
-import { createLeafAsh } from './leaf-ash.js?v=fire-v28c';
-import { createLeafFracture } from './leaf-fracture.js?v=fire-v28c';
+import { computeWGSL, projectionWGSL, accumulateWGSL, historyWGSL, compositeWGSL, depthResolveWGSL, fxaaWGSL } from './shaders.js?v=fire-v29d';
+import { geometryWGSL, renderWGSL, shadowWGSL, riderRenderWGSL, riderShadowWGSL, FLOWER_ROOT_STRIDE, CRUST_VERTEX_COUNT, CRUST_INDICES, GRASS_RENDER_INDICES as GRASS_INDICES } from './botanical-renderer.js?v=fire-v29d';
+import { createFireSimulation } from './fire-simulation.js?v=fire-v29d';
+import { createFireVisuals } from './fire-visuals.js?v=fire-v29d';
+import { createEmberParticles } from './ember-particles.js?v=fire-v29d';
+import { createLeafAsh } from './leaf-ash.js?v=fire-v29d';
+import { createLeafFracture } from './leaf-fracture.js?v=fire-v29d';
 import { GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT, FLOWER_INDICES, GRASS_INDICES as GRASS_ORIGINAL_INDICES } from './botanical.js?v=flower-ratio-v17';
-import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=fire-v28c';
+import { DEFAULT_PARAMETERS as INITIAL } from './parameters.js?v=fire-v29d';
 
 // Keep the focus slider's existing calibration in the skating camera.
 const RIDE_FOCUS_REFERENCE = -0.48;
@@ -396,7 +396,7 @@ export async function createRenderer(canvas, { onReady, onError, onStats, initia
       canvas.dataset.ridePush = (rideState.push||0).toFixed(4);
       canvas.dataset.fireActive=String(fireSimulation.active);
       canvas.dataset.fireRendering='branching-reaction-sheets-v21';
-      canvas.dataset.smokeRendering='rolling-layered-dissipating-plume-v28';
+      canvas.dataset.smokeRendering='independent-rolling-smoke-sheets-v29';
       canvas.dataset.grassIndexing=fractureIndexing?'fracture-120':'intact-70';
       canvas.dataset.vegetationBurning='hinged-char-leaf-detachment-v24';
       canvas.dataset.emberRendering='brighter-fine-spark-trails-v27';

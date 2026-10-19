@@ -1,7 +1,7 @@
-import { sharedWGSL } from './shaders.js?v=fire-v28c';
-import { fireFieldWGSL } from './fire-simulation.js?v=fire-v28c';
-import { leafAshWGSL } from './leaf-ash.js?v=fire-v28c';
-import { fractureWGSL } from './leaf-fracture.js?v=fire-v28c';
+import { sharedWGSL } from './shaders.js?v=fire-v29d';
+import { fireFieldWGSL } from './fire-simulation.js?v=fire-v29d';
+import { leafAshWGSL } from './leaf-ash.js?v=fire-v29d';
+import { fractureWGSL } from './leaf-fracture.js?v=fire-v29d';
 import { botanicalWGSL, GRASS_VERTEX_COUNT, FLOWER_VERTEX_COUNT } from './botanical.js?v=flower-ratio-v17';
 
 export const FLOWER_ROOT_STRIDE = 16;

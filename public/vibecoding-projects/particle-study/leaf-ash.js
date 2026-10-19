@@ -1,5 +1,5 @@
-import { sharedWGSL } from './shaders.js?v=fire-v28c';
-import { fireFieldWGSL } from './fire-simulation.js?v=fire-v28c';
+import { sharedWGSL } from './shaders.js?v=fire-v29d';
+import { fireFieldWGSL } from './fire-simulation.js?v=fire-v29d';
 
 const BLADES_PER_ROOT = 5;
 const WORKGROUP_SIZE = 128;
